@@ -43,7 +43,14 @@ function choosePlacement(box, width, height) {
       tipY: side === 'below' ? top - GAP : top + height + GAP,
     };
   });
-  const best = candidates.find(c => c.fits && c.reaches) || candidates.find(c => c.fits) || candidates[0];
+  const best = candidates.find(c => c.fits && c.reaches) || candidates.find(c => c.fits);
+  if (!best) {
+    // The target fills the screen (like the Play canvas): float the balloon
+    // inside it, without a tail.
+    const left = clamp(box.left + box.width / 2 - width / 2, MARGIN, viewWidth - width - MARGIN);
+    const top = clamp(box.top + Math.min(box.height, viewHeight) / 3 - height / 2, TOP, viewHeight - height - MARGIN);
+    return { side: 'inside', left, top, tail: 0, tipX: left + width / 2, tipY: top + height / 2 };
+  }
   const vertical = best.side === 'right' || best.side === 'left';
   best.tail = clamp(best.tail, TAIL_MIN, (vertical ? height : width) - 16 - TAIL_MIN);
   if (vertical) best.tipY = best.top + best.tail + 8;

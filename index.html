@@ -14,14 +14,14 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./mac.css">
 </head>
-<body>
+<body data-screen="play">
 
 <div id="boot" class="boot">
   <div class="boot-box dialog-frame">
     <div class="dialog-inner">
       <span data-icon="mac"></span>
       <p>Welcome to Undertow.</p>
-      <p class="small">Play, practise and record Radiohead songs. Headphones recommended.</p>
+      <p class="small">Touch anything to play in the sound worlds of Radiohead's records, or learn the songs. Headphones recommended.</p>
       <button id="boot-start" class="btn default">Start</button>
     </div>
   </div>
@@ -30,15 +30,38 @@
 <header class="menubar" role="menubar" aria-label="Menu bar">
   <button class="menu-title logo" data-menu="undertow" aria-label="Undertow" aria-haspopup="true" aria-expanded="false"><span data-icon="logo"></span></button>
   <button class="menu-title" data-menu="file" aria-haspopup="true" aria-expanded="false">File</button>
-  <button class="menu-title" data-menu="edit" aria-haspopup="true" aria-expanded="false">Edit</button>
-  <button class="menu-title" data-menu="song" aria-haspopup="true" aria-expanded="false">Song</button>
-  <button class="menu-title" data-menu="sound" aria-haspopup="true" aria-expanded="false">Sound</button>
-  <button class="menu-title hide-phone" data-menu="window" aria-haspopup="true" aria-expanded="false">Window</button>
+  <button class="menu-title play-only" data-menu="world" aria-haspopup="true" aria-expanded="false">World</button>
+  <button class="menu-title learn-only" data-menu="edit" aria-haspopup="true" aria-expanded="false">Edit</button>
+  <button class="menu-title learn-only" data-menu="song" aria-haspopup="true" aria-expanded="false">Song</button>
+  <button class="menu-title learn-only" data-menu="sound" aria-haspopup="true" aria-expanded="false">Sound</button>
+  <button class="menu-title learn-only hide-phone" data-menu="window" aria-haspopup="true" aria-expanded="false">Window</button>
   <button class="menu-title" data-menu="help" aria-haspopup="true" aria-expanded="false">Help</button>
-  <span class="menubar-right"><span id="status" class="status" aria-live="polite"></span><span id="clock" class="clock"></span></span>
+  <span class="menubar-right"><span id="status" class="status" aria-live="polite"></span>
+    <span id="screen-switch" class="screen-switch" role="group" aria-label="Screen" data-help="Play: touch anything to make Radiohead-style sounds and pictures. Learn: practise the songs step by step."><button data-screen="play" aria-pressed="true">Play</button><button data-screen="learn" aria-pressed="false">Learn</button></span><span id="clock" class="clock"></span></span>
 </header>
 
 <div id="menus"></div>
+
+<main id="play-screen" class="play-screen" aria-label="Play">
+  <section id="world-window" class="window active">
+    <header class="titlebar"><h2 id="world-title">Sound World</h2><button id="world-zoom" class="box zoom" aria-label="Full screen" data-help="Full screen: just the picture and the sound."></button></header>
+    <div class="world-body">
+      <canvas id="art" aria-label="Touch anywhere to play" data-help="Touch anywhere to play. Left is low, right is high, higher up is brighter. Slide your finger to play more notes; use several fingers at once. Every note fits, so nothing sounds wrong."></canvas>
+      <div class="world-caption"><strong id="world-name"></strong><span id="world-sub" class="small"></span></div>
+      <div id="touch-hint" class="touch-hint">Touch anywhere to play</div>
+    </div>
+  </section>
+  <section id="strip" class="control-strip" aria-label="Controls">
+    <button id="world-prev" class="btn square" aria-label="Previous world">◀</button>
+    <select id="world-select" class="popup" aria-label="Sound world" data-help="Choose a sound world: Kid A machines, OK Computer's glowing room or In Rainbows guitars."></select>
+    <button id="world-next" class="btn square" aria-label="Next world">▶</button>
+    <span class="spacer"></span>
+    <button id="band" class="btn" aria-pressed="true" data-help="Start or stop the band playing underneath you (Space)."><span data-icon="play"></span><span>Band On</span></button>
+    <button id="play-record" class="btn record" aria-pressed="false" data-help="Record a piece: the sound and the moving picture together (R). It is kept in My Pieces."><span data-icon="record"></span><span>Record</span></button>
+    <output id="record-time" class="small"></output>
+    <button id="pieces-button" class="btn" data-help="Watch, save or share the pieces you have recorded.">My Pieces</button>
+  </section>
+</main>
 
 <main class="desktop">
 

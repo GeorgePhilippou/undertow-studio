@@ -7,9 +7,10 @@ const { launch, openApp, check } = require('./helpers.cjs');
   const { page, errors } = await openApp(browser);
   const results = await page.evaluate(async () => {
     const { SONGS, prepareSong } = await import('./src/songs.js');
+    const { WORLDS } = await import('./src/play/worlds.js');
     const { renderWav } = await import('./src/render.js');
     const out = [];
-    for (const raw of SONGS) {
+    for (const raw of [...SONGS, ...WORLDS.map(w => w.song)]) {
       const song = prepareSong(raw);
       const { blob, peak, seconds } = await renderWav(song, { beats: song.loop });
       const samples = new Int16Array((await blob.arrayBuffer()).slice(44));

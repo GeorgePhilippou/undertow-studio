@@ -13,10 +13,12 @@ export const INSTRUMENTS = {
   musicbox: 'Music Box',
   organ: 'Organ',
   guitar: 'Clean Guitar',
+  ondes: 'Ondes',
+  strings: 'Tape Strings',
   bass: 'Synth Bass',
 };
 
-const REVERB = { piano: 0.22, prophet: 0.12, lansky: 0.35, epiano: 0.2, musicbox: 0.4, organ: 0.25, guitar: 0.18, bass: 0.03 };
+const REVERB = { piano: 0.22, prophet: 0.12, lansky: 0.35, epiano: 0.2, musicbox: 0.4, organ: 0.25, guitar: 0.18, ondes: 0.3, strings: 0.3, bass: 0.03 };
 
 // A small room: a short pre-delay, then a tail that darkens as it fades,
 // with different noise on each side for width.
@@ -56,6 +58,7 @@ export class Engine {
     limiter.attack.value = 0.001;
     limiter.release.value = 0.08;
     this.output.connect(compressor).connect(limiter).connect(context.destination);
+    this.master = limiter;
     this.reverb = context.createConvolver();
     this.reverb.buffer = impulse(context);
     const wet = context.createGain();
@@ -85,6 +88,29 @@ export class Engine {
     channel.level.gain.value = volume / (1 + drive * 0.35);
     channel.send.gain.value = kit ? 0.08 : REVERB[instrument] ?? 0.15;
     return channel.input;
+  }
+
+  // Everything that reaches the speakers, as a stream for recording.
+  stream() {
+    if (!this.recording) {
+      this.recording = this.context.createMediaStreamDestination();
+      this.master.connect(this.recording);
+    }
+    return this.recording.stream;
+  }
+
+  // A meter on the output, for pictures that move with the music.
+  meter() {
+    if (!this.analyser) {
+      this.analyser = this.context.createAnalyser();
+      this.analyser.fftSize = 1024;
+      this.master.connect(this.analyser);
+      this.levels = new Float32Array(this.analyser.fftSize);
+    }
+    this.analyser.getFloatTimeDomainData(this.levels);
+    let sum = 0;
+    for (const v of this.levels) sum += v * v;
+    return Math.sqrt(sum / this.levels.length);
   }
 
   // Starts one note and returns a voice that must be released.
