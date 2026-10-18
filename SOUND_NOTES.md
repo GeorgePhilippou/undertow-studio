@@ -1,0 +1,11 @@
+# Revised opening studies
+
+These are short synthesized teaching reductions. They are not album masters, full transcriptions or claims of exact sonic identity. The original recording remains available through Listen to record; no recording audio is included in the studies or exports.
+
+- **Idioteque:** four E♭maj7-family voicings, one-bar chord arrivals and a final two-bar hold. The FM patch now has a longer attack/release and additional upper partials. Its separate six-beat drum exercise remains a teaching model. The extended loop lets that model and the five-bar harmony realign. Reference: [Ali Jamieson’s reconstruction](https://alijamieson.co.uk/2017/12/12/radiohead-idioteque/).
+- **Everything in Its Right Place:** C, D♭maj7 and E♭6 now each contain the upper C rather than adding a separate high-note pattern. A dedicated single-oscillator patch uses a dark, pitch-tracked filter and an attack/decay envelope; the generic warm polysynth remains available separately. The ten-beat attack pattern is an editable reduction, with no added independent bass line in the opening. Reference: [Ali Jamieson’s harmonic and patch analysis](https://alijamieson.co.uk/2015/04/09/chord-of-the-day-everything-in-its-right-place/).
+- **Karma Police:** corrected D/F♯ triad, fuller piano voicings and stronger/weaker repeated attacks. The two short passages cover Am–D/F♯–Em–G and Am–F–Em–G. The drum backing begins silent; the bass is simplified. The extended study repeats this harmonic material rather than pretending to include the entire introduction or song. Reference: [Cifra Club’s chord chart](https://www.cifraclub.com/radiohead/karma-police/).
+
+The timing guide uses the same steps and note lengths as the audio scheduler. It does not assess the player’s latency or timing. Quiet studies can use a click. Pad-order practice while paused remains separate from following the running audio clock.
+
+Eight-second offline checks measured finite, audible output with peaks approximately 0.405, 0.129 and 0.248 for the three revised studies, below digital clipping. These checks establish signal and headroom; they do not establish perceptual similarity to a recording. Physical iPad Safari and Pencil testing remain necessary.
