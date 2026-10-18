@@ -14,6 +14,8 @@ Serve the root with `python3 -m http.server 8000`. Sources: `index.html`, `mac.c
 
 Browser checks use Node, the `playwright` package and Chromium; set `CHROMIUM_PATH` to use a specific executable. Run `node tests/app.cjs` and `node tests/sound.cjs` with the server running; set `UNDERTOW_URL` to test another address. Signal checks prove audibility and headroom, not resemblance to the records. Physical iPad Safari, Apple Pencil and MIDI hardware remain unverified.
 
+`sw.js` precaches the core files listed in `CORE` and serves pages and code network-first, so a deploy shows up on the next online load. Add new source files to `CORE`. Give new controls a `data-help` balloon.
+
 `python3 scripts/package.py` copies the site into `dist/` (ignored build output). Check `/dist/` from a GitHub Pages-style `/undertow-studio/` subdirectory; use relative asset paths.
 
 ## Publish

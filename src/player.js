@@ -1,8 +1,9 @@
 // Transport, practice and recording.
 //
-// Beats are counted from the start of the loop and keep increasing while the
-// loop repeats ("absolute" beats). Audio is scheduled a little ahead of time
-// against the audio clock, so the timing never depends on the screen.
+// Beats are counted from the start of the playing range (the whole loop, or a
+// section of bars) and keep increasing while it repeats ("absolute" beats).
+// Audio is scheduled a little ahead against the audio clock, so the timing
+// never depends on the screen.
 
 import { loopEvents, barLines } from './songs.js';
 
@@ -26,6 +27,9 @@ export class Player {
     this.listeners = {};
     this.held = new Map();
     this.timer = null;
+    this.section = null; // { start, end } in song beats, or null for the whole loop
+    this.marks = new Map(); // target beat -> 'hit' | 'part' | 'miss'
+    this.marksVersion = 0;
   }
 
   on(name, callback) {
@@ -39,8 +43,8 @@ export class Player {
   setSong(song) {
     this.stop();
     this.song = song;
-    this.timeline = new Map(song.parts.map(part => [part.id, loopEvents(song, part)]));
-    this.bars = barLines(song);
+    this.section = null;
+    this.rebuild();
     const learnable = song.parts.find(p => p.learn) || song.parts[0];
     if (!song.parts.some(p => p.id === this.myPart)) this.myPart = learnable?.id;
     this.muted = new Set([...this.muted].filter(id => song.parts.some(p => p.id === id)));
@@ -50,9 +54,40 @@ export class Player {
   // Swaps in an edited song without interrupting playback.
   updateSong(song) {
     this.song = song;
-    this.timeline = new Map(song.parts.map(part => [part.id, loopEvents(song, part)]));
-    this.bars = barLines(song);
+    this.rebuild();
+  }
+
+  // Events for the playing range, measured from its start.
+  rebuild() {
+    const song = this.song;
+    if (this.section && (this.section.end > song.loop + 1e-6 || this.section.start >= this.section.end)) this.section = null;
+    this.songTimeline = new Map(song.parts.map(part => [part.id, loopEvents(song, part)]));
+    const { offset, span } = this;
+    this.timeline = new Map([...this.songTimeline].map(([id, events]) => [id, events
+      .filter(e => e.beat >= offset - 1e-6 && e.beat < offset + span - 1e-6)
+      .map(e => ({ ...e, beat: round(e.beat - offset) }))]));
+    this.bars = barLines(song).filter(b => b >= offset && b < offset + span).map(b => b - offset);
     this.buildTargets();
+  }
+
+  get offset() {
+    return this.section ? this.section.start : 0;
+  }
+
+  get span() {
+    return this.section ? this.section.end - this.section.start : this.song.loop;
+  }
+
+  // Loops part of the song (null for all of it), restarting if it was playing.
+  setSection(section) {
+    const wasPlaying = this.state === 'playing';
+    if (wasPlaying) this.stop(false);
+    this.section = section;
+    this.rebuild();
+    this.resetPractice();
+    this.emit('section', this.section);
+    if (wasPlaying) this.play();
+    else this.emit('state', this.state);
   }
 
   setSpeed(speed) {
@@ -104,12 +139,18 @@ export class Player {
 
   get loopBeat() {
     const beat = this.beat;
-    return beat < 0 ? beat : beat % this.song.loop;
+    return beat < 0 ? beat : beat % this.span;
   }
 
   play({ record = false, take = null } = {}) {
     if (!this.song) return;
     this.stop(false);
+    if (record && this.section) {
+      // Takes always start at the top of the song so they can become its part.
+      this.section = null;
+      this.rebuild();
+      this.emit('section', null);
+    }
     const startBeat = take ? 0 : Math.floor(this.position || 0);
     const countBeats = this.countIn && (record || this.mode !== 'listen') && !take ? this.song.barLengths[0] : 0;
     const now = this.context.currentTime + 0.06;
@@ -173,7 +214,7 @@ export class Player {
   }
 
   schedule(from, to) {
-    const loop = this.song.loop;
+    const loop = this.span;
     for (const part of this.song.parts) {
       if (this.muted.has(part.id)) continue;
       const silent = this.take ? part.id === this.take.part : part.id === this.myPart && (this.mode !== 'listen' || this.state === 'recording');
@@ -251,18 +292,21 @@ export class Player {
     const result = [];
     for (let i = 0; i < this.targets.length * 2 && result.length < count; i++) {
       const target = this.targets[i % this.targets.length];
-      const beat = target.beat + (i >= this.targets.length ? this.song.loop : 0);
+      const beat = target.beat + (i >= this.targets.length ? this.span : 0);
       if (beat >= loopBeat - 0.05) result.push({ ...target, absolute: beat });
     }
     return result;
   }
 
   resetPractice(startBeat = 0) {
-    this.pass = { start: Math.floor(startBeat / (this.song?.loop || 1)) * (this.song?.loop || 1), hits: new Map() };
+    const span = this.song ? this.span : 1;
+    this.pass = { start: Math.floor(startBeat / span) * span, hits: new Map() };
     this.waitIndex = 0;
     this.waitTarget = null;
+    this.marks.clear();
+    this.marksVersion++;
     if (this.mode === 'wait' && this.targets?.length) {
-      const loop = this.song.loop;
+      const loop = this.span;
       const cycle = Math.floor(startBeat / loop);
       const offset = startBeat - cycle * loop;
       let index = this.targets.findIndex(t => t.beat >= offset - 1e-6);
@@ -275,21 +319,24 @@ export class Player {
   setWaitTarget() {
     const count = this.targets.length;
     const target = this.targets[this.waitIndex % count];
-    const absolute = Math.floor(this.waitIndex / count) * this.song.loop + target.beat;
+    const absolute = Math.floor(this.waitIndex / count) * this.span + target.beat;
     this.waitTarget = { ...target, absolute, remaining: new Set(target.drums.size ? target.drums : [...target.notes].map(n => n % 12)) };
   }
 
   checkPass() {
-    const loop = this.song.loop;
+    const loop = this.span;
     if (this.beatAt(this.context.currentTime) < this.pass.start + loop + PRACTICE_WINDOW) return;
     let total = 0;
     let hit = 0;
     for (const target of this.targets) {
       const size = this.wanted(target).size;
+      const got = Math.min(size, this.pass.hits.get(round(this.pass.start + target.beat))?.size || 0);
       total += size;
-      hit += Math.min(size, this.pass.hits.get(round(this.pass.start + target.beat))?.size || 0);
+      hit += got;
+      this.marks.set(target.beat, got === size ? 'hit' : got ? 'part' : 'miss');
     }
-    this.emit('pass', { hit, total });
+    this.marksVersion++;
+    this.emit('pass', { hit, total, section: this.section });
     this.pass.start += loop;
     for (const key of this.pass.hits.keys()) if (key < this.pass.start - 1) this.pass.hits.delete(key);
   }
@@ -310,6 +357,8 @@ export class Player {
     if (this.mode === 'wait' && this.waitTarget) {
       for (const key of accept(this.waitTarget)) this.waitTarget.remaining.delete(key);
       if (this.waitTarget.remaining.size === 0) {
+        this.marks.set(this.waitTarget.beat, 'hit');
+        this.marksVersion++;
         const wasHolding = this.holding;
         const resumeAt = this.waitTarget.absolute;
         this.waitIndex++;
@@ -325,7 +374,7 @@ export class Player {
     }
     if (this.mode !== 'along') return;
     const now = this.beatAt(this.context.currentTime - (this.context.baseLatency || 0));
-    const loop = this.song.loop;
+    const loop = this.span;
     for (const target of this.targets) {
       for (const cycle of [Math.floor(now / loop) - 1, Math.floor(now / loop), Math.floor(now / loop) + 1]) {
         const beat = cycle * loop + target.beat;
@@ -337,6 +386,10 @@ export class Player {
         const hits = this.pass.hits.get(key) || new Set();
         got.forEach(k => hits.add(k));
         this.pass.hits.set(key, hits);
+        if (hits.size >= this.wanted(target).size) {
+          this.marks.set(target.beat, 'hit');
+          this.marksVersion++;
+        }
         return;
       }
     }
