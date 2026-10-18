@@ -1,0 +1,933 @@
+// Undertow - play, practise and record Radiohead songs on a classic Mac desk.
+
+import { SONGS, prepareSong, padsFor, noteName, barBeat, blankSong } from './songs.js';
+import { Engine, INSTRUMENTS, loadPiano } from './audio/engine.js';
+import { KITS, DRUM_VOICES, DRUM_LABELS } from './audio/drums.js';
+import { Player, takeToPart } from './player.js';
+import { renderWav } from './render.js';
+import * as storage from './storage.js';
+import { Keyboard } from './ui/keyboard.js';
+import { drawRoll } from './ui/roll.js';
+import { MenuBar, setupWindows, openFloating, showDialog, alertBox, confirmBox, toast, escape } from './ui/mac.js';
+import { ICONS, renderIcons } from './ui/icons.js';
+
+const $ = selector => document.querySelector(selector);
+const $$ = selector => [...document.querySelectorAll(selector)];
+
+const SPEEDS = [0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1, 1.1, 1.25];
+const PIANO_KEYS = 'awsedftgyhujkolp;';
+
+let data = storage.load();
+data.settings = { parts: {}, instruments: {}, kits: {}, muted: {}, octave: {}, ...data.settings };
+const settings = () => data.settings;
+const undoStack = [];
+let song = null;
+let selectedTake = null;
+let drumPage = 0;
+
+// ---------------------------------------------------------------- audio
+
+const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+const context = new AudioContextClass({ latencyHint: 'interactive' });
+try {
+  if (navigator.audioSession) navigator.audioSession.type = 'playback';
+} catch {
+  // Older Safari: the ring/silent switch may mute Web Audio.
+}
+const engine = new Engine(context);
+const player = new Player(engine);
+setStatus('Loading piano…');
+loadPiano(context).then(count => setStatus(count ? '' : 'Piano samples unavailable'));
+
+// ---------------------------------------------------------------- songs
+
+const allSongs = () => [...SONGS, ...data.songs];
+const rawSong = id => allSongs().find(s => s.id === id) || SONGS[0];
+
+function buildSong(raw) {
+  const edits = data.edits[raw.id]?.parts || {};
+  const kit = settings().kits[raw.id];
+  const parts = raw.parts.map(part => {
+    const kind = part.drums ? 'drums' : 'notes';
+    const edited = edits[part.id] ? { ...part, kind, events: structuredClone(edits[part.id].events), length: edits[part.id].length } : part;
+    return kind === 'drums' && kit ? { ...edited, kit } : edited;
+  });
+  return prepareSong({ ...raw, parts });
+}
+
+function selectSong(id) {
+  player.stop();
+  keyboard.releaseAll();
+  const raw = rawSong(id);
+  song = buildSong(raw);
+  settings().songId = song.id;
+  player.myInstrument = settings().instruments[song.id] || null;
+  player.myPart = settings().parts[song.id] || null;
+  player.muted = new Set(settings().muted[song.id] || []);
+  player.setSong(song);
+  player.setMode(currentMode());
+  selectedTake = null;
+  drumPage = 0;
+  $('#score').textContent = '';
+  renderSong();
+  persist();
+}
+
+// Rebuilds the song after an edit without stopping playback.
+function refreshSong() {
+  song = buildSong(rawSong(song.id));
+  player.updateSong(song);
+  renderTracks();
+  renderKeyboard();
+  renderDrumMachine();
+}
+
+function renderSong() {
+  $('#song-title').textContent = song.title;
+  $('#song-window-title').textContent = song.title;
+  document.title = `${song.title} - Undertow`;
+  const meter = song.barLengths.length > 1 ? `${song.barLengths.join(' + ')} beats` : `${song.barLengths[0]} beats to a bar`;
+  $('#song-meta').textContent = [song.custom ? 'My song' : `${song.album}, ${song.year}`, song.key, `${song.bpm} BPM`, meter].filter(Boolean).join(', ');
+  $('#song-about').textContent = song.about;
+  renderSongList();
+  renderParts();
+  renderTracks();
+  renderKeyboard();
+  renderSpeed();
+  renderTakes();
+  renderDrumMachine();
+}
+
+function renderSongList() {
+  const item = s => `
+    <li><button data-song="${s.id}" aria-current="${s.id === song.id}">
+      ${s.custom ? ICONS.mine : ICONS.song}<span>${escape(s.title)}</span>
+      <span class="meta">${escape(s.custom ? `${s.bpm} BPM` : `${s.album}, ${s.year}`)}</span>
+    </button></li>`;
+  const mine = data.songs;
+  $('#song-list').innerHTML = SONGS.map(item).join('') +
+    (mine.length ? `<li class="heading small">My Songs</li>${mine.map(item).join('')}` : '');
+}
+
+function renderParts() {
+  $('#my-part').innerHTML = song.parts.map(p => `<option value="${p.id}" ${p.id === player.myPart ? 'selected' : ''}>${escape(p.name)}</option>`).join('');
+}
+
+function renderTracks() {
+  const hasDrums = song.parts.some(p => p.kind === 'drums');
+  $('#tracks').innerHTML = `<span class="label">Hear:</span>` + song.parts.map(p => `
+    <label class="check"><input type="checkbox" data-part="${p.id}" ${player.muted.has(p.id) ? '' : 'checked'}> ${escape(p.name)}${p.id === player.myPart ? ' (you)' : ''}</label>`).join('') +
+    (hasDrums ? '<span class="spacer" style="flex:1"></span><button id="open-drums" class="btn">Drum Machine…</button>' : '');
+}
+
+function myPart() {
+  return player.part();
+}
+
+// ---------------------------------------------------------------- keyboard window
+
+const keyboard = new Keyboard({ piano: $('#piano'), pads: $('#pads'), drumPads: $('#drum-pads') }, {
+  noteOn: (midi, velocity) => player.noteOn(midi, velocity),
+  noteOff: midi => player.noteOff(midi),
+  padOn: (pad, velocity) => player.chordOn(pad, velocity * 0.85),
+  padOff: pad => pad.notes.forEach(midi => player.noteOff(midi)),
+  drum: (voice, velocity) => player.drumHit(voice, velocity),
+});
+
+function renderKeyboard() {
+  const part = myPart();
+  const drums = part?.kind === 'drums';
+  const pads = padsFor(song, part);
+  const tabs = { keys: !drums, chords: !drums && pads.length > 0, drums };
+  let tab = settings().tab;
+  if (!tabs[tab]) tab = drums ? 'drums' : 'keys';
+  $$('#keys-tabs button').forEach(button => {
+    button.hidden = !tabs[button.dataset.tab];
+    button.setAttribute('aria-pressed', String(button.dataset.tab === tab));
+  });
+  $('#keys-tabs').hidden = Object.values(tabs).filter(Boolean).length < 2;
+  keyboard.setPads(pads);
+  keyboard.setDrums(drums ? [...new Set([...DRUM_VOICES.filter(v => part.events.some(e => e.drum === v)), ...DRUM_VOICES])] : DRUM_VOICES);
+  keyboard.show(tab);
+  $('#keys-title').textContent = drums ? 'Drum Pads' : tab === 'chords' ? 'Chord Pads' : 'Keyboard';
+  $('#octave-tools').hidden = tab !== 'keys';
+  if (tab === 'keys') {
+    const saved = settings().octave[`${song.id}:${part.id}`];
+    const pitches = part.events.flatMap(e => e.notes);
+    const { low } = saved ? keyboard.layout(saved)
+      : pitches.length ? keyboard.fit(Math.min(...pitches), Math.max(...pitches)) : keyboard.layout(48);
+    $('#octave').textContent = noteName(low);
+  }
+  $('#instrument').innerHTML = drums
+    ? Object.entries(KITS).map(([id, kit]) => `<option value="${id}" ${id === part.kit ? 'selected' : ''}>${kit.name}</option>`).join('')
+    : Object.entries(INSTRUMENTS).map(([id, name]) => `<option value="${id}" ${id === player.instrumentFor(part) ? 'selected' : ''}>${name}</option>`).join('');
+  lastHighlight = '';
+}
+
+function setTab(tab) {
+  settings().tab = tab;
+  persist();
+  renderKeyboard();
+}
+
+function shiftOctave(direction) {
+  const part = myPart();
+  if (!part || part.kind === 'drums') return;
+  const low = Math.max(24, Math.min(84, keyboard.low + direction * 12));
+  settings().octave[`${song.id}:${part.id}`] = low;
+  persist();
+  keyboard.releaseAll();
+  renderKeyboard();
+}
+
+function setInstrument(value) {
+  const part = myPart();
+  if (part.kind === 'drums') {
+    settings().kits[song.id] = value;
+    persist();
+    refreshSong();
+  } else {
+    settings().instruments[song.id] = value === part.instrument ? undefined : value;
+    player.myInstrument = settings().instruments[song.id] || null;
+    persist();
+    renderKeyboard();
+  }
+  toast(`Sound: ${part.kind === 'drums' ? KITS[value].name : INSTRUMENTS[value]}`);
+}
+
+function useOriginalSound() {
+  delete settings().instruments[song.id];
+  delete settings().kits[song.id];
+  player.myInstrument = null;
+  persist();
+  refreshSong();
+}
+
+// ---------------------------------------------------------------- transport
+
+const currentMode = () => $('input[name="mode"]:checked')?.value || 'listen';
+
+function togglePlay() {
+  if (player.state === 'playing' || player.state === 'take') player.stop();
+  else play();
+}
+
+async function play(options = {}) {
+  await context.resume();
+  player.play(options);
+}
+
+function toggleRecord() {
+  if (player.state === 'recording') player.stop();
+  else play({ record: true });
+}
+
+function renderTransport(state) {
+  $('#play').setAttribute('aria-pressed', String(state === 'playing' || state === 'take'));
+  $('#record').setAttribute('aria-pressed', String(state === 'recording'));
+  $('#take-play').textContent = state === 'take' ? 'Stop' : 'Play';
+  if (state === 'stopped') keyboard.highlight({});
+}
+
+function renderSpeed() {
+  const speed = settings().speed || 1;
+  player.setSpeed(speed);
+  $('#tempo').textContent = speed === 1 ? `${song.bpm} BPM` : `${Math.round(speed * 100)}% (${Math.round(song.bpm * speed)})`;
+  $('#slower').disabled = speed <= SPEEDS[0];
+  $('#faster').disabled = speed >= SPEEDS.at(-1);
+}
+
+function changeSpeed(direction) {
+  const speed = settings().speed || 1;
+  const index = SPEEDS.indexOf(speed);
+  settings().speed = SPEEDS[Math.max(0, Math.min(SPEEDS.length - 1, (index < 0 ? 6 : index) + direction))];
+  persist();
+  renderSpeed();
+}
+
+player.on('state', renderTransport);
+
+player.on('pass', ({ hit, total }) => {
+  if (!total) return;
+  $('#score').textContent = hit === total ? `Perfect - all ${total} notes in time` : `Last time round: ${hit} of ${total} notes in time`;
+});
+
+player.on('take', take => {
+  (data.takes[take.song] ||= []).push(take);
+  persist();
+  selectedTake = take.id;
+  renderTakes();
+  openFloating($('#takes-window'), $('#song-window'));
+  toast('Take recorded. Play it back, save it, or use it as the part.');
+});
+
+// ---------------------------------------------------------------- live display
+
+let lastHighlight = '';
+let lastRoll = '';
+
+function describe(target) {
+  if (!target) return '';
+  if (target.drums?.size) return [...target.drums].map(d => DRUM_LABELS[d]).join(' + ');
+  return [...target.notes].sort((a, b) => a - b).map(n => noteName(n)).join(' ');
+}
+
+function frame() {
+  requestAnimationFrame(frame);
+  if (!song) return;
+  const running = player.state !== 'stopped';
+  const beat = running ? player.beat : 0;
+  const loopBeat = running ? (beat < 0 ? beat : beat % song.loop) : 0;
+  const mode = player.mode;
+  const part = myPart();
+
+  // Counter.
+  if (beat < 0) {
+    $('#counter').textContent = `Count ${Math.max(1, Math.ceil(-beat))}`;
+  } else {
+    const position = barBeat(song, loopBeat);
+    $('#counter').textContent = `${position.bar} : ${position.beat}`;
+  }
+
+  // What to play next, and what is sounding.
+  const target = player.state === 'take' ? null : player.upcoming(Math.max(0, loopBeat), 1)[0] || null;
+  const sounding = running && (mode === 'listen' || player.state === 'take') ? player.soundingNotes(part.id, loopBeat) : new Set();
+  const soundingChord = running ? currentChord(part, loopBeat) : null;
+  const showTarget = player.state !== 'recording' && (mode !== 'listen' || !running);
+  const targetSet = showTarget && target ? (target.drums.size ? target.drums : target.notes) : new Set();
+  const key = `${[...targetSet].join()}|${[...sounding].join()}|${soundingChord}|${showTarget && target?.chord}`;
+  if (key !== lastHighlight) {
+    lastHighlight = key;
+    keyboard.highlight({ targets: targetSet, sounding, chord: showTarget ? target?.chord : null, soundingChord: mode === 'listen' ? soundingChord : null });
+  }
+
+  // Message line.
+  let label = '';
+  let detail = '';
+  if (player.state === 'recording') {
+    label = beat < 0 ? 'Get ready…' : '● Recording';
+    detail = 'Play your part. Press Stop when you\'re done.';
+  } else if (player.state === 'take') {
+    label = 'Playing take';
+  } else if (mode === 'listen') {
+    label = running ? soundingChord || 'Listening' : 'Listen first';
+    detail = running ? 'Watch the keys. When it feels familiar, choose Play Along.' : 'Press Play to hear the part. The roll and keys follow the music.';
+  } else if (mode === 'along') {
+    label = target ? `Next: ${target.chord || describe(target)}` : 'Play Along';
+    detail = target?.chord ? describe(target) : running ? '' : 'Press Play. The song plays without your part; keep up with it.';
+  } else {
+    label = target ? `${player.holding ? 'Your turn' : 'Next'}: ${target.chord || describe(target)}` : 'Wait for Me';
+    detail = target ? `${target.chord ? describe(target) : ''}${player.holding ? ' - the song waits for you' : ''}` : '';
+    if (!running) detail = 'Press Play. The song stops at each chord until you play it - any octave counts.';
+  }
+  if ($('#next-label').textContent !== label) $('#next-label').textContent = label;
+  if ($('#next-detail').textContent !== detail) $('#next-detail').textContent = detail;
+
+  // Roll.
+  const rollKey = `${loopBeat.toFixed(3)}|${target?.absolute}|${song.id}|${part.id}|${$('#roll').clientWidth}`;
+  if (rollKey !== lastRoll) {
+    lastRoll = rollKey;
+    drawRoll($('#roll'), { song, part, events: player.timeline.get(part.id) || [], loopBeat: running ? loopBeat : 0, target: showTarget ? target && { beat: target.beat } : null, playing: running });
+  }
+
+  // Drum machine step light.
+  if (!$('#drum-window').hidden) lightDrumStep(running ? loopBeat : -1);
+}
+
+function currentChord(part, loopBeat) {
+  let chord = null;
+  for (const event of player.timeline.get(part.id) || []) {
+    if (event.beat > loopBeat) break;
+    if (event.chord) chord = event.chord;
+  }
+  return chord;
+}
+
+// ---------------------------------------------------------------- takes
+
+function songTakes() {
+  return data.takes[song.id] || [];
+}
+
+function renderTakes() {
+  const takes = songTakes();
+  if (!takes.some(t => t.id === selectedTake)) selectedTake = takes.at(-1)?.id || null;
+  $('#take-list').innerHTML = takes.length
+    ? takes.map((take, i) => {
+      const seconds = Math.round((take.length * 60) / song.bpm);
+      const when = new Date(take.created).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      const part = song.parts.find(p => p.id === take.part)?.name || take.part;
+      return `<button role="option" data-take="${take.id}" aria-selected="${take.id === selectedTake}">
+        <span>Take ${i + 1} - ${escape(part)}</span><span>${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}</span>
+        <span>${escape(when)}, ${escape(INSTRUMENTS[take.instrument] || KITS[take.instrument]?.name || 'Drums')}</span></button>`;
+    }).join('')
+    : '<div class="empty">No takes yet. Press Record, play your part, then press Stop.</div>';
+  for (const id of ['#take-play', '#take-use', '#take-export', '#take-delete']) $(id).disabled = !selectedTake;
+}
+
+const currentTake = () => songTakes().find(t => t.id === selectedTake);
+
+async function playTake() {
+  if (player.state === 'take') return player.stop();
+  const take = currentTake();
+  if (take) await play({ take });
+}
+
+async function useTake() {
+  const take = currentTake();
+  if (!take) return;
+  const part = song.parts.find(p => p.id === take.part);
+  const ok = await confirmBox(`Use this take as the ${part.name} part?`,
+    'Your take replaces the written part, snapped to the nearest sixteenth note. Edit ▸ Undo or Revert to Original brings the original back.', 'Use as Part');
+  if (!ok) return;
+  pushUndo('Use as Part');
+  (data.edits[song.id] ||= { parts: {} }).parts[take.part] = takeToPart(take, song);
+  persist();
+  selectSong(song.id);
+  toast(`${part.name} part replaced.`);
+}
+
+async function deleteTake() {
+  const take = currentTake();
+  if (!take || !(await confirmBox('Delete this take?', 'This cannot be undone.', 'Delete'))) return;
+  if (player.state === 'take') player.stop();
+  data.takes[song.id] = songTakes().filter(t => t.id !== take.id);
+  selectedTake = null;
+  persist();
+  renderTakes();
+}
+
+async function exportAudio(take = null) {
+  setStatus('Rendering…');
+  try {
+    const beats = take ? take.length : song.loop * Math.max(1, Math.ceil(16 / song.loop));
+    const instruments = player.myInstrument ? { [player.myPart]: player.myInstrument } : {};
+    const { blob } = await renderWav(song, { beats, muted: player.muted, take, instruments });
+    download(blob, `${song.title}${take ? ' take' : ''}.wav`);
+    setStatus('');
+  } catch (error) {
+    setStatus('');
+    alertBox('The audio could not be saved.', error.message);
+  }
+}
+
+function download(blob, name) {
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = name.replace(/[\\/:*?"<>|]/g, '');
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+}
+
+// ---------------------------------------------------------------- drum machine
+
+function drumPart() {
+  return song.parts.find(p => p.kind === 'drums');
+}
+
+function renderDrumMachine() {
+  const win = $('#drum-window');
+  if (win.hidden) return;
+  const part = drumPart();
+  const grid = $('#drum-grid');
+  if (!part) {
+    grid.innerHTML = '<p class="small">This song has no drum part.</p>';
+    return;
+  }
+  $('#kit').innerHTML = Object.entries(KITS).map(([id, kit]) => `<option value="${id}" ${id === part.kit ? 'selected' : ''}>${kit.name}</option>`).join('');
+  const steps = Math.round(part.length * 4);
+  const pages = Math.max(1, Math.ceil(steps / 16));
+  drumPage = Math.min(drumPage, pages - 1);
+  const first = drumPage * 16;
+  const count = Math.min(16, steps - first);
+  $('#drum-page').textContent = pages > 1 ? `Bar ${drumPage + 1} of ${pages}` : 'One bar';
+  $('#drum-prev').disabled = drumPage === 0;
+  $('#drum-next').disabled = drumPage >= pages - 1;
+  const hits = new Map(part.events.map(e => [`${e.drum}:${Math.round(e.beat * 4)}`, e]));
+  grid.style.gridTemplateColumns = `auto repeat(${count}, minmax(26px, 1fr))`;
+  let html = '<span></span>';
+  for (let i = 0; i < count; i++) html += `<span class="head">${(first + i) % 4 === 0 ? (first + i) / 4 + 1 : ''}</span>`;
+  for (const voice of DRUM_VOICES) {
+    html += `<span class="lane">${DRUM_LABELS[voice]}</span>`;
+    for (let i = 0; i < count; i++) {
+      const step = first + i;
+      const hit = hits.get(`${voice}:${step}`);
+      html += `<button class="cell${step % 4 === 0 ? ' beat' : ''}${hit && hit.velocity < 0.6 ? ' soft' : ''}" data-voice="${voice}" data-step="${step}" aria-pressed="${Boolean(hit)}" aria-label="${DRUM_LABELS[voice]} step ${step + 1}"></button>`;
+    }
+  }
+  grid.innerHTML = html;
+}
+
+function toggleDrum(voice, step) {
+  const part = drumPart();
+  const events = part.events.filter(e => !(e.drum === voice && Math.round(e.beat * 4) === step));
+  const removed = events.length !== part.events.length;
+  if (!removed) events.push({ beat: step / 4, drum: voice, velocity: 0.8, length: 0.25, notes: [] });
+  pushUndo('Drum Edit');
+  (data.edits[song.id] ||= { parts: {} }).parts[part.id] = { events, length: part.length };
+  persist();
+  refreshSong();
+  if (!removed) player.drumHit(voice, 0.8);
+}
+
+function clearDrums() {
+  const part = drumPart();
+  if (!part) return;
+  pushUndo('Clear Drums');
+  (data.edits[song.id] ||= { parts: {} }).parts[part.id] = { events: [], length: part.length };
+  persist();
+  refreshSong();
+}
+
+let litStep = null;
+
+function lightDrumStep(loopBeat) {
+  const part = drumPart();
+  if (!part) return;
+  const step = loopBeat < 0 ? null : Math.floor((loopBeat % part.length) * 4);
+  if (step === litStep) return;
+  litStep = step;
+  if (step !== null && Math.floor(step / 16) !== drumPage) {
+    drumPage = Math.floor(step / 16);
+    renderDrumMachine();
+  }
+  $$('#drum-grid .cell').forEach(cell => cell.classList.toggle('now', Number(cell.dataset.step) === step));
+}
+
+// ---------------------------------------------------------------- edits and undo
+
+function pushUndo(label) {
+  undoStack.push({ song: song.id, label, edits: structuredClone(data.edits[song.id] || null) });
+  if (undoStack.length > 60) undoStack.shift();
+}
+
+function undo() {
+  const last = undoStack.pop();
+  if (!last) return;
+  if (last.edits) data.edits[last.song] = last.edits;
+  else delete data.edits[last.song];
+  persist();
+  if (last.song === song.id) refreshSong();
+  toast(`Undid ${last.label}.`);
+}
+
+async function revertSong() {
+  if (!data.edits[song.id]) return;
+  if (!(await confirmBox('Revert to the original parts?', 'Parts you replaced with takes and drum edits are undone. Your takes are kept.', 'Revert'))) return;
+  pushUndo('Revert');
+  delete data.edits[song.id];
+  persist();
+  selectSong(song.id);
+}
+
+// ---------------------------------------------------------------- dialogs
+
+function showInfo() {
+  const listen = song.youtube
+    ? `https://www.youtube.com/watch?v=${song.youtube}`
+    : `https://www.youtube.com/results?search_query=${encodeURIComponent(`Radiohead ${song.title}`)}`;
+  const meter = song.barLengths.length > 1 ? song.barLengths.join(' + ') : song.barLengths[0];
+  showDialog(`
+    <div class="alert">${ICONS.song}<div>
+      <h3>${escape(song.title)}</h3>
+      <p>${escape(song.custom ? 'My song' : `Radiohead - ${song.album} (${song.year})`)}<br>
+      ${song.key ? `Key: ${escape(song.key)}, ` : ''}${song.bpm} BPM, ${escape(String(meter))} beats a bar</p>
+      <p>${escape(song.about)}</p>
+      ${song.accuracy ? `<p><b>How close is it?</b> ${escape(song.accuracy)} If something sounds wrong, record the part as you hear it and choose Use as Part.</p>` : ''}
+      ${song.sources?.length ? `<p><b>Sources</b><br>${song.sources.map(([name, url]) => `<a href="${escape(url)}" target="_blank" rel="noopener">${escape(name)}</a>`).join('<br>')}</p>` : ''}
+      ${song.custom ? '' : `<p>No recordings are included. <a href="${escape(listen)}" target="_blank" rel="noopener">Listen to the record on YouTube</a>.</p>`}
+    </div></div>
+    <div class="button-row"><button class="btn default" data-value="ok">OK</button></div>`);
+}
+
+function showHelp() {
+  showDialog(`
+    <h3>How to Use Undertow</h3>
+    <ul>
+      <li><b>Choose a song</b> from the Songs window or the Song menu.</li>
+      <li><b>Listen</b> - press Play. The roll and the keys show your part as it plays.</li>
+      <li><b>Play Along</b> - the song plays without your part. The dotted keys show what comes next; your score appears after each time round.</li>
+      <li><b>Wait for Me</b> - the song stops at every chord until you play it. Any octave counts.</li>
+      <li><b>Record</b> - press Record, play over the count-in and the backing, then press Stop. Your take appears in the Takes window, where you can play it, save it as a WAV file, or <i>Use as Part</i> to correct a song by ear.</li>
+      <li><b>Slower / faster</b> with − and +. <b>Click</b> adds a metronome.</li>
+      <li><b>Chords</b> tab turns the keyboard into one pad per chord.</li>
+    </ul>
+    <h3>Keyboard shortcuts</h3>
+    <ul>
+      <li>Space: Play / Stop, R: Record, 1–9: chord or drum pads</li>
+      <li>A W S E D F T G Y H U J K O L P ; play the piano from the lowest key shown, Z / X change octave</li>
+      <li>A USB or Bluetooth MIDI keyboard works in browsers that support Web MIDI.</li>
+    </ul>
+    <div class="button-row"><button class="btn default" data-value="ok">OK</button></div>`);
+}
+
+function showAbout() {
+  showDialog(`
+    <div class="alert">${ICONS.mac}<div>
+      <h3>Undertow</h3>
+      <p>A classic Macintosh music desk for playing, practising and recording Radiohead songs. Everything you make stays in this browser. No recordings or vocals are included; the songs are played by the instruments in this app.</p>
+      <p><b>Credits</b><br>
+      Piano: Salamander Grand Piano by Alexander Holm, CC BY 3.0.<br>
+      Chicago-style type: ChiKareGo2 by Giles Booth, CC BY.<br>
+      Geneva-style type: Geneva 9 by Kelsey Higham, CC BY 3.0.<br>
+      Song analyses are credited in each song\'s Get Info window.</p>
+      <p>Older projects open in <a href="classic/">Undertow Classic</a>.</p>
+    </div></div>
+    <div class="button-row"><button class="btn default" data-value="ok">OK</button></div>`);
+}
+
+async function newSong() {
+  const { value, fields } = await showDialog(`
+    <form>
+      <h3>New Song</h3>
+      <div class="row"><label class="label" for="ns-title">Title</label><input id="ns-title" class="field" name="title" value="Untitled" maxlength="60"></div>
+      <div class="row"><label class="label" for="ns-bpm">Tempo</label><input id="ns-bpm" class="field" name="bpm" type="number" min="40" max="220" value="90" style="width:90px"> <span class="small">BPM</span></div>
+      <div class="row"><label class="label" for="ns-meter">Beats in a bar</label><select id="ns-meter" class="popup" name="beats">${[3, 4, 5, 6, 7].map(n => `<option ${n === 4 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="row"><label class="label" for="ns-bars">Bars to loop</label><select id="ns-bars" class="popup" name="bars">${[1, 2, 4, 8].map(n => `<option ${n === 4 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="row"><label class="label" for="ns-sound">Keys sound</label><select id="ns-sound" class="popup" name="sound">${Object.entries(INSTRUMENTS).map(([id, name]) => `<option value="${id}">${name}</option>`).join('')}</select></div>
+      <div class="button-row"><button type="button" class="btn" data-value="cancel">Cancel</button><button type="submit" class="btn default">Create</button></div>
+    </form>`, { defaultValue: 'create' });
+  if (value !== 'create') return;
+  const created = blankSong({
+    id: `my-${Date.now().toString(36)}`,
+    title: fields.title.trim() || 'Untitled',
+    bpm: Math.max(40, Math.min(220, Number(fields.bpm) || 90)),
+    beatsPerBar: Number(fields.beats),
+    barCount: Number(fields.bars),
+    instrument: fields.sound,
+  });
+  data.songs.push(created);
+  persist();
+  selectSong(created.id);
+  toast('New song. Record keys, bass or drums - or open the Drum Machine.');
+}
+
+async function deleteSong() {
+  if (!song.custom) return;
+  if (!(await confirmBox(`Delete “${song.title}”?`, 'Its parts and takes are removed from this browser.', 'Delete'))) return;
+  data.songs = data.songs.filter(s => s.id !== song.id);
+  delete data.takes[song.id];
+  delete data.edits[song.id];
+  persist();
+  selectSong(SONGS[0].id);
+}
+
+function chooseSongDialog() {
+  showDialog(`
+    <h3>Choose a Song</h3>
+    <ul class="song-list" style="border:1px solid #000;max-height:60vh;overflow:auto">
+      ${allSongs().map(s => `<li><button data-value="${s.id}" aria-current="${s.id === song.id}">${s.custom ? ICONS.mine : ICONS.song}<span>${escape(s.title)}</span><span class="meta">${escape(s.custom ? 'My song' : s.album)}</span></button></li>`).join('')}
+    </ul>
+    <div class="button-row"><button class="btn" data-value="new">New Song…</button><button class="btn default" data-value="cancel">Cancel</button></div>`)
+    .then(({ value }) => {
+      if (value === 'new') newSong();
+      else if (value !== 'cancel') selectSong(value);
+    });
+}
+
+function saveCopy() {
+  download(storage.exportFile(data), 'Undertow songs.undertow.json');
+}
+
+function openCopy() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+      const imported = storage.importFile(await file.text());
+      if (!(await confirmBox('Replace your songs and takes?', 'Everything in this browser is replaced with the contents of the file.', 'Replace'))) return;
+      data = { ...imported, settings: { ...data.settings, ...imported.settings } };
+      persist();
+      selectSong(data.settings.songId || SONGS[0].id);
+    } catch (error) {
+      alertBox('This file could not be opened.', error.message);
+    }
+  });
+  input.click();
+}
+
+// ---------------------------------------------------------------- menus
+
+const menus = new MenuBar($('.menubar'), $('#menus'), name => {
+  const part = myPart();
+  switch (name) {
+    case 'undertow':
+      return [
+        { label: 'About Undertow…', action: showAbout },
+        '-',
+        { label: 'Open Undertow Classic…', action: openClassic },
+      ];
+    case 'file':
+      return [
+        { label: 'New Song…', shortcut: '⌘N', action: newSong },
+        '-',
+        { label: 'Save a Copy…', shortcut: '⌘S', action: saveCopy },
+        { label: 'Open a Copy…', action: openCopy },
+        '-',
+        { label: 'Save Loop as WAV…', action: () => exportAudio() },
+        { label: 'Save Take as WAV…', disabled: !currentTake(), action: () => exportAudio(currentTake()) },
+        '-',
+        { label: 'Delete This Song…', disabled: !song.custom, action: deleteSong },
+        { label: 'Open Undertow Classic…', action: openClassic },
+      ];
+    case 'edit':
+      return [
+        { label: undoStack.length ? `Undo ${undoStack.at(-1).label}` : 'Can\'t Undo', shortcut: '⌘Z', disabled: !undoStack.length, action: undo },
+        '-',
+        { label: 'Revert to Original…', disabled: !data.edits[song.id], action: revertSong },
+      ];
+    case 'song':
+      return [
+        ...SONGS.map(s => ({ label: s.title, checked: s.id === song.id, action: () => selectSong(s.id) })),
+        ...(data.songs.length ? [{ header: 'My Songs' }, ...data.songs.map(s => ({ label: s.title, checked: s.id === song.id, action: () => selectSong(s.id) }))] : []),
+        '-',
+        { label: 'Count-in Before Playing', checked: player.countIn, action: toggleCountIn },
+        '-',
+        { label: 'Get Info', shortcut: '⌘I', action: showInfo },
+        { label: 'Listen to the Record', disabled: Boolean(song.custom), action: () => window.open(song.youtube ? `https://www.youtube.com/watch?v=${song.youtube}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(`Radiohead ${song.title}`)}`, '_blank', 'noopener') },
+      ];
+    case 'sound':
+      if (part.kind === 'drums') {
+        return [
+          { header: 'Drum kit' },
+          ...Object.entries(KITS).map(([id, kit]) => ({ label: kit.name, checked: id === part.kit, action: () => setInstrument(id) })),
+          '-',
+          { label: 'Use Original Sound', action: useOriginalSound },
+        ];
+      }
+      return [
+        { header: `Sound for ${part.name}` },
+        ...Object.entries(INSTRUMENTS).map(([id, label]) => ({ label, checked: id === player.instrumentFor(part), action: () => setInstrument(id) })),
+        '-',
+        { label: 'Use Original Sound', action: useOriginalSound },
+      ];
+    case 'window':
+      return [
+        { label: 'Songs', action: () => { $('#songs-window').hidden = false; } },
+        { label: 'Keyboard', action: () => $('#keys-window').classList.remove('shaded') },
+        { label: 'Drum Machine', disabled: !drumPart(), action: openDrumMachine },
+        { label: 'Takes', action: openTakes },
+      ];
+    case 'help':
+      return [
+        { label: 'How to Use Undertow…', shortcut: '?', action: showHelp },
+        { label: 'About Undertow…', action: showAbout },
+      ];
+    default:
+      return [];
+  }
+});
+
+async function openClassic() {
+  if (await confirmBox('Open Undertow Classic?', 'The earlier version of Undertow opens with its own saved projects. Your songs and takes here are kept.', 'Open')) {
+    location.href = 'classic/';
+  }
+}
+
+function openDrumMachine() {
+  $('#drum-window').hidden = false;
+  renderDrumMachine();
+  openFloating($('#drum-window'), $('#song-window'));
+}
+
+function openTakes() {
+  renderTakes();
+  openFloating($('#takes-window'), $('#song-window'));
+}
+
+// ---------------------------------------------------------------- events
+
+setupWindows(win => {
+  if (win.id === 'songs-window') win.hidden = true;
+  else if (win.classList.contains('floating')) win.hidden = true;
+});
+
+$('#song-list').addEventListener('click', event => {
+  const button = event.target.closest('[data-song]');
+  if (button) selectSong(button.dataset.song);
+});
+$('#new-song').addEventListener('click', newSong);
+$('#songs-button').addEventListener('click', chooseSongDialog);
+$('#info-button').addEventListener('click', showInfo);
+$('#play').addEventListener('click', togglePlay);
+$('#stop').addEventListener('click', () => player.stop());
+$('#record').addEventListener('click', toggleRecord);
+$('#slower').addEventListener('click', () => changeSpeed(-1));
+$('#faster').addEventListener('click', () => changeSpeed(1));
+$('#metronome').addEventListener('change', event => {
+  player.metronome = event.target.checked;
+  settings().metronome = player.metronome;
+  persist();
+});
+function toggleCountIn() {
+  player.countIn = !player.countIn;
+  settings().countIn = player.countIn;
+  persist();
+  toast(player.countIn ? 'A bar of clicks plays before you start.' : 'Count-in off.');
+}
+$$('input[name="mode"]').forEach(input => input.addEventListener('change', () => {
+  const running = player.state === 'playing';
+  player.stop();
+  player.setMode(currentMode());
+  settings().mode = currentMode();
+  $('#score').textContent = '';
+  persist();
+  if (running) play();
+}));
+$('#my-part').addEventListener('change', event => {
+  player.stop();
+  player.setMyPart(event.target.value);
+  settings().parts[song.id] = event.target.value;
+  persist();
+  renderTracks();
+  renderKeyboard();
+});
+$('#tracks').addEventListener('change', event => {
+  const id = event.target.dataset.part;
+  if (!id) return;
+  if (event.target.checked) player.muted.delete(id);
+  else player.muted.add(id);
+  settings().muted[song.id] = [...player.muted];
+  persist();
+});
+$('#tracks').addEventListener('click', event => {
+  if (event.target.closest('#open-drums')) openDrumMachine();
+});
+$('#keys-tabs').addEventListener('click', event => {
+  const button = event.target.closest('[data-tab]');
+  if (button) setTab(button.dataset.tab);
+});
+$('#octave-down').addEventListener('click', () => shiftOctave(-1));
+$('#octave-up').addEventListener('click', () => shiftOctave(1));
+$('#instrument').addEventListener('change', event => setInstrument(event.target.value));
+$('#kit').addEventListener('change', event => setInstrument(event.target.value));
+$('#drum-grid').addEventListener('click', event => {
+  const cell = event.target.closest('.cell');
+  if (cell) toggleDrum(cell.dataset.voice, Number(cell.dataset.step));
+});
+$('#drum-prev').addEventListener('click', () => { drumPage--; renderDrumMachine(); });
+$('#drum-next').addEventListener('click', () => { drumPage++; renderDrumMachine(); });
+$('#drum-clear').addEventListener('click', clearDrums);
+$('#take-list').addEventListener('click', event => {
+  const row = event.target.closest('[data-take]');
+  if (!row) return;
+  selectedTake = row.dataset.take;
+  renderTakes();
+});
+$('#take-list').addEventListener('dblclick', playTake);
+$('#take-play').addEventListener('click', playTake);
+$('#take-use').addEventListener('click', useTake);
+$('#take-export').addEventListener('click', () => exportAudio(currentTake()));
+$('#take-delete').addEventListener('click', deleteTake);
+
+// Computer keyboard.
+const heldKeys = new Map();
+document.addEventListener('keydown', event => {
+  if ($('#dialog').open || event.target.closest('input, select, textarea')) return;
+  const command = event.metaKey || event.ctrlKey;
+  if (command) {
+    const actions = { z: undo, n: newSong, i: showInfo, s: saveCopy };
+    const action = actions[event.key.toLowerCase()];
+    if (action) {
+      event.preventDefault();
+      action();
+    }
+    return;
+  }
+  if (event.repeat) return;
+  const key = event.key.toLowerCase();
+  if (key === ' ') {
+    event.preventDefault();
+    togglePlay();
+  } else if (key === 'r') {
+    toggleRecord();
+  } else if (key === '?') {
+    showHelp();
+  } else if (key === 'z' || key === 'x') {
+    shiftOctave(key === 'z' ? -1 : 1);
+  } else if (/^[1-9]$/.test(key)) {
+    const index = Number(key) - 1;
+    if (keyboard.tab === 'chords' && keyboard.pads[index]) {
+      keyboard.handlers.padOn(keyboard.pads[index], 0.8);
+      heldKeys.set(key, () => keyboard.handlers.padOff(keyboard.pads[index]));
+    } else if (keyboard.tab === 'drums' && keyboard.drums[index]) {
+      keyboard.handlers.drum(keyboard.drums[index], 0.85);
+    }
+  } else if (PIANO_KEYS.includes(key) && keyboard.tab === 'keys') {
+    const midi = keyboard.low + PIANO_KEYS.indexOf(key);
+    keyboard.press(midi, 0.75);
+    heldKeys.set(key, () => keyboard.release(midi));
+  }
+});
+document.addEventListener('keyup', event => {
+  const key = event.key.toLowerCase();
+  heldKeys.get(key)?.();
+  heldKeys.delete(key);
+});
+
+// MIDI keyboards, where the browser supports them.
+function connectMidi() {
+  navigator.requestMIDIAccess?.().then(access => {
+    const listen = input => {
+      input.onmidimessage = ({ data: [status, note, velocity] }) => {
+        const type = status & 0xf0;
+        if (type === 0x90 && velocity > 0) keyboard.press(note, velocity / 127);
+        else if (type === 0x80 || (type === 0x90 && velocity === 0)) keyboard.release(note);
+      };
+    };
+    access.inputs.forEach(listen);
+    access.onstatechange = event => event.port.type === 'input' && event.port.state === 'connected' && listen(event.port);
+  }).catch(() => {});
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    player.stop();
+    keyboard.releaseAll();
+  }
+});
+window.addEventListener('resize', () => {
+  if (keyboard.tab === 'keys') renderKeyboard();
+});
+
+// ---------------------------------------------------------------- status and storage
+
+function setStatus(text) {
+  $('#status').textContent = text;
+}
+
+function persist() {
+  if (!storage.save(data)) setStatus('Not saved - browser storage is full or blocked');
+  else if ($('#status').textContent.startsWith('Not saved')) setStatus('');
+}
+
+function tickClock() {
+  $('#clock').textContent = new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+// ---------------------------------------------------------------- start
+
+renderIcons();
+tickClock();
+setInterval(tickClock, 10000);
+const savedMode = settings().mode;
+if (savedMode) $(`input[name="mode"][value="${savedMode}"]`).checked = true;
+player.metronome = $('#metronome').checked = Boolean(settings().metronome);
+player.countIn = settings().countIn !== false;
+selectSong(settings().songId || SONGS[0].id);
+requestAnimationFrame(frame);
+
+$('#boot-start').addEventListener('click', async () => {
+  await context.resume();
+  connectMidi();
+  $('#boot').classList.add('leaving');
+  setTimeout(() => $('#boot').remove(), 300);
+});
+
+// Exposed for automated browser checks.
+window.undertow = { player, engine, keyboard, get song() { return song; }, get data() { return data; } };

@@ -1,57 +1,154 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#c5c5bb"><meta name="description" content="An expressive electronic sketchbook. Sequence beats, shape synths, and play your own samples.">
-  <title>Undertow — Sound Explorer</title><link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css?v=10"><link rel="stylesheet" href="./equipment.css?v=10"><link rel="stylesheet" href="./night.css?v=10">
-<link rel="stylesheet" href="./macintosh.css?v=10"></head>
-<body class="mac-body">
-<nav class="mac-menubar" aria-label="Application menu"><span class="finder-mark" aria-hidden="true">▧</span><strong>Undertow</strong><button id="menu-library">Library</button><button id="menu-save">Save</button><button id="menu-help">Help</button><button id="menu-transport" aria-label="Play loop">Play</button><span class="menu-right">SOUND EXPLORER <span>·</span> 1997</span></nav>
-<main class="machine mac-desktop" aria-label="Undertow music desktop">
-<aside class="desktop-sidebar"><div class="sidebar-caption">ON YOUR DESKTOP</div><div class="desktop-icon" aria-hidden="true"><span>♫</span></div><h1>Undertow</h1><p>A small computer.<br>A room full of sound.</p><button id="change-tape" class="sidebar-library">▤ &nbsp; Song library…</button><div id="quick-library"></div><div class="sidebar-bottom"><span class="tiny-computer" aria-hidden="true">☺</span><span>Independent music studies<br>Made for touch & Pencil</span></div></aside>
-<div class="desktop-windows">
-<section class="mac-window instrument-window" aria-label="Instrument"><header class="mac-titlebar"><span class="mac-close" aria-hidden="true"></span><h2>Sound Explorer</h2><button id="machine-power" aria-label="Power" aria-pressed="true"><i></i><span>ON</span></button></header>
-<div class="window-infobar"><span id="tape-number">STUDY 01</span><span id="machine-album">KID A / 138 BPM</span><span id="save-indicator" class="saved-indicator">● SESSION READY</span></div>
-<div class="instrument-content"><div class="song-heading"><div><span class="small-label">NOW EXPLORING</span><h2 id="machine-song">IDIOTEQUE</h2><p id="desktop-harmony"></p></div><button id="full-song" class="mac-button">Listen to record</button></div>
-<section class="sofa-guide" aria-label="Guided play">
-<div class="guide-top"><span class="small-label">YOUR LISTENING ROOM</span><button id="sofa-library" class="mac-button">Choose song…</button></div>
-<div class="guide-modes" role="group" aria-label="How to play"><button data-guide-mode="listen" aria-pressed="true">1. Hear the loop</button><button data-guide-mode="layers" aria-pressed="false">2. Follow along</button><button data-guide-mode="play" aria-pressed="false">3. Play it yourself</button></div>
-<div class="passage-heading"><span id="passage-kind"></span><button id="refresh-study" class="mac-button" hidden>Load improved study</button></div><h3 id="sofa-title">Start with the sound.</h3><p id="sofa-instruction"></p>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Play, practise and record Radiohead songs on a classic Macintosh music desk.">
+  <title>Undertow</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./mac.css">
+</head>
+<body>
 
-<div class="sofa-controls"><label>Passage <select id="sofa-loop"><option value="phrase">Opening passage</option><option value="whole">Whole study</option></select></label><button id="show-hints" class="mac-button" aria-pressed="false" hidden>Show hints</button></div>
-<div id="phrase-timing" class="phrase-timing" aria-label="Phrase timing"><div id="phrase-notes"></div><i id="phrase-playhead"></i></div><p id="timing-caption" aria-live="off">Ready.</p>
-<div id="sofa-cue" class="sofa-cue" role="status" aria-live="polite"></div><div id="sofa-sequence" class="sofa-sequence" aria-label="Pad phrase"></div><div id="pad-caption" class="small-label">CHORDS <span>PRESS 1–4 · PENCIL PRESSURE = EXPRESSION</span></div><div class="rubber-pads"><button class="rubber-pad" data-pad="0" aria-label="Play chord 1"><span class="pad-index">01</span><strong class="pad-name">1</strong><small class="pad-notes"></small></button><button class="rubber-pad" data-pad="1" aria-label="Play chord 2"><span class="pad-index">02</span><strong class="pad-name">2</strong><small class="pad-notes"></small></button><button class="rubber-pad" data-pad="2" aria-label="Play chord 3"><span class="pad-index">03</span><strong class="pad-name">3</strong><small class="pad-notes"></small></button><button class="rubber-pad" data-pad="3" aria-label="Play chord 4"><span class="pad-index">04</span><strong class="pad-name">4</strong><small class="pad-notes"></small></button></div>
-<div class="layer-heading">YOUR LAYERS <span>Tap to switch · Alone to isolate</span></div><div id="sofa-layers" class="sofa-layers" aria-label="Choose your layers"></div><details class="sound-recipe"><summary>How to shape this sound</summary><p id="sofa-recipe"></p><button id="sofa-reset-sound" class="mac-button">Use the study’s sound settings</button></details>
-
-</section>
-<details class="sound-drawer"><summary>Edit sound & instrument</summary><div class="sound-row"><label class="patch-label">Instrument <select id="sound-patch"><option value="study">Song sound</option><option value="digital">Tape chord</option><option value="prophet">Warm polysynth</option><option value="piano">Grand piano</option><option value="bell">Glass bell</option><option value="pluck">Picked strings</option><option value="organ">Soft organ</option></select></label><span id="patch-description">Play a chord. Find its colour.</span><canvas id="machine-wave" aria-label="Audio waveform"></canvas></div>
-<div class="knob-bank"><label class="rotary"><span class="slider-label">Tone<output id="machine-tone-value"></output></span><input id="machine-tone" data-parameter="tone" aria-label="Tone" type="range" min="150" max="8500" step="10" value="4300"></label><label class="rotary"><span class="slider-label">Space<output id="machine-space-value"></output></span><input id="machine-space" data-parameter="space" aria-label="Space" type="range" min="0" max="70" step="1" value="23"></label><label class="rotary"><span class="slider-label">Tempo<output id="machine-bpm-value"></output></span><input id="machine-bpm" data-parameter="bpm" aria-label="Tempo" type="range" min="50" max="180" step="1" value="138"></label></div></details></div></section>
-<details class="beat-drawer"><summary>Edit the beat <span>Patterns, drum kits & fills</span></summary><section class="mac-window rhythm-window" aria-label="Beat composer"><header class="mac-titlebar"><span class="mac-close" aria-hidden="true"></span><h2>Rhythm Composer</h2><span class="window-tag">16 STEPS / PAGE</span></header><div class="beat-toolbar"><label>Beat <select id="beat-library"><option value="">Song pattern</option></select></label><label>Kit <select id="drum-kit"><option value="modular">Modular</option><option value="machine">Drum machine</option><option value="soft">Soft room</option><option value="toms">Toms & sticks</option></select></label><button id="beat-undo" disabled class="mac-button" aria-label="Undo last edit">↶ Undo</button></div><p id="beat-description" class="beat-description">Tap a square to write a beat. Tap an instrument name to hear it.</p><div class="beat-scroll"><div id="beat-grid" class="beat-grid" aria-label="Drum step sequencer"></div></div><div class="beat-footer"><div class="page-controls"><button id="follow-playback" aria-label="Follow playback" class="follow-button" aria-pressed="true" title="Keep the grid on the page currently playing">Follow</button><button id="beat-prev" aria-label="Previous pattern page">‹</button><span id="beat-page">PAGE 01 / 15</span><button id="beat-next" aria-label="Next pattern page">›</button></div><label>Length <select id="beat-length"><option value="16">1 bar</option><option value="32">2 bars</option><option value="64">4 bars</option><option value="128">8 bars</option><option value="240">15 bars</option><option value="256">16 bars</option></select></label><button id="beat-fill" class="mac-button">Add fill</button><button id="beat-reset" class="mac-button">Song beat</button></div></section>
-</details><footer class="mac-window transport-window"><div class="transport-main"><button id="machine-play" class="mac-button primary" aria-label="Play loop"><span class="transport-symbol" aria-hidden="true">▶</span><span class="play-caption">PLAY LOOP</span></button><button id="machine-stop" class="mac-button" aria-label="Stop">■ <span>Stop</span></button><span id="desktop-position">01 : 01</span><div id="quick-layers" class="quick-layers" aria-label="Audible layers"></div><label class="transport-speed">Speed <select id="sofa-speed"><option value="50">Slow · 50%</option><option value="75">Relaxed · 75%</option><option value="100" selected>Full speed</option></select></label><button id="sofa-click" class="mac-button" aria-pressed="false">Click</button><button id="learn-part" class="mac-button lesson-button">More tools…</button></div><div class="transport-status"><span id="desktop-status">Ready. Start a loop, or play the four pads.</span><span>44.1 / WEB AUDIO</span></div></footer>
-<p class="desktop-footnote">A listening room for curious hands. <span>Practice studies · not album transcriptions</span></p>
-</div></main>
-<dialog id="recording-panel" class="device-dialog recording-panel"><header class="device-dialog-head"><div><span class="eyebrow">RADIOHEAD / OFFICIAL RECORDING</span><h2 id="recording-title">Full song</h2></div><button class="panel-close" data-close="recording-panel" aria-label="Close full song">×</button></header><div id="recording-frame"></div><div class="recording-notes"><a id="recording-link" target="_blank" rel="noopener noreferrer">Open on YouTube ↗</a><p>The original recording, streamed by YouTube. Press play in the player. The instrument pads are simplified practice studies.</p><button id="recording-practice" class="hardware-button">PRACTICE WITH MY AUDIO FILE</button><p>Load your own recording to loop a passage and slow it down locally.</p></div></dialog>
-<dialog id="tape-panel" class="device-dialog tape-panel"><header class="device-dialog-head"><div><span class="eyebrow">UNDERTOW / SONG LIBRARY</span><h2>Open a study.</h2></div><button class="panel-close" data-close="tape-panel" aria-label="Close tape library">×</button></header><div class="library-tools"><label for="library-search">Find a song<input id="library-search" type="search" placeholder="Song, album or sound…" autocomplete="off"></label><label for="library-album">Album<select id="library-album"><option value="">All albums</option></select></label><span id="library-count" role="status"></span></div><div id="presets"></div><p class="tape-note">Short synthesized studies and instrumental teaching arrangements. Every tape has its own sounds.</p></dialog>
-<dialog id="learn-panel" class="device-dialog learn-panel"><header class="device-dialog-head"><div><span class="eyebrow">UNDERTOW / WORKSHOP</span><h2 id="machine-lesson-title">Learn this part.</h2></div><button class="panel-close" data-close="learn-panel" aria-label="Close lesson">×</button></header><div class="workshop-body"><section class="study-strip" aria-label="Selected song study"><div class="study-copy"><div class="eyebrow"><span class="red-led"></span> NOW ON TAPE <span id="study-album"></span></div><h2 id="study-title"></h2><p id="study-description"></p><div class="harmony"><span id="study-harmony"></span><a id="study-source" target="_blank" rel="noopener noreferrer">Arrangement reference ↗</a></div></div><div class="study-actions"><span class="equipment-label">LISTEN / DISASSEMBLE / REBUILD</span><div><button id="focus" class="outline" aria-pressed="false">Solo keys</button><button id="rebuild" class="rebuild">Rebuild main part</button></div><div><button id="reference" class="quiet" aria-pressed="false">Show reference</button><button id="restore" class="quiet">Restore track</button></div><p id="study-tip"></p></div></section>
-<section id="lesson-room" class="lesson-room" hidden>
-<div class="lesson-heading"><div><div class="eyebrow">GUIDED PRACTICE / FROM PARTS TO A WHOLE</div><h2 id="lesson-title"></h2></div><span id="arrangement-duration"></span></div>
-<p id="lesson-note" class="lesson-note"></p><button id="lesson-update" class="lesson-update" hidden>Load the revised, longer study (keeps your sample)</button>
-<div class="lesson-controls"><div class="mode-switch"><button id="mode-loop" class="selected">Practice loop</button><button id="mode-song">Play full arrangement</button></div><label class="speed-control">PRACTICE SPEED <output id="practice-speed-output">100%</output><input id="practice-speed" type="range" min="50" max="110" value="100" step="5"></label><button id="metronome" aria-pressed="false">Click</button><button id="count-in" aria-pressed="true">Count in</button></div>
-<div id="lesson-exercises" class="lesson-exercises"></div><p id="exercise-instruction" class="exercise-instruction"></p>
-<div class="chord-deck"><span class="equipment-label">PLAY THE VOICINGS / NOTES SHOWN IN SOUNDING OCTAVES</span><div id="chord-pads"></div></div>
-<div class="timeline-heading"><span>SONG FORM / TAP A SECTION TO LOOP IT</span><span id="lesson-clock">0:00</span></div><div id="song-timeline" class="song-timeline"></div><progress id="lesson-progress" value="0" max="1" aria-label="Practice progress"></progress><p id="current-section"></p><div id="lesson-sources" class="lesson-sources"></div>
-</section>
-<details class="service-panel"><summary>Make your own pattern</summary><section class="transport" aria-label="Transport"><div class="playback"><button id="play" class="play" aria-label="Play"><span>▶</span></button><button id="stop" class="stop" aria-label="Stop">■</button><div class="time"><strong id="position">01 <span>/</span> 01</strong><small>PAGE / STEP</small></div></div><div class="transport-setting"><label for="bpm">TEMPO</label><div><input id="bpm" type="number" min="50" max="180" value="108"><span>BPM</span></div></div><div class="transport-setting swing"><label for="swing">SWING <output id="swing-value">12%</output></label><input id="swing" type="range" min="0" max="60" value="12"></div><div class="transport-setting key"><span class="label">KEY / SCALE</span><strong>E minor</strong></div><div class="transport-right"><span class="loop-icon">↻</span> <span id="loop-length">8 BEATS</span> <span class="divider"></span><button id="undo" class="quiet" disabled>↶ Undo</button><button id="clear" class="quiet">Clear track</button></div></section>
-<div class="workspace">
-
-<section class="sequencer"><div class="section-heading"><div><span class="eyebrow">SEQUENCE / EDIT</span><h2>Write. Erase. Repeat.</h2></div><div class="banks"><button data-bank="0" class="selected">01</button><button data-bank="1">02</button></div></div><div class="tabs" role="tablist" aria-label="Instrument"><button data-tab="drums" class="active" role="tab" aria-selected="true">01 <span>Drums</span><i class="orange"></i></button><button data-tab="bass" role="tab" aria-selected="false">02 <span>Bass</span><i class="green"></i></button><button data-tab="keys" role="tab" aria-selected="false">03 <span>Keys</span><i class="purple"></i></button><button data-tab="sample" role="tab" aria-selected="false">04 <span>Sample</span><i class="blue"></i></button></div><div class="editor-toolbar"><span id="instrument-label">ANALOGUE KIT / 4 VOICES</span><span id="edit-hint">Tap to place · drag to paint</span></div><div id="editor" class="editor" role="tabpanel" aria-label="Step sequencer"></div><div id="rebuild-score" class="rebuild-score" role="status"></div><div class="editor-footer"><span><i class="tiny-dot"></i> <span id="input-status">PENCIL + TOUCH READY</span></span><span id="pattern-summary">32 steps · 1/16 resolution</span></div><div class="sound-controls"><div class="sound-control"><label for="tone">FILTER <output id="tone-value">2.4 kHz</output></label><input id="tone" type="range" min="150" max="8500" value="2400"><span>Dark <span>Bright</span></span></div><div class="sound-control"><label for="space">SPACE <output id="space-value">28%</output></label><input id="space" type="range" min="0" max="70" value="28"><span>Dry <span>Echo</span></span></div><div class="sound-control"><label for="master">MASTER <output id="master-value">75%</output></label><input id="master" type="range" min="0" max="100" value="75"><span>Output <span>Soft limiter on</span></span></div></div></section>
-<aside class="mixer"><div class="panel-title">MIXER <span>STEREO</span></div><div id="mixer-tracks"></div><div class="output-meter"><div><span>MASTER OUTPUT</span><span id="peak-label">−∞ dB</span></div><div class="meter-track"><div id="meter-fill"></div></div><div class="meter-labels"><span>−48</span><span>−24</span><span>−12</span><span>0</span></div></div><div class="mixer-note">PROPERTY OF THE IMAGINATION</div></aside>
+<div id="boot" class="boot">
+  <div class="boot-box dialog-frame">
+    <div class="dialog-inner">
+      <span data-icon="mac"></span>
+      <p>Welcome to Undertow.</p>
+      <p class="small">Play, practise and record Radiohead songs. Headphones recommended.</p>
+      <button id="boot-start" class="btn default">Start</button>
+    </div>
+  </div>
 </div>
-</details><details class="service-panel"><summary>Samples & reference recordings</summary><section class="reference-deck"><div class="section-heading"><div><div class="eyebrow">REFERENCE DECK / YOUR RECORDING STAYS ON YOUR DEVICE</div><h2>Learn against the record.</h2></div><button id="load-reference" class="outline">Load your recording</button></div><p id="reference-title">Load a complete song to compare tones, slow passages down, and loop a section by ear.</p><audio id="reference-audio" controls preload="metadata"></audio><div class="reference-controls"><label>A / seconds <input id="reference-a" type="number" min="0" step="0.01" value="0"></label><button id="set-reference-a" class="quiet">Set A here</button><label>B / seconds <input id="reference-b" type="number" min="0" step="0.01" value="0"></label><button id="set-reference-b" class="quiet">Set B here</button><label class="loop-check"><input id="reference-loop" type="checkbox" checked>Loop A–B</label><label>Speed <select id="reference-speed"><option value="0.5">50%</option><option value="0.75">75%</option><option value="1" selected>100%</option></select></label></div></section>
-<div class="bottom-workspace"><section class="sampler"><div class="section-heading"><div><span class="eyebrow">SAMPLE LAB</span><h2>Splice something in.</h2></div><button id="import-sample" class="outline">＋ Import audio</button></div><div class="waveform-wrap"><canvas id="waveform" aria-label="Sample waveform"></canvas><div class="waveform-caption"><span id="sample-name">FACTORY / TAPE GLASS</span><span id="sample-duration">4 SLICES · READY TO PLAY</span></div></div><div class="sample-bottom"><div id="sample-pads" class="sample-pads"></div><div class="sample-trim"><label>START <input id="trim-start" aria-label="Sample trim start" type="range" min="0" max="95" value="0"></label><label>END <input id="trim-end" aria-label="Sample trim end" type="range" min="5" max="100" value="100"></label></div><button id="reverse" class="quiet" aria-pressed="false">⇄ Reverse</button></div></section><section class="performance"><div class="section-heading"><div><span class="eyebrow">PERFORM</span><h2>Interference control.</h2></div><span class="live-badge">LIVE FX</span></div><div id="xy-pad" class="xy-pad" role="slider" tabindex="0" aria-label="Performance filter, arrow keys adjust tone and echo" aria-valuemin="150" aria-valuemax="8500" aria-valuenow="2400"><span class="xy-y">ECHO ↑</span><span class="xy-x">FILTER →</span><div id="xy-dot"></div><span class="xy-help">Touch or draw to shape the sound</span></div></section></div>
-</details><details class="service-panel"><summary>Save, export & more</summary><div class="service-actions"><button id="help" class="quiet">Quick guide <span>?</span></button><button id="save" class="quiet">Save project</button><button id="open" class="quiet">Open</button><button id="export" class="outline">Export WAV</button><button id="new-project" class="quiet">Empty session</button></div></details></div></dialog>
-<div class="status" hidden><span id="audio-status">AUDIO STANDBY</span></div><section class="session" hidden><div><div class="eyebrow">PORTABLE PATTERN RECORDER / SERIAL NO. 01997</div><h1>RADIOHEAD<span> / NIGHT SCHOOL</span></h1><p>Stay with the difficult part. A room for listening, rebuilding & learning.</p></div><div class="session-info"><span class="session-dot"></span><div><strong id="project-title">Everything in its wake</strong><span id="project-meta">E MINOR · 2-BAR LOOP · ORIGINAL STUDY</span></div><span class="session-number">001</span></div></section>
-<div id="toast" role="status"></div><input id="reference-file" type="file" accept="audio/*" hidden><input id="sample-file" type="file" accept="audio/*" hidden><input id="project-file" type="file" accept=".json,application/json" hidden>
-<dialog id="guide"><button id="close-guide" class="close" aria-label="Close guide">×</button><div class="eyebrow">WELCOME TO UNDERTOW</div><h2>Start with a song.</h2><p><b>Choose song</b> opens the library. Start with <b>Hear the loop</b>, then use the layer switches below the pads to build your backing. <b>Alone</b> lets you hear one layer; tap it again to return to your mix. Choose a named passage or the extended study and slow it to 50% or 75%.</p><p><b>Follow along</b> shows a moving marker and lights each pad when its note arrives. The width of each note on the timing strip shows its length. <b>Play it yourself</b> removes the programmed instrument and hides the hints so you can try the passage from memory. Tap Show hints to see the guide again. This is a learning aid, not an automatic timing grade. Quiet studies enable a click. Play, Stop and Speed stay together in the transport bar. Edit sound & instrument opens the sound controls. <b>How to shape this sound</b> explains Tone and Space and can restore the study’s sound settings. Expand <b>Edit the beat</b> for the drum grid, twelve beat starters, kits and fills. <b>More tools</b> opens advanced lessons, sampling, saving and export.</p><p>Press <b>Play</b> to hear a starting point. Choose a song study from the tape archive, then make it yours. The fifteen song tapes are simplified, synthesized learning arrangements; the three original sketches are starting points of our own.</p><ol><li><b>Write a pattern.</b> Tap cells to add or remove hits. Drag to paint. Switch between pattern pages; playback follows automatically. The studies now span longer passages. Idioteque uses fifteen bars so its drum and chord cycles realign. Each page shows sixteen steps; scroll the page buttons for longer patterns.</li><li><b>Find a melody.</b> Open Bass or Keys and draw notes. Each tape has its own pitch palette and instrument. Some Keys rows trigger labeled chord voicings; others play single notes.</li><li><b>Learn a whole arrangement.</b> Idioteque and Everything in Its Right Place have six guided exercises, adjustable practice speed, click, count-in, playable chord voicings, section loops, and a full instrumental teaching arrangement. These teach the parts and structure; they are not recording-synchronized full transcriptions.</li><li><b>Compare.</b> Load your own recording in the reference deck, choose A and B times, and slow it down. Reference files stay local and are not included in project exports.</li><li><b>Take it apart.</b> Solo Keys to hear the main part. Rebuild clears it and shows dotted reference notes; tap those cells to reconstruct the phrase. Restore track reloads just the selected instrument.</li><li><b>Sample anything.</b> Import an audio file, trim its start and end, and play four equal slices with the pads. Write slices into the Sample track.</li><li><b>Perform.</b> Move across the effects pad to change filter and echo. Pencil pressure sets note velocity on supported devices; fingers and mice work too.</li><li><b>Keep it.</b> Sessions autosave here. Save project downloads a portable file including imported audio. Export WAV renders two practice-loop repeats, or the entire teaching arrangement when full arrangement mode is selected, plus an effects tail.</li></ol><p class="guide-note">Space = play / pause · 1–4 = instrument pads · ⌘/Ctrl Z = undo.<br>iPad: open in Safari and tap Play to enable audio. Squeeze, barrel rotation, and double-tap require a native app and aren’t used here. Keep the app in the foreground during playback.</p><p class="guide-note">Piano: Salamander Grand Piano by <a href="https://archive.org/details/SalamanderGrandPianoV3" target="_blank" rel="noopener noreferrer">Alexander Holm</a>, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener noreferrer">CC BY 3.0</a>. A reduced sample set, repitched and enveloped for playback. Independent fan-made practice instrument; not affiliated with Radiohead.</p></dialog>
-<script type="module" src="./app.js?v=10"></script>
-</body></html>
+
+<header class="menubar" role="menubar" aria-label="Menu bar">
+  <button class="menu-title logo" data-menu="undertow" aria-label="Undertow" aria-haspopup="true" aria-expanded="false"><span data-icon="logo"></span></button>
+  <button class="menu-title" data-menu="file" aria-haspopup="true" aria-expanded="false">File</button>
+  <button class="menu-title" data-menu="edit" aria-haspopup="true" aria-expanded="false">Edit</button>
+  <button class="menu-title" data-menu="song" aria-haspopup="true" aria-expanded="false">Song</button>
+  <button class="menu-title" data-menu="sound" aria-haspopup="true" aria-expanded="false">Sound</button>
+  <button class="menu-title hide-phone" data-menu="window" aria-haspopup="true" aria-expanded="false">Window</button>
+  <button class="menu-title" data-menu="help" aria-haspopup="true" aria-expanded="false">Help</button>
+  <span class="menubar-right"><span id="status" class="status" aria-live="polite"></span><span id="clock" class="clock"></span></span>
+</header>
+
+<div id="menus"></div>
+
+<main class="desktop">
+
+  <section id="songs-window" class="window" aria-label="Songs">
+    <header class="titlebar"><button class="box close" data-close aria-label="Close"></button><h2>Songs</h2></header>
+    <div class="window-body"><ul id="song-list" class="song-list"></ul></div>
+    <div class="songs-footer">
+      <button id="new-song" class="btn">New Song…</button>
+    </div>
+  </section>
+
+  <section id="song-window" class="window active" aria-label="Song">
+    <header class="titlebar"><button class="box close" data-close aria-label="Close" hidden></button><h2 id="song-window-title">Song</h2><button class="box shade" data-shade aria-label="Collapse window"></button></header>
+    <div class="window-body">
+      <div class="song-head">
+        <div class="titles">
+          <h1 id="song-title">Song</h1>
+          <div id="song-meta" class="meta small"></div>
+          <p id="song-about" class="about small"></p>
+        </div>
+        <div class="actions">
+          <button id="songs-button" class="btn only-narrow">Songs…</button>
+          <button id="info-button" class="btn">Get Info</button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button id="play" class="btn default" aria-pressed="false"><span data-icon="play"></span><span>Play</span></button>
+        <button id="stop" class="btn"><span data-icon="stop"></span><span>Stop</span></button>
+        <button id="record" class="btn record" aria-pressed="false"><span data-icon="record"></span><span>Record</span></button>
+        <output id="counter" class="counter">1 : 1</output>
+        <span class="spacer"></span>
+        <span class="tempo" aria-label="Speed">
+          <button id="slower" class="btn" aria-label="Slower">−</button>
+          <output id="tempo">100%</output>
+          <button id="faster" class="btn" aria-label="Faster">+</button>
+        </span>
+        <label class="check"><input id="metronome" type="checkbox"> Click</label>
+      </div>
+
+      <div class="practice" role="radiogroup" aria-label="Practice mode">
+        <label class="radio"><input type="radio" name="mode" value="listen" checked> Listen</label>
+        <label class="radio"><input type="radio" name="mode" value="along"> Play Along</label>
+        <label class="radio"><input type="radio" name="mode" value="wait"> Wait for Me</label>
+        <span class="spacer"></span>
+        <label class="label" for="my-part">I'm playing</label>
+        <select id="my-part" class="popup"></select>
+      </div>
+
+      <div class="roll-wrap"><canvas id="roll" aria-label="Notes of your part"></canvas></div>
+
+      <div class="message" aria-live="polite">
+        <strong id="next-label"></strong><span id="next-detail"></span><span id="score" class="score"></span>
+      </div>
+
+      <div class="tracks" id="tracks" aria-label="Parts"></div>
+    </div>
+  </section>
+
+  <section id="keys-window" class="window" aria-label="Keyboard">
+    <header class="titlebar"><h2 id="keys-title">Keyboard</h2><button class="box shade" data-shade aria-label="Collapse window"></button></header>
+    <div class="window-body">
+      <div class="keys-tools">
+        <span id="keys-tabs" class="segmented" role="group" aria-label="Input">
+          <button data-tab="keys" aria-pressed="true">Keys</button>
+          <button data-tab="chords" aria-pressed="false">Chords</button>
+          <button data-tab="drums" aria-pressed="false">Drums</button>
+        </span>
+        <span class="spacer"></span>
+        <span id="octave-tools" class="tempo" aria-label="Octave">
+          <button id="octave-down" class="btn" aria-label="Octave down">◀</button>
+          <output id="octave">C3</output>
+          <button id="octave-up" class="btn" aria-label="Octave up">▶</button>
+        </span>
+        <select id="instrument" class="popup hide-phone" aria-label="Instrument"></select>
+      </div>
+      <div id="piano" class="piano" aria-label="Piano keyboard"></div>
+      <div id="pads" class="pads" aria-label="Chord pads" hidden></div>
+      <div id="drum-pads" class="pads" aria-label="Drum pads" hidden></div>
+    </div>
+  </section>
+</main>
+
+<section id="drum-window" class="window floating" aria-label="Drum Machine" hidden>
+  <header class="titlebar"><button class="box close" data-close aria-label="Close"></button><h2>Drum Machine</h2></header>
+  <div class="window-body">
+    <div class="toolbar">
+      <select id="kit" class="popup" aria-label="Drum kit"></select>
+      <span class="spacer"></span>
+      <button id="drum-prev" class="btn square" aria-label="Previous bar">◀</button>
+      <output id="drum-page" class="small">Bar 1</output>
+      <button id="drum-next" class="btn square" aria-label="Next bar">▶</button>
+      <button id="drum-clear" class="btn">Clear</button>
+    </div>
+    <div id="drum-grid" class="grid" style="margin-top:12px"></div>
+    <p class="small" style="margin:10px 0 0">Tap a square to add or remove a hit. Changes are kept with this song; Edit ▸ Revert restores the original.</p>
+  </div>
+</section>
+
+<section id="takes-window" class="window floating" aria-label="Takes" hidden>
+  <header class="titlebar"><button class="box close" data-close aria-label="Close"></button><h2>Takes</h2></header>
+  <div class="window-body" style="width:min(460px, calc(100vw - 40px))">
+    <div id="take-list" class="list-box" role="listbox" aria-label="Recorded takes"></div>
+    <div class="button-row">
+      <button id="take-delete" class="btn">Delete</button>
+      <button id="take-export" class="btn">Save WAV</button>
+      <button id="take-use" class="btn">Use as Part</button>
+      <button id="take-play" class="btn default">Play</button>
+    </div>
+  </div>
+</section>
+
+<dialog id="dialog"><div class="dialog-frame"><div class="dialog-inner" id="dialog-body"></div></div></dialog>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
