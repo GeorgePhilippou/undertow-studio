@@ -43,6 +43,6 @@ These are synthesised arrangements of short passages. They are not transcription
 
 ## Sound worlds
 
-The Play screen's worlds live in `src/play/worlds.js`. They are original loops in the manner of Kid A, OK Computer and In Rainbows - instruments, tempo and harmonic colour - and are never presented as songs. Each lists a `scale` that fits every chord in its loop, so anything played on the surface fits.
+The Play screen's worlds live in `src/play/worlds.js`. **Your Song** is the exception: it plays a recording the player loads from their own files, so it sounds exactly like the record; nothing from it is stored outside their device. They are original loops in the manner of Kid A, OK Computer and In Rainbows - instruments, tempo and harmonic colour - and are never presented as songs. Each lists a `scale` that fits every chord in its loop, so anything played on the surface fits.
 
 Source links are in each song's `sources` and its Get Info window. Before adding a song or changing one, check it against at least one published analysis and say in `accuracy` what is checked and what is not.

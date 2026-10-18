@@ -18,7 +18,7 @@ export const INSTRUMENTS = {
   bass: 'Synth Bass',
 };
 
-const REVERB = { piano: 0.22, prophet: 0.12, lansky: 0.35, epiano: 0.2, musicbox: 0.4, organ: 0.25, guitar: 0.18, ondes: 0.3, strings: 0.3, bass: 0.03 };
+const REVERB = { piano: 0.22, prophet: 0.12, lansky: 0.35, epiano: 0.2, musicbox: 0.4, organ: 0.25, guitar: 0.18, ondes: 0.3, strings: 0.3, track: 0.2, bass: 0.03 };
 
 // A small room: a short pre-delay, then a tail that darkens as it fades,
 // with different noise on each side for width.

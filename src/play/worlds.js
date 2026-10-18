@@ -21,6 +21,16 @@ function arpeggio(chords, size, offset, velocity) {
 
 export const WORLDS = [
   {
+    id: 'yoursong',
+    title: 'Your Song',
+    subtitle: 'A Radiohead track you own, played by touch: left to right is the song, higher up melts it into a cloud. It stays on this device.',
+    art: 'waveform',
+    track: true,
+    scale: [],
+    low: 0,
+    song: null,
+  },
+  {
     id: 'kida',
     title: 'Kid A',
     subtitle: 'Machines, glass chords and a singing electronic voice. Inspired by Kid A and Amnesiac.',
@@ -248,6 +258,7 @@ export const WORLDS = [
 // The notes the touch surface offers, low to high, over two octaves.
 export function surfaceNotes(world) {
   const notes = [];
+  if (world.track) return notes;
   for (let midi = world.low; notes.length < world.scale.length * 2 + 1; midi++) {
     if (world.scale.includes(midi % 12)) notes.push(midi);
   }

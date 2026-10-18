@@ -735,3 +735,20 @@ body[data-screen='learn'] .play-screen, body[data-screen='learn'] .play-only { d
 }
 .world-caption.brief #world-sub { display: none; }
 body[data-screen='play'] .toast { bottom: 84px; }
+.track-panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(440px, calc(100% - 32px));
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  outline: 3px solid var(--paper);
+  padding: 18px 20px;
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+.track-panel strong { font: 22px var(--chicago); }
+.track-panel p { margin: 0; }
