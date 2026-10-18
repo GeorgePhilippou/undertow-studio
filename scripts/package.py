@@ -11,7 +11,7 @@ dist = root / 'dist'
 if dist.exists():
     shutil.rmtree(dist)
 dist.mkdir()
-for name in ['index.html', 'mac.css', 'icon.svg', '.nojekyll']:
+for name in ['index.html', 'mac.css', 'icon.svg', 'manifest.webmanifest', 'sw.js', '.nojekyll']:
     shutil.copy2(root / name, dist / name)
 for folder in ['src', 'assets']:
     shutil.copytree(root / folder, dist / folder)

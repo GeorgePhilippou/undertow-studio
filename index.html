@@ -7,7 +7,11 @@
   <meta name="theme-color" content="#ffffff">
   <meta name="description" content="Play, practise and record Radiohead songs on a classic Macintosh music desk.">
   <title>Undertow</title>
+  <meta name="apple-mobile-web-app-title" content="Undertow">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./assets/icons/icon-180.png">
+  <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./mac.css">
 </head>
 <body>
@@ -40,9 +44,9 @@
 
   <section id="songs-window" class="window" aria-label="Songs">
     <header class="titlebar"><button class="box close" data-close aria-label="Close"></button><h2>Songs</h2></header>
-    <div class="window-body"><ul id="song-list" class="song-list"></ul></div>
+    <div class="window-body"><ul id="song-list" class="song-list" data-help="Choose a song. Each one is a short passage with its own sound. Your best Play Along score shows under its name."></ul></div>
     <div class="songs-footer">
-      <button id="new-song" class="btn">New Song…</button>
+      <button id="new-song" class="btn" data-help="Start a song of your own: choose a tempo and length, then record keys, bass or drums.">New Song…</button>
     </div>
   </section>
 
@@ -56,41 +60,50 @@
           <p id="song-about" class="about small"></p>
         </div>
         <div class="actions">
-          <button id="songs-button" class="btn only-narrow">Songs…</button>
-          <button id="info-button" class="btn">Get Info</button>
+          <button id="songs-button" class="btn only-narrow" data-help="Choose another song.">Songs…</button>
+          <button id="info-button" class="btn" data-help="About this song: where the notes come from, how close it is to the record, and a link to listen to the original.">Get Info</button>
         </div>
       </div>
 
       <div class="toolbar">
-        <button id="play" class="btn default" aria-pressed="false"><span data-icon="play"></span><span>Play</span></button>
-        <button id="stop" class="btn"><span data-icon="stop"></span><span>Stop</span></button>
-        <button id="record" class="btn record" aria-pressed="false"><span data-icon="record"></span><span>Record</span></button>
-        <output id="counter" class="counter">1 : 1</output>
+        <button id="play" class="btn default" aria-pressed="false" data-help="Play or stop the song (Space). In Listen it plays everything; in Play Along and Wait for Me it leaves your part to you."><span data-icon="play"></span><span>Play</span></button>
+        <button id="stop" class="btn" data-help="Stop and go back to the start."><span data-icon="stop"></span><span>Stop</span></button>
+        <button id="record" class="btn record" aria-pressed="false" data-help="Record yourself (R). After a bar of clicks, play over the band; press again to stop. Every take is kept in the Takes window."><span data-icon="record"></span><span>Record</span></button>
+        <output id="counter" class="counter" data-help="Where the song is: bar and beat.">1 : 1</output>
         <span class="spacer"></span>
-        <span class="tempo" aria-label="Speed">
+        <span class="tempo" aria-label="Speed" data-help="Slow the song down to learn it, or speed it up. Tempo, not pitch, changes.">
           <button id="slower" class="btn" aria-label="Slower">−</button>
           <output id="tempo">100%</output>
           <button id="faster" class="btn" aria-label="Faster">+</button>
         </span>
-        <label class="check"><input id="metronome" type="checkbox"> Click</label>
+        <label class="check" data-help="A metronome click on every beat, louder on the first beat of the bar."><input id="metronome" type="checkbox"> Click</label>
       </div>
 
-      <div class="practice" role="radiogroup" aria-label="Practice mode">
+      <div class="practice" role="radiogroup" aria-label="Practice mode" data-help="Listen: hear the whole song. Play Along: the song keeps going without your part and scores you each time round. Wait for Me: the song waits at every chord until you play it.">
         <label class="radio"><input type="radio" name="mode" value="listen" checked> Listen</label>
         <label class="radio"><input type="radio" name="mode" value="along"> Play Along</label>
         <label class="radio"><input type="radio" name="mode" value="wait"> Wait for Me</label>
         <span class="spacer"></span>
         <label class="label" for="my-part">I'm playing</label>
-        <select id="my-part" class="popup"></select>
+        <select id="my-part" class="popup" data-help="The part you are learning or recording. The other parts are the band."></select>
       </div>
 
-      <div class="roll-wrap"><canvas id="roll" aria-label="Notes of your part"></canvas></div>
+      <div class="roll-row">
+        <div id="tools" class="tools" role="group" aria-label="Tools" data-help="Tools for the roll. Arrow: drag across bar numbers to loop those bars. Pencil: add or remove notes. Eraser: rub notes out.">
+          <button data-tool="arrow" aria-pressed="true" aria-label="Arrow: drag across bars to loop them"><span data-icon="arrow"></span></button>
+          <button data-tool="pencil" aria-pressed="false" aria-label="Pencil: add and remove notes"><span data-icon="pencil"></span></button>
+          <button data-tool="eraser" aria-pressed="false" aria-label="Eraser: rub out notes"><span data-icon="eraser"></span></button>
+        </div>
+        <div class="roll-wrap"><canvas id="roll" data-tool="arrow" aria-label="Notes of your part" data-help="Your part, bar by bar. Low notes at the bottom, high at the top. The dotted note is the next one to play; ticks and crosses show how you did."></canvas></div>
+      </div>
 
       <div class="message" aria-live="polite">
         <strong id="next-label"></strong><span id="next-detail"></span><span id="score" class="score"></span>
+        <label id="trainer-box" class="check" hidden data-help="After a perfect time round, the song gets a little faster, up to full speed."><input id="trainer" type="checkbox"> Speed up when perfect</label>
+        <button id="loop-all" class="btn square" hidden data-help="Stop looping a section and play the whole passage again.">Loop All</button>
       </div>
 
-      <div class="tracks" id="tracks" aria-label="Parts"></div>
+      <div class="tracks" id="tracks" aria-label="Parts" data-help="Turn parts of the band on and off."></div>
     </div>
   </section>
 
@@ -98,22 +111,22 @@
     <header class="titlebar"><h2 id="keys-title">Keyboard</h2><button class="box shade" data-shade aria-label="Collapse window"></button></header>
     <div class="window-body">
       <div class="keys-tools">
-        <span id="keys-tabs" class="segmented" role="group" aria-label="Input">
+        <span id="keys-tabs" class="segmented" role="group" aria-label="Input" data-help="Keys: a piano. Chords: one big pad per chord in this song. Drums: pads for the drum part.">
           <button data-tab="keys" aria-pressed="true">Keys</button>
           <button data-tab="chords" aria-pressed="false">Chords</button>
           <button data-tab="drums" aria-pressed="false">Drums</button>
         </span>
         <span class="spacer"></span>
-        <span id="octave-tools" class="tempo" aria-label="Octave">
+        <span id="octave-tools" class="tempo" aria-label="Octave" data-help="Move the keyboard up or down an octave (Z and X on a computer keyboard).">
           <button id="octave-down" class="btn" aria-label="Octave down">◀</button>
           <output id="octave">C3</output>
           <button id="octave-up" class="btn" aria-label="Octave up">▶</button>
         </span>
-        <select id="instrument" class="popup hide-phone" aria-label="Instrument"></select>
+        <select id="instrument" class="popup hide-phone" aria-label="Instrument" data-help="The sound you play with. Sound > Use Original Sound puts it back."></select>
       </div>
-      <div id="piano" class="piano" aria-label="Piano keyboard"></div>
-      <div id="pads" class="pads" aria-label="Chord pads" hidden></div>
-      <div id="drum-pads" class="pads" aria-label="Drum pads" hidden></div>
+      <div id="piano" class="piano" aria-label="Piano keyboard" data-help="Play with several fingers, slide along the keys, or press harder with Apple Pencil for louder notes. Dotted keys are what to play next."></div>
+      <div id="pads" class="pads" aria-label="Chord pads" hidden data-help="Each pad plays a whole chord from this song. The dotted pad is the next chord."></div>
+      <div id="drum-pads" class="pads" aria-label="Drum pads" hidden data-help="Tap the drums. Harder Pencil presses play louder."></div>
     </div>
   </section>
 </main>
@@ -129,7 +142,7 @@
       <button id="drum-next" class="btn square" aria-label="Next bar">▶</button>
       <button id="drum-clear" class="btn">Clear</button>
     </div>
-    <div id="drum-grid" class="grid" style="margin-top:12px"></div>
+    <div id="drum-grid" class="grid" style="margin-top:12px" data-help="One row per drum, one square per sixteenth note. Tap to add or remove a hit."></div>
     <p class="small" style="margin:10px 0 0">Tap a square to add or remove a hit. Changes are kept with this song; Edit ▸ Revert restores the original.</p>
   </div>
 </section>
@@ -137,7 +150,7 @@
 <section id="takes-window" class="window floating" aria-label="Takes" hidden>
   <header class="titlebar"><button class="box close" data-close aria-label="Close"></button><h2>Takes</h2></header>
   <div class="window-body" style="width:min(460px, calc(100vw - 40px))">
-    <div id="take-list" class="list-box" role="listbox" aria-label="Recorded takes"></div>
+    <div id="take-list" class="list-box" role="listbox" aria-label="Recorded takes" data-help="Your recordings for this song. Select one, then play it, save it as a WAV file, or use it as the song's part."></div>
     <div class="button-row">
       <button id="take-delete" class="btn">Delete</button>
       <button id="take-export" class="btn">Save WAV</button>

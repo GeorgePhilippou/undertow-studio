@@ -1,6 +1,6 @@
 // Undertow - play, practise and record Radiohead songs on a classic Mac desk.
 
-import { SONGS, prepareSong, padsFor, noteName, barBeat, blankSong } from './songs.js';
+import { SONGS, prepareSong, padsFor, noteName, barBeat, barLines, blankSong } from './songs.js';
 import { Engine, INSTRUMENTS, loadPiano } from './audio/engine.js';
 import { KITS, DRUM_VOICES, DRUM_LABELS } from './audio/drums.js';
 import { Player, takeToPart } from './player.js';
@@ -10,6 +10,8 @@ import { Keyboard } from './ui/keyboard.js';
 import { drawRoll } from './ui/roll.js';
 import { MenuBar, setupWindows, openFloating, showDialog, alertBox, confirmBox, toast, escape } from './ui/mac.js';
 import { ICONS, renderIcons } from './ui/icons.js';
+import { BalloonHelp, runTour, hideBalloon } from './ui/balloons.js';
+import { pianoReady } from './audio/piano.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -19,6 +21,7 @@ const PIANO_KEYS = 'awsedftgyhujkolp;';
 
 let data = storage.load();
 data.settings = { parts: {}, instruments: {}, kits: {}, muted: {}, octave: {}, ...data.settings };
+data.scores ||= {};
 const settings = () => data.settings;
 const undoStack = [];
 let song = null;
@@ -102,11 +105,17 @@ function renderSongList() {
   const item = s => `
     <li><button data-song="${s.id}" aria-current="${s.id === song.id}">
       ${s.custom ? ICONS.mine : ICONS.song}<span>${escape(s.title)}</span>
-      <span class="meta">${escape(s.custom ? `${s.bpm} BPM` : `${s.album}, ${s.year}`)}</span>
+      <span class="meta">${escape(s.custom ? `${s.bpm} BPM` : `${s.album}, ${s.year}`)}${scoreLabel(s.id)}</span>
     </button></li>`;
   const mine = data.songs;
   $('#song-list').innerHTML = SONGS.map(item).join('') +
     (mine.length ? `<li class="heading small">My Songs</li>${mine.map(item).join('')}` : '');
+}
+
+function scoreLabel(id) {
+  const best = data.scores[id];
+  if (!best) return '';
+  return `<br><span class="best">${best.percent === 100 ? '\u2605 ' : ''}Best ${best.percent}%${best.speed < 1 ? ` at ${Math.round(best.speed * 100)}% speed` : ''}</span>`;
 }
 
 function renderParts() {
@@ -126,6 +135,7 @@ function myPart() {
 
 // ---------------------------------------------------------------- keyboard window
 
+const balloons = new BalloonHelp();
 const keyboard = new Keyboard({ piano: $('#piano'), pads: $('#pads'), drumPads: $('#drum-pads') }, {
   noteOn: (midi, velocity) => player.noteOn(midi, velocity),
   noteOff: midi => player.noteOff(midi),
@@ -247,9 +257,28 @@ function changeSpeed(direction) {
 
 player.on('state', renderTransport);
 
-player.on('pass', ({ hit, total }) => {
+player.on('pass', ({ hit, total, section }) => {
   if (!total) return;
-  $('#score').textContent = hit === total ? `Perfect - all ${total} notes in time` : `Last time round: ${hit} of ${total} notes in time`;
+  const percent = Math.round((hit / total) * 100);
+  $('#score').textContent = hit === total ? `Perfect - all ${total} notes in time` : `Last time round: ${hit} of ${total} notes (${percent}%)`;
+  if (!section) {
+    const best = data.scores[song.id];
+    const speed = settings().speed || 1;
+    if (!best || percent > best.percent || (percent === best.percent && speed > best.speed)) {
+      data.scores[song.id] = { percent, speed, when: new Date().toISOString() };
+      persist();
+      renderSongList();
+      if (best && percent > best.percent) toast(`New best for ${song.title}: ${percent}%`);
+    }
+  }
+  if (hit === total && settings().trainer && (settings().speed || 1) < 1) {
+    changeSpeed(1);
+    toast(`Perfect! Speeding up to ${Math.round(settings().speed * 100)}%.`);
+  }
+});
+
+player.on('section', section => {
+  $('#loop-all').hidden = !section;
 });
 
 player.on('take', take => {
@@ -265,6 +294,10 @@ player.on('take', take => {
 
 let lastHighlight = '';
 let lastRoll = '';
+let rollLayout = null;
+let selecting = null;
+let tool = 'arrow';
+let editVersion = 0;
 
 function describe(target) {
   if (!target) return '';
@@ -272,12 +305,20 @@ function describe(target) {
   return [...target.notes].sort((a, b) => a - b).map(n => noteName(n)).join(' ');
 }
 
+function barsLabel(section) {
+  const bars = barLines(song);
+  const first = bars.findIndex(b => Math.abs(b - section.start) < 1e-6) + 1;
+  const last = bars.filter(b => b < section.end - 1e-6).length;
+  return first === last ? `bar ${first}` : `bars ${first}-${last}`;
+}
+
 function frame() {
   requestAnimationFrame(frame);
   if (!song) return;
   const running = player.state !== 'stopped';
   const beat = running ? player.beat : 0;
-  const loopBeat = running ? (beat < 0 ? beat : beat % song.loop) : 0;
+  const loopBeat = running ? (beat < 0 ? beat : beat % player.span) : 0;
+  const songBeat = player.offset + Math.max(0, loopBeat);
   const mode = player.mode;
   const part = myPart();
 
@@ -285,14 +326,14 @@ function frame() {
   if (beat < 0) {
     $('#counter').textContent = `Count ${Math.max(1, Math.ceil(-beat))}`;
   } else {
-    const position = barBeat(song, loopBeat);
+    const position = barBeat(song, songBeat);
     $('#counter').textContent = `${position.bar} : ${position.beat}`;
   }
 
   // What to play next, and what is sounding.
   const target = player.state === 'take' ? null : player.upcoming(Math.max(0, loopBeat), 1)[0] || null;
   const sounding = running && (mode === 'listen' || player.state === 'take') ? player.soundingNotes(part.id, loopBeat) : new Set();
-  const soundingChord = running ? currentChord(part, loopBeat) : null;
+  const soundingChord = running ? currentChord(part, songBeat) : null;
   const showTarget = player.state !== 'recording' && (mode !== 'listen' || !running);
   const targetSet = showTarget && target ? (target.drums.size ? target.drums : target.notes) : new Set();
   const key = `${[...targetSet].join()}|${[...sounding].join()}|${soundingChord}|${showTarget && target?.chord}`;
@@ -305,13 +346,18 @@ function frame() {
   let label = '';
   let detail = '';
   if (player.state === 'recording') {
-    label = beat < 0 ? 'Get ready…' : '● Recording';
+    label = beat < 0 ? 'Get ready...' : 'Recording';
     detail = 'Play your part. Press Stop when you\'re done.';
   } else if (player.state === 'take') {
     label = 'Playing take';
+  } else if (tool !== 'arrow' && !running) {
+    label = tool === 'pencil' ? 'Pencil' : 'Eraser';
+    detail = tool === 'pencil'
+      ? 'Tap the roll to add a note, drag right to make it longer, tap a note to remove it.'
+      : 'Drag across notes to rub them out. Edit > Undo puts them back.';
   } else if (mode === 'listen') {
     label = running ? soundingChord || 'Listening' : 'Listen first';
-    detail = running ? 'Watch the keys. When it feels familiar, choose Play Along.' : 'Press Play to hear the part. The roll and keys follow the music.';
+    detail = running ? 'Watch the keys. When it feels familiar, choose Play Along.' : 'Press Play to hear it. Drag across bar numbers to loop just those bars.';
   } else if (mode === 'along') {
     label = target ? `Next: ${target.chord || describe(target)}` : 'Play Along';
     detail = target?.chord ? describe(target) : running ? '' : 'Press Play. The song plays without your part; keep up with it.';
@@ -320,28 +366,168 @@ function frame() {
     detail = target ? `${target.chord ? describe(target) : ''}${player.holding ? ' - the song waits for you' : ''}` : '';
     if (!running) detail = 'Press Play. The song stops at each chord until you play it - any octave counts.';
   }
+  if (player.section && player.state !== 'recording') detail = `Looping ${barsLabel(player.section)}. ${detail}`;
   if ($('#next-label').textContent !== label) $('#next-label').textContent = label;
   if ($('#next-detail').textContent !== detail) $('#next-detail').textContent = detail;
+  $('#trainer-box').hidden = mode !== 'along';
 
   // Roll.
-  const rollKey = `${loopBeat.toFixed(3)}|${target?.absolute}|${song.id}|${part.id}|${$('#roll').clientWidth}`;
+  const countIn = running && beat < 0 ? Math.max(1, Math.ceil(-beat)) : null;
+  const rollTarget = showTarget && target ? player.offset + (target.absolute % player.span) : null;
+  const rollKey = [songBeat.toFixed(3), countIn, rollTarget, song.id, part.id, $('#roll').clientWidth, $('#roll').clientHeight,
+    player.marksVersion, JSON.stringify(player.section), JSON.stringify(selecting), tool, editVersion, running].join('|');
   if (rollKey !== lastRoll) {
     lastRoll = rollKey;
-    drawRoll($('#roll'), { song, part, events: player.timeline.get(part.id) || [], loopBeat: running ? loopBeat : 0, target: showTarget ? target && { beat: target.beat } : null, playing: running });
+    rollLayout = drawRoll($('#roll'), {
+      song, part, events: player.songTimeline.get(part.id) || [],
+      position: running ? songBeat : player.offset, target: rollTarget, playing: running && beat >= 0,
+      section: player.section, selecting, marks: player.marks, offset: player.offset, countIn, editing: tool !== 'arrow',
+    });
   }
 
   // Drum machine step light.
-  if (!$('#drum-window').hidden) lightDrumStep(running ? loopBeat : -1);
+  if (!$('#drum-window').hidden) lightDrumStep(running && beat >= 0 ? songBeat : -1);
 }
 
-function currentChord(part, loopBeat) {
+function currentChord(part, songBeat) {
   let chord = null;
-  for (const event of player.timeline.get(part.id) || []) {
-    if (event.beat > loopBeat) break;
+  for (const event of player.songTimeline.get(part.id) || []) {
+    if (event.beat > songBeat) break;
     if (event.chord) chord = event.chord;
   }
   return chord;
 }
+
+// ---------------------------------------------------------------- roll: sections and editing
+
+function barRange(fromBeat, toBeat) {
+  const bars = barLines(song);
+  const low = Math.min(fromBeat, toBeat);
+  const high = Math.max(fromBeat, toBeat);
+  const start = [...bars].reverse().find(b => b <= low + 1e-6) ?? 0;
+  const after = bars.find(b => b > high + 1e-6);
+  return { start, end: after ?? song.loop };
+}
+
+function setTool(name) {
+  tool = name;
+  $$('#tools [data-tool]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tool === name)));
+  $('#roll').dataset.tool = name;
+}
+
+// Edits the part's own events. A part repeats through the loop, so an edit
+// to one repeat changes them all.
+function editPart(change) {
+  const part = myPart();
+  const length = part.length || song.loop;
+  const events = structuredClone(part.events).map(e => ({ ...e, notes: [...e.notes] }));
+  change(events, length);
+  (data.edits[song.id] ||= { parts: {} }).parts[part.id] = { events: events.filter(e => e.drum || e.notes.length), length };
+  persist();
+  refreshSong();
+  editVersion++;
+}
+
+function eventAt(events, length, beat, row, drums) {
+  const local = ((beat % length) + length) % length;
+  return events.find(e => (drums ? e.drum === row : e.notes.includes(row)) &&
+    local >= e.beat - 1e-6 && local < e.beat + Math.max(e.length, 0.25) - 1e-6);
+}
+
+let stroke = null;
+
+$('#roll').addEventListener('pointerdown', event => {
+  if (!rollLayout || player.state === 'recording' || player.state === 'take') return;
+  const box = event.currentTarget.getBoundingClientRect();
+  const px = event.clientX - box.left;
+  const py = event.clientY - box.top;
+  const beat = Math.max(0, Math.min(song.loop - 1e-3, rollLayout.beatAt(px)));
+  event.currentTarget.setPointerCapture(event.pointerId);
+  if (tool === 'arrow' || py < rollLayout.header) {
+    selecting = barRange(beat, beat);
+    stroke = { kind: 'select', anchor: beat, moved: false };
+    return;
+  }
+  const row = rollLayout.rowAt(py);
+  if (row === undefined) return;
+  const part = myPart();
+  const drums = part.kind === 'drums';
+  const grid = 0.25;
+  const snapped = Math.floor(beat / grid) * grid;
+  pushUndo(tool === 'pencil' ? 'Pencil' : 'Eraser');
+  if (tool === 'eraser') {
+    stroke = { kind: 'erase' };
+    eraseAt(beat, row);
+    return;
+  }
+  editPart((events, length) => {
+    const existing = eventAt(events, length, beat, row, drums);
+    if (existing) {
+      if (drums) events.splice(events.indexOf(existing), 1);
+      else existing.notes = existing.notes.filter(n => n !== row);
+      stroke = { kind: 'removed' };
+      return;
+    }
+    const local = ((snapped % length) + length) % length;
+    const added = drums
+      ? { beat: local, drum: row, notes: [], length: 0.25, velocity: 0.8 }
+      : { beat: local, notes: [row], length: 1, velocity: 0.75, chord: null };
+    events.push(added);
+    stroke = { kind: 'draw', start: snapped, local, row, drums };
+  });
+  if (drums) player.drumHit(row, 0.8);
+  else if (stroke.kind === 'draw') engine.note(player.instrumentFor(part), row, 0.75, context.currentTime, 0.4, engine.channel('you', { instrument: player.instrumentFor(part) }));
+});
+
+$('#roll').addEventListener('pointermove', event => {
+  if (!stroke || !rollLayout) return;
+  const box = event.currentTarget.getBoundingClientRect();
+  const px = event.clientX - box.left;
+  const py = event.clientY - box.top;
+  const beat = Math.max(0, Math.min(song.loop - 1e-3, rollLayout.beatAt(px)));
+  if (stroke.kind === 'select') {
+    stroke.moved = true;
+    selecting = barRange(stroke.anchor, beat);
+  } else if (stroke.kind === 'erase') {
+    const row = rollLayout.rowAt(py);
+    if (row !== undefined) eraseAt(beat, row);
+  } else if (stroke.kind === 'draw' && !stroke.drums) {
+    const length = Math.max(0.25, Math.ceil((beat - stroke.start) / 0.25) * 0.25);
+    const part = myPart();
+    const current = part.events.find(e => Math.abs(e.beat - stroke.local) < 1e-6 && e.notes.includes(stroke.row) && !e.chord);
+    if (current && Math.abs(current.length - length) > 1e-6) {
+      editPart(events => {
+        const match = events.find(e => Math.abs(e.beat - stroke.local) < 1e-6 && e.notes.includes(stroke.row) && !e.chord);
+        if (match) match.length = length;
+      });
+    }
+  }
+});
+
+function eraseAt(beat, row) {
+  const part = myPart();
+  const drums = part.kind === 'drums';
+  if (!eventAt(part.events, part.length || song.loop, beat, row, drums)) return;
+  editPart((events, length) => {
+    const hit = eventAt(events, length, beat, row, drums);
+    if (!hit) return;
+    if (drums) events.splice(events.indexOf(hit), 1);
+    else hit.notes = hit.notes.filter(n => n !== row);
+  });
+}
+
+function endStroke() {
+  if (stroke?.kind === 'select' && selecting) {
+    const whole = selecting.start <= 1e-6 && selecting.end >= song.loop - 1e-6;
+    const same = player.section && Math.abs(player.section.start - selecting.start) < 1e-6 && Math.abs(player.section.end - selecting.end) < 1e-6;
+    player.setSection(whole || (same && !stroke.moved) ? null : selecting);
+  }
+  selecting = null;
+  stroke = null;
+}
+
+$('#roll').addEventListener('pointerup', endStroke);
+$('#roll').addEventListener('pointercancel', endStroke);
 
 // ---------------------------------------------------------------- takes
 
@@ -705,6 +891,7 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
         ...Object.entries(INSTRUMENTS).map(([id, label]) => ({ label, checked: id === player.instrumentFor(part), action: () => setInstrument(id) })),
         '-',
         { label: 'Use Original Sound', action: useOriginalSound },
+        { label: 'Show Note Names on Keys', checked: Boolean(settings().labels), action: toggleLabels },
       ];
     case 'window':
       return [
@@ -715,6 +902,9 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
       ];
     case 'help':
       return [
+        { label: balloons.enabled ? 'Hide Balloons' : 'Show Balloons', action: () => toast(balloons.toggle() ? 'Point at or touch anything to see what it does.' : 'Balloons off.') },
+        { label: 'Take the Tour', action: startTour },
+        '-',
         { label: 'How to Use Undertow…', shortcut: '?', action: showHelp },
         { label: 'About Undertow…', action: showAbout },
       ];
@@ -813,6 +1003,15 @@ $('#drum-grid').addEventListener('click', event => {
 $('#drum-prev').addEventListener('click', () => { drumPage--; renderDrumMachine(); });
 $('#drum-next').addEventListener('click', () => { drumPage++; renderDrumMachine(); });
 $('#drum-clear').addEventListener('click', clearDrums);
+$('#tools').addEventListener('click', event => {
+  const button = event.target.closest('[data-tool]');
+  if (button) setTool(button.dataset.tool);
+});
+$('#loop-all').addEventListener('click', () => player.setSection(null));
+$('#trainer').addEventListener('change', event => {
+  settings().trainer = event.target.checked;
+  persist();
+});
 $('#take-list').addEventListener('click', event => {
   const row = event.target.closest('[data-take]');
   if (!row) return;
@@ -919,15 +1118,56 @@ const savedMode = settings().mode;
 if (savedMode) $(`input[name="mode"][value="${savedMode}"]`).checked = true;
 player.metronome = $('#metronome').checked = Boolean(settings().metronome);
 player.countIn = settings().countIn !== false;
+$('#trainer').checked = Boolean(settings().trainer);
+keyboard.labels = Boolean(settings().labels);
 selectSong(settings().songId || SONGS[0].id);
 requestAnimationFrame(frame);
 
 $('#boot-start').addEventListener('click', async () => {
   await context.resume();
   connectMidi();
+  startChord();
   $('#boot').classList.add('leaving');
-  setTimeout(() => $('#boot').remove(), 300);
+  setTimeout(() => {
+    $('#boot').remove();
+    if (!settings().toured) startTour();
+  }, 300);
 });
+
+// A soft open chord to say the sound is working.
+function startChord() {
+  const instrument = pianoReady() ? 'piano' : 'epiano';
+  const output = engine.channel('you', { instrument });
+  [53, 60, 64, 67, 72].forEach((midi, i) => engine.note(instrument, midi, 0.45, context.currentTime + 0.05 + i * 0.06, 1.6, output));
+}
+
+function startTour() {
+  const narrow = window.matchMedia('(max-width: 860px)').matches;
+  runTour([
+    { target: narrow ? '#songs-button' : '#song-list', text: 'Choose a song here. Each one is a short passage with its own sound.' },
+    { target: '#play', text: 'Press Play to hear it. The roll shows your part and the keys light up as it plays.' },
+    { target: '.practice', text: 'When it feels familiar, try Play Along, or Wait for Me, which stops at each chord until you play it.' },
+    { target: '#keys-tabs', text: 'Play with your fingers or Apple Pencil. The Chords tab gives you one big pad per chord.' },
+    { target: '#tools', text: 'Drag across bar numbers to loop just those bars. The Pencil adds and removes notes.' },
+    { target: '#record', text: 'Record yourself over the band. Every take is kept, and a good one can become the song\'s part.' },
+    { target: '[data-menu="help"]', text: 'Help > Show Balloons explains anything on screen. Have fun.' },
+  ]).then(() => {
+    settings().toured = true;
+    persist();
+  });
+}
+
+function toggleLabels() {
+  settings().labels = !settings().labels;
+  keyboard.labels = settings().labels;
+  persist();
+  renderKeyboard();
+}
+
+// Works offline and installs to the Home Screen once loaded over https.
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
 
 // Exposed for automated browser checks.
 window.undertow = { player, engine, keyboard, get song() { return song; }, get data() { return data; } };

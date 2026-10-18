@@ -16,7 +16,8 @@ async function openApp(browser, viewport = { width: 1180, height: 820 }) {
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => message.type() === 'error' && errors.push(message.text()));
   await page.goto(BASE);
-  await page.evaluate(() => localStorage.removeItem('undertow-desk-v1'));
+  // Start fresh, but skip the first-run tour so balloons do not cover controls.
+  await page.evaluate(() => localStorage.setItem('undertow-desk-v1', JSON.stringify({ settings: { toured: true } })));
   await page.reload();
   await page.click('#boot-start');
   await page.waitForFunction(() => window.undertow && !document.getElementById('boot'));

@@ -31,6 +31,7 @@
 html, body {
   margin: 0;
   height: 100%;
+  touch-action: manipulation;
   overflow: hidden;
   background: var(--paper) var(--desktop);
   color: var(--ink);
@@ -107,7 +108,9 @@ a { color: inherit; }
 }
 .menu button .shortcut { margin-left: auto; padding-left: 24px; }
 .menu button[aria-checked='true']::before { content: '✓'; position: absolute; left: 6px; }
-.menu button:not(:disabled):hover, .menu button.active { background: var(--ink); color: var(--paper); }
+.menu button:not(:disabled):hover { background: var(--ink); color: var(--paper); }
+.menu button.lit, .menu button.lit:hover { background: var(--ink); color: var(--paper); }
+.menu button.unlit, .menu button.unlit:hover { background: var(--paper); color: var(--ink); }
 .menu button:disabled { color: transparent; background: var(--gray); background-clip: text; -webkit-background-clip: text; cursor: default; }
 .menu hr { border: 0; border-top: 1px dotted var(--ink); margin: 3px 0; }
 .menu .menu-label { padding: 3px 14px 1px 22px; font: 16px var(--geneva); }
@@ -342,7 +345,20 @@ a { color: inherit; }
 .practice { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 16px; border-top: 1px dotted var(--ink); border-bottom: 1px dotted var(--ink); padding: 3px 0; }
 .practice .label { margin-right: -6px; }
 
-.roll-wrap { position: relative; border: 1px solid var(--ink); min-height: 150px; flex: 1; }
+.roll-row { display: flex; gap: 8px; flex: 1; min-height: 150px; }
+.roll-wrap { position: relative; border: 1px solid var(--ink); flex: 1; min-width: 0; }
+.roll-wrap canvas { touch-action: none; }
+.roll-wrap canvas[data-tool='pencil'], .roll-wrap canvas[data-tool='eraser'] { cursor: crosshair; }
+.tools { display: flex; flex-direction: column; align-self: flex-start; border: 1px solid var(--ink); box-shadow: 1px 1px 0 var(--ink); }
+.tools button { width: 38px; height: 38px; border: 0; background: var(--paper); padding: 0; display: grid; place-items: center; }
+.tools button + button { border-top: 1px solid var(--ink); }
+.tools button svg { width: 22px; height: 22px; }
+.tools button[aria-pressed='true'] { background: var(--ink); }
+.tools button[aria-pressed='true'] svg { filter: invert(1); }
+.message .check { min-height: 30px; font: 16px var(--geneva); }
+.message .score:empty { display: none; }
+.message #trainer-box, .message #loop-all { margin-left: auto; }
+.message .score + #trainer-box { margin-left: 0; }
 .roll-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 
 .tracks { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16px; }
@@ -355,11 +371,13 @@ a { color: inherit; }
 }
 .message strong { font: 16px var(--chicago); }
 .message .score { margin-left: auto; }
+.message { flex-wrap: wrap; }
 
 /* ---------------------------------------------------------------- keyboard window */
 
 #keys-window .window-body { display: flex; flex-direction: column; gap: 10px; padding-bottom: 14px; }
-#keys-window .pads { flex: 1; grid-auto-rows: minmax(96px, 200px); }
+#keys-window .pads { flex: 1; min-height: 90px; max-height: 280px; grid-auto-rows: minmax(0, 1fr); }
+#keys-window .pad { min-height: 0; }
 .keys-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 .keys-tools .spacer { flex: 1; }
 
@@ -545,13 +563,15 @@ dialog::backdrop { background: transparent; }
 
 @media (max-width: 860px) {
   html, body { overflow: auto; }
-  .desktop { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(min-content, 1fr); padding: 8px; }
+  .desktop { grid-template-columns: minmax(0, 1fr); grid-template-rows: max-content minmax(min-content, 1fr); padding: 8px; }
+  #song-window .window-body { overflow: visible; }
   #keys-window .piano { flex: 1; max-height: 300px; }
   #songs-window { display: none; }
   .only-narrow { display: inline-flex; }
   .song-head h1 { font-size: 24px; }
   .song-head .about { display: none; }
-  .roll-wrap { min-height: 140px; flex: none; height: 150px; }
+  .roll-row { min-height: 140px; flex: none; height: 150px; }
+  #keys-window .pads { min-height: 170px; }
   .piano { height: 150px; }
 }
 @media (max-width: 520px) {
@@ -563,12 +583,41 @@ dialog::backdrop { background: transparent; }
   .menubar-right .clock { display: none; }
 }
 @media (max-height: 800px) and (min-width: 861px) {
-  .roll-wrap { min-height: 110px; }
+  .roll-row { min-height: 116px; }
   .piano { height: 140px; }
   .song-head .about { display: none; }
   .pad { min-height: 82px; }
 }
 @media (max-width: 860px) and (min-height: 1000px) {
-  .roll-wrap { height: 260px; }
-  #keys-window .piano { max-height: 360px; }
+  .roll-row { height: 260px; }
+  #keys-window .piano { max-height: 440px; }
 }
+
+/* ---------------------------------------------------------------- balloon help */
+
+.balloon {
+  --tail: 20px;
+  position: fixed;
+  z-index: 95;
+  max-width: min(300px, calc(100vw - 24px));
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 2px 2px 0 var(--ink);
+  padding: 10px 14px;
+  font: 16px/1.3 var(--geneva);
+  pointer-events: none;
+}
+.balloon.tour { pointer-events: auto; }
+.balloon b { font: 16px var(--chicago); }
+.balloon::before, .balloon::after { content: ''; position: absolute; width: 0; height: 0; border: solid transparent; }
+.balloon.right::before { right: 100%; top: var(--tail); border-width: 8px 18px 8px 0; border-right-color: var(--ink); }
+.balloon.right::after { right: calc(100% - 2px); top: calc(var(--tail) + 2px); border-width: 6px 15px 6px 0; border-right-color: var(--paper); }
+.balloon.left::before { left: 100%; top: var(--tail); border-width: 8px 0 8px 18px; border-left-color: var(--ink); }
+.balloon.left::after { left: calc(100% - 2px); top: calc(var(--tail) + 2px); border-width: 6px 0 6px 15px; border-left-color: var(--paper); }
+.balloon.below::before { bottom: 100%; left: var(--tail); border-width: 0 8px 18px 8px; border-bottom-color: var(--ink); }
+.balloon.below::after { bottom: calc(100% - 2px); left: calc(var(--tail) + 2px); border-width: 0 6px 15px 6px; border-bottom-color: var(--paper); }
+.balloon.above::before { top: 100%; left: var(--tail); border-width: 18px 8px 0 8px; border-top-color: var(--ink); }
+.balloon.above::after { top: calc(100% - 2px); left: calc(var(--tail) + 2px); border-width: 15px 6px 0 6px; border-top-color: var(--paper); }
+.balloon-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+.balloon-buttons .btn { min-height: 30px; }

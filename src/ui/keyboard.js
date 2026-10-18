@@ -86,6 +86,7 @@ export class Keyboard {
       } else {
         key.className = 'white';
         if (midi % 12 === 0) key.innerHTML = `<span class="label-c">${noteName(midi)}</span>`;
+        else if (this.labels) key.innerHTML = `<span class="label-c">${noteName(midi, false)}</span>`;
       }
       this.pianoElement.append(key);
       this.keys.set(midi, key);

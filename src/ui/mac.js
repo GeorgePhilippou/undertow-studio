@@ -65,9 +65,20 @@ export class MenuBar {
       if (item.checked !== undefined) button.setAttribute('aria-checked', String(Boolean(item.checked)));
       button.disabled = Boolean(item.disabled);
       button.innerHTML = `<span>${escape(item.label)}</span>${item.shortcut ? `<span class="shortcut">${escape(item.shortcut)}</span>` : ''}`;
+      // The chosen item blinks before the menu closes, as on the original Mac.
       button.addEventListener('click', () => {
-        this.close();
-        item.action?.();
+        if (menu.dataset.chosen) return;
+        menu.dataset.chosen = '1';
+        let flashes = 0;
+        const blink = setInterval(() => {
+          button.classList.toggle('lit', flashes % 2 === 0);
+          button.classList.toggle('unlit', flashes % 2 === 1);
+          if (++flashes > 4) {
+            clearInterval(blink);
+            this.close();
+            item.action?.();
+          }
+        }, 45);
       });
       menu.append(button);
     }

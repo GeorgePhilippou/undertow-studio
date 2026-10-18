@@ -14,7 +14,12 @@ Open https://GeorgePhilippou.github.io/undertow-studio/, tap **Start**, choose a
 - **Keyboard window:** a multi-touch piano with gliding and Apple Pencil pressure, one pad per chord, and drum pads. Computer keys (A W S E D…) and Web MIDI keyboards also work.
 - **Drum Machine:** a step grid for the drum part, with three synthesised kits.
 - **New Song:** start your own loop and build it up from takes and drum steps.
-- **Slower/faster** from 50% to 125%, a click track, and Undo / Revert to Original for every change.
+- **Loop a section:** drag across bar numbers in the roll to repeat just those bars; Loop All goes back to the whole passage.
+- **See how you did:** ticks and crosses on each chord after every time round, your best score under each song, and *Speed up when perfect* to step the tempo up as you improve.
+- **Pencil and Eraser:** MacPaint-style tools for adding and removing notes or drum hits right in the roll.
+- **Slower/faster** from 50% to 125%, a click track, a big count-in, and Undo / Revert to Original for every change.
+- **Balloon Help and a tour:** Help ▸ Show Balloons explains anything you point at or touch; the tour runs on a first visit and from the Help menu.
+- **Install it:** in Safari choose Share ▸ Add to Home Screen. It opens full screen and works offline once loaded.
 
 Everything you make is stored in this browser. File ▸ Save a Copy writes a portable file. No recordings or vocals are bundled; the songs are played by the app's own instruments. Listen to the Record opens the official recording on YouTube.
 
@@ -37,7 +42,8 @@ Open http://localhost:8000. The page is plain HTML, CSS and ES modules with no d
 | `src/player.js` | Transport, looping, count-in, practice modes and recording |
 | `src/audio/` | Sampled piano, synthesisers, drum kits, reverb and limiter |
 | `src/render.js` | Offline WAV export |
-| `src/ui/` | Menus and windows, keyboard and pads, note roll, icons |
+| `src/ui/` | Menus and windows, keyboard and pads, note roll, Balloon Help, icons |
+| `sw.js`, `manifest.webmanifest` | Offline support and Home Screen install |
 | `src/main.js` | Wires the windows, menus and storage together |
 
 Browser checks need Node, the `playwright` package and Chromium (set `CHROMIUM_PATH` if it is not Playwright's own):
