@@ -269,6 +269,72 @@ async function pressPad(page, index) {
   check(await page.textContent('#drum-page') === 'Beats 1-4 of 6', 'the six-beat Idioteque pattern pages in beats');
   await page.click('#drum-window [data-close]');
 
+  // Sustain pedal: notes keep ringing after the key is let go.
+  await page.click('[data-song="karma"]');
+  await page.click('[data-tab="keys"]');
+  await page.click('#pedal');
+  await page.keyboard.down('a');
+  await page.keyboard.up('a');
+  check(await page.evaluate(() => undertow.player.sustained.size) === 1, 'with the Pedal down, a released note keeps ringing');
+  await page.click('#pedal');
+  check(await page.evaluate(() => undertow.player.sustained.size) === 0, 'lifting the Pedal lets it go');
+  await page.keyboard.down('Shift');
+  check(await page.evaluate(() => undertow.player.pedal), 'Shift works as a sustain pedal');
+  await page.keyboard.up('Shift');
+
+  // Wrong chords flash; the beat light flashes; the guide plays your part quietly.
+  await page.click('[data-song="idioteque"]');
+  await page.click('[data-step="2"]');
+  await page.click('[data-tab="chords"]');
+  await page.click('#play');
+  await page.waitForFunction(() => undertow.player.holding, null, { timeout: 8000 });
+  const wrongPad = page.locator('#pads .pad').nth(2);
+  const box = await wrongPad.boundingBox();
+  await page.mouse.move(box.x + 20, box.y + 20);
+  await page.mouse.down();
+  check(await wrongPad.evaluate(el => el.classList.contains('wrong')), 'a wrong chord flashes on its pad');
+  await page.mouse.up();
+  await page.click('#stop');
+  await page.click('[data-step="4"]');
+  await page.click('#guide');
+  await page.evaluate(() => {
+    window.channels = new Set();
+    const original = undertow.engine.channel.bind(undertow.engine);
+    undertow.engine.channel = (id, options) => { window.channels.add(id); return original(id, options); };
+  });
+  await page.click('#play');
+  await page.waitForFunction(() => undertow.player.beat > 0.2, null, { timeout: 8000 });
+  let flashes = 0;
+  for (let i = 0; i < 40; i++) {
+    if (await page.evaluate(() => document.getElementById('counter').classList.contains('flash'))) flashes++;
+    await wait(50);
+  }
+  check(flashes > 0 && flashes < 40, 'the counter flashes on each beat');
+  check(await page.evaluate(() => window.channels.has('guide')), 'Guide plays your part quietly while you practise');
+  await page.click('#stop');
+  await page.click('#guide');
+  await page.click('[data-step="1"]');
+  await page.click('[data-tab="keys"]');
+
+  // Mixer.
+  await page.click('#open-mixer');
+  await page.waitForSelector('#dialog[open] .slider');
+  await page.evaluate(() => {
+    const slider = document.querySelector('#mix-drums');
+    slider.value = 40;
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  check(await page.evaluate(() => undertow.player.volumes.drums === 0.4 && undertow.data.settings.volumes.idioteque.drums === 0.4), 'the Mixer sets and remembers a part\'s level');
+  await page.click('#dialog [data-value="reset"]');
+  check(await page.evaluate(() => Object.keys(undertow.player.volumes).length === 0), 'Mixer Reset puts levels back');
+
+  // Interrupted audio comes back on the next touch.
+  await page.evaluate(() => undertow.engine.context.suspend());
+  await page.waitForFunction(() => document.getElementById('status').textContent.startsWith('Sound paused'));
+  await page.mouse.click(600, 120);
+  await page.waitForFunction(() => undertow.engine.context.state === 'running');
+  check(true, 'paused sound resumes on the next touch');
+
   // Balloon Help.
   await page.click('[data-menu="help"]');
   await page.click('.menu button:has-text("Show Balloons")');

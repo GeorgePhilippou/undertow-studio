@@ -27,6 +27,10 @@ export class Player {
     this.listeners = {};
     this.held = new Map();
     this.timer = null;
+    this.pedal = false;
+    this.sustained = new Map(); // notes still ringing because the pedal is down
+    this.guide = false; // play your part quietly while you practise it
+    this.volumes = {}; // part id -> mixer level
     this.section = null; // { start, end } in song beats, or null for the whole loop
     this.marks = new Map(); // target beat -> 'hit' | 'part' | 'miss'
     this.marksVersion = 0;
@@ -218,9 +222,11 @@ export class Player {
     for (const part of this.song.parts) {
       if (this.muted.has(part.id)) continue;
       const silent = this.take ? part.id === this.take.part : part.id === this.myPart && (this.mode !== 'listen' || this.state === 'recording');
-      if (silent) continue;
+      const guiding = silent && this.guide && !this.take && this.state === 'playing';
+      if (silent && !guiding) continue;
       const events = this.timeline.get(part.id);
-      const output = this.engine.channel(part.id, { volume: part.volume, instrument: this.instrumentFor(part), kit: part.kit });
+      const volume = (part.volume ?? 1) * (this.volumes[part.id] ?? 1) * (guiding ? 0.3 : 1);
+      const output = this.engine.channel(guiding ? 'guide' : part.id, { volume, instrument: this.instrumentFor(part), kit: part.kit });
       for (let cycle = Math.floor(from / loop); cycle * loop < to; cycle++) {
         for (const event of events) {
           const beat = cycle * loop + event.beat;
@@ -355,7 +361,9 @@ export class Player {
       return keys.map(k => (typeof k === 'number' ? k % 12 : k)).filter(k => wanted.has(k));
     };
     if (this.mode === 'wait' && this.waitTarget) {
-      for (const key of accept(this.waitTarget)) this.waitTarget.remaining.delete(key);
+      const accepted = accept(this.waitTarget);
+      if (!accepted.length) this.emit('wrong', { keys, chord });
+      for (const key of accepted) this.waitTarget.remaining.delete(key);
       if (this.waitTarget.remaining.size === 0) {
         this.marks.set(this.waitTarget.beat, 'hit');
         this.marksVersion++;
@@ -393,6 +401,7 @@ export class Player {
         return;
       }
     }
+    this.emit('wrong', { keys, chord });
   }
 
   // ---------------------------------------------------------------- live input
@@ -406,6 +415,8 @@ export class Player {
     const part = this.part();
     const output = this.engine.channel('you', { volume: 1, instrument: this.instrumentFor(part) });
     this.noteOff(midi);
+    this.sustained.get(midi)?.voice.release(this.context.currentTime);
+    this.sustained.delete(midi);
     const voice = this.engine.noteOn(this.instrumentFor(part), midi, velocity, this.context.currentTime, output);
     this.held.set(midi, voice);
     if (register) this.registerInput([midi]);
@@ -417,13 +428,30 @@ export class Player {
   }
 
   noteOff(midi) {
-    this.held.get(midi)?.release(this.context.currentTime);
+    const voice = this.held.get(midi);
     this.held.delete(midi);
     const event = this.recording?.open.get(midi);
+    if (this.pedal && voice) {
+      // The pedal keeps the note ringing; it ends when the pedal comes up.
+      this.sustained.set(midi, { voice, event });
+      this.recording?.open.delete(midi);
+      return;
+    }
+    voice?.release(this.context.currentTime);
     if (event && this.state === 'recording') {
       event.length = Math.max(0.1, this.recordBeat() - event.beat);
       this.recording.open.delete(midi);
     }
+  }
+
+  setPedal(down) {
+    this.pedal = down;
+    if (down) return;
+    for (const { voice, event } of this.sustained.values()) {
+      voice.release(this.context.currentTime);
+      if (event && this.state === 'recording') event.length = Math.max(0.1, this.recordBeat() - event.beat);
+    }
+    this.sustained.clear();
   }
 
   drumHit(voice, velocity = 0.85) {
@@ -444,6 +472,7 @@ export class Player {
     const { events, open } = this.recording;
     const end = this.recordBeat();
     for (const event of open.values()) event.length = Math.max(0.1, end - event.beat);
+    for (const { event } of this.sustained.values()) if (event) event.length = Math.max(0.1, end - event.beat);
     this.recording = null;
     if (!events.length) return null;
     const part = this.part();

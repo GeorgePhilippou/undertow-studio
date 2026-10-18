@@ -12,17 +12,28 @@ export const INSTRUMENTS = {
   epiano: 'Electric Piano',
   musicbox: 'Music Box',
   organ: 'Organ',
+  guitar: 'Clean Guitar',
   bass: 'Synth Bass',
 };
 
-const REVERB = { piano: 0.22, prophet: 0.12, lansky: 0.35, epiano: 0.2, musicbox: 0.4, organ: 0.25, bass: 0.03 };
+const REVERB = { piano: 0.22, prophet: 0.12, lansky: 0.35, epiano: 0.2, musicbox: 0.4, organ: 0.25, guitar: 0.18, bass: 0.03 };
 
+// A small room: a short pre-delay, then a tail that darkens as it fades,
+// with different noise on each side for width.
 function impulse(context, seconds = 2.4) {
-  const length = Math.round(context.sampleRate * seconds);
-  const buffer = context.createBuffer(2, length, context.sampleRate);
+  const rate = context.sampleRate;
+  const length = Math.round(rate * seconds);
+  const preDelay = Math.round(rate * 0.018);
+  const buffer = context.createBuffer(2, length, rate);
   for (let channel = 0; channel < 2; channel++) {
     const data = buffer.getChannelData(channel);
-    for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / length) ** 3.2;
+    let smooth = 0;
+    for (let i = preDelay; i < length; i++) {
+      const progress = (i - preDelay) / (length - preDelay);
+      const brightness = 0.85 - progress * 0.75;
+      smooth += brightness * ((Math.random() * 2 - 1) - smooth);
+      data[i] = smooth * (1 - progress) ** 3 * (1.2 - brightness * 0.3);
+    }
   }
   return buffer;
 }
@@ -77,14 +88,25 @@ export class Engine {
   }
 
   // Starts one note and returns a voice that must be released.
-  noteOn(instrument, midi, velocity, time, destination) {
+  noteOn(instrument, midi, velocity, time, output) {
     const at = Math.max(time, this.context.currentTime);
+    const destination = this.place(output, instrument === 'bass' ? 0 : midi);
     if (instrument === 'piano') {
       const voice = piano(this.context, destination, midi, velocity, at);
       if (voice) return voice;
       return SYNTHS.fallbackPiano(this.context, destination, midi, velocity, at);
     }
     return (SYNTHS[instrument] || SYNTHS.epiano)(this.context, destination, midi, velocity, at);
+  }
+
+  // Spreads notes across the stereo field like a keyboard in front of you:
+  // low notes slightly left, high notes slightly right.
+  place(output, midi) {
+    if (!midi || !this.context.createStereoPanner) return output;
+    const panner = this.context.createStereoPanner();
+    panner.pan.value = Math.max(-0.35, Math.min(0.35, (midi - 62) / 80));
+    panner.connect(output);
+    return panner;
   }
 
   note(instrument, midi, velocity, time, duration, destination) {

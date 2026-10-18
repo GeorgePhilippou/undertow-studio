@@ -21,7 +21,7 @@ const SPEEDS = [0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1, 1.1, 1.25];
 const PIANO_KEYS = 'awsedftgyhujkolp;';
 
 let data = storage.load();
-data.settings = { parts: {}, instruments: {}, kits: {}, muted: {}, octave: {}, ...data.settings };
+data.settings = { parts: {}, instruments: {}, kits: {}, muted: {}, octave: {}, volumes: {}, ...data.settings };
 data.scores ||= {};
 data.progress ||= {};
 const settings = () => data.settings;
@@ -75,6 +75,7 @@ function selectSong(id) {
   player.myInstrument = settings().instruments[song.id] || null;
   player.myPart = settings().parts[song.id] || null;
   player.muted = new Set(settings().muted[song.id] || []);
+  player.volumes = settings().volumes[song.id] || {};
   player.setSong(song);
   player.setMode(currentStep().mode);
   selectedTake = null;
@@ -135,7 +136,7 @@ function renderTracks() {
   const hasDrums = song.parts.some(p => p.kind === 'drums');
   $('#tracks').innerHTML = `<span class="label">Hear:</span>` + song.parts.map(p => `
     <label class="check"><input type="checkbox" data-part="${p.id}" ${player.muted.has(p.id) ? '' : 'checked'}> ${escape(p.name)}${p.id === player.myPart ? ' (you)' : ''}</label>`).join('') +
-    `<span class="spacer" style="flex:1"></span><button id="open-drums" class="btn" data-help="${hasDrums ? 'Edit the drum beat on a grid, or start from a ready-made beat.' : 'This song has no drums yet. Open the Drum Machine to add a beat of your own.'}">${hasDrums ? 'Drum Machine...' : 'Add Drums...'}</button>`;
+    `<span class="spacer" style="flex:1"></span><button id="open-mixer" class="btn" data-help="Set how loud each part is.">Mixer...</button><button id="open-drums" class="btn" data-help="${hasDrums ? 'Edit the drum beat on a grid, or start from a ready-made beat.' : 'This song has no drums yet. Open the Drum Machine to add a beat of your own.'}">${hasDrums ? 'Drum Machine...' : 'Add Drums...'}</button>`;
 }
 
 function myPart() {
@@ -337,6 +338,24 @@ function changeSpeed(direction) {
 }
 
 player.on('state', renderTransport);
+player.on('state', state => keepAwake(state !== 'stopped'));
+player.on('wrong', ({ keys, chord }) => keyboard.flashWrong(keys, chord));
+
+// Keep the iPad screen on while the music plays.
+let wakeLock = null;
+async function keepAwake(on) {
+  try {
+    if (on && !wakeLock && navigator.wakeLock) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => (wakeLock = null));
+    } else if (!on && wakeLock) {
+      await wakeLock.release();
+      wakeLock = null;
+    }
+  } catch {
+    wakeLock = null;
+  }
+}
 
 player.on('pass', ({ hit, total, section }) => {
   if (!total) return;
@@ -412,7 +431,8 @@ function frame() {
   const mode = player.mode;
   const part = myPart();
 
-  // Counter.
+  // Counter, flashing on each beat.
+  $('#counter').classList.toggle('flash', running && beat >= 0 && beat % 1 < 0.12);
   if (beat < 0) {
     $('#counter').textContent = `Count ${Math.max(1, Math.ceil(-beat))}`;
   } else {
@@ -462,6 +482,7 @@ function frame() {
   if ($('#next-label').textContent !== label) $('#next-label').textContent = label;
   if ($('#next-detail').textContent !== detail) $('#next-detail').textContent = detail;
   $('#trainer-box').hidden = mode !== 'along';
+  $('#guide-box').hidden = mode === 'listen';
 
   // Roll.
   const countIn = running && beat < 0 ? Math.max(1, Math.ceil(-beat)) : null;
@@ -680,7 +701,7 @@ async function exportAudio(take = null) {
   try {
     const beats = take ? take.length : song.loop * Math.max(1, Math.ceil(16 / song.loop));
     const instruments = player.myInstrument ? { [player.myPart]: player.myInstrument } : {};
-    const { blob } = await renderWav(song, { beats, muted: player.muted, take, instruments });
+    const { blob } = await renderWav(song, { beats, muted: player.muted, take, instruments, volumes: player.volumes });
     download(blob, `${song.title}${take ? ' take' : ''}.wav`);
     setStatus('');
   } catch (error) {
@@ -689,7 +710,22 @@ async function exportAudio(take = null) {
   }
 }
 
+// On touch devices the share sheet saves to Files, AirDrops or sends the file;
+// elsewhere it downloads.
 function download(blob, name) {
+  if (navigator.canShare && window.matchMedia('(pointer: coarse)').matches) {
+    const file = new File([blob], name.replace(/[\\/:*?"<>|]/g, ''), { type: blob.type });
+    if (navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: file.name }).catch(error => {
+        if (error.name !== 'AbortError') saveFile(blob, name);
+      });
+      return;
+    }
+  }
+  saveFile(blob, name);
+}
+
+function saveFile(blob, name) {
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = name.replace(/[\\/:*?"<>|]/g, '');
@@ -1007,6 +1043,7 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
           ...Object.entries(KITS).map(([id, kit]) => ({ label: kit.name, checked: id === part.kit, action: () => setInstrument(id) })),
           '-',
           { label: 'Use Original Sound', action: useOriginalSound },
+          { label: 'Mixer...', action: showMixer },
         ];
       }
       return [
@@ -1014,6 +1051,7 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
         ...Object.entries(INSTRUMENTS).map(([id, label]) => ({ label, checked: id === player.instrumentFor(part), action: () => setInstrument(id) })),
         '-',
         { label: 'Use Original Sound', action: useOriginalSound },
+        { label: 'Mixer...', action: showMixer },
         { label: 'Show Note Names on Keys', checked: Boolean(settings().labels), action: toggleLabels },
       ];
     case 'window':
@@ -1112,6 +1150,7 @@ $('#tracks').addEventListener('change', event => {
   persist();
 });
 $('#tracks').addEventListener('click', event => {
+  if (event.target.closest('#open-mixer')) showMixer();
   if (event.target.closest('#open-drums')) openDrumMachine();
 });
 $('#keys-tabs').addEventListener('click', event => {
@@ -1134,6 +1173,11 @@ $('#tools').addEventListener('click', event => {
   if (button) setTool(button.dataset.tool);
 });
 $('#loop-all').addEventListener('click', () => player.setSection(null));
+$('#guide').addEventListener('change', event => {
+  settings().guide = player.guide = event.target.checked;
+  persist();
+});
+$('#pedal').addEventListener('click', () => setPedal(!player.pedal));
 $('#trainer').addEventListener('change', event => {
   settings().trainer = event.target.checked;
   persist();
@@ -1165,6 +1209,10 @@ document.addEventListener('keydown', event => {
     return;
   }
   if (event.repeat) return;
+  if (event.key === 'Shift') {
+    setPedal(true);
+    return;
+  }
   const key = event.key.toLowerCase();
   if (key === ' ') {
     event.preventDefault();
@@ -1190,6 +1238,7 @@ document.addEventListener('keydown', event => {
   }
 });
 document.addEventListener('keyup', event => {
+  if (event.key === 'Shift') setPedal(false);
   const key = event.key.toLowerCase();
   heldKeys.get(key)?.();
   heldKeys.delete(key);
@@ -1203,12 +1252,29 @@ function connectMidi() {
         const type = status & 0xf0;
         if (type === 0x90 && velocity > 0) keyboard.press(note, velocity / 127);
         else if (type === 0x80 || (type === 0x90 && velocity === 0)) keyboard.release(note);
+        else if (type === 0xb0 && note === 64) setPedal(velocity >= 64);
       };
     };
     access.inputs.forEach(listen);
     access.onstatechange = event => event.port.type === 'input' && event.port.state === 'connected' && listen(event.port);
   }).catch(() => {});
 }
+
+// iPad Safari suspends or interrupts audio after calls, alarms or a locked
+// screen; the next touch brings it back.
+const wakeAudio = () => {
+  if (context.state !== 'running' && !document.getElementById('boot')) context.resume();
+};
+document.addEventListener('pointerdown', wakeAudio, true);
+document.addEventListener('keydown', wakeAudio, true);
+context.addEventListener?.('statechange', () => {
+  if (document.getElementById('boot')) return;
+  if (context.state === 'running') {
+    if ($('#status').textContent.startsWith('Sound paused')) setStatus('');
+  } else {
+    setStatus('Sound paused - tap anywhere');
+  }
+});
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
@@ -1243,6 +1309,7 @@ setInterval(tickClock, 10000);
 player.metronome = $('#metronome').checked = Boolean(settings().metronome);
 player.countIn = settings().countIn !== false;
 $('#trainer').checked = Boolean(settings().trainer);
+player.guide = $('#guide').checked = Boolean(settings().guide);
 keyboard.labels = Boolean(settings().labels);
 selectSong(settings().songId || SONGS[0].id);
 requestAnimationFrame(frame);
@@ -1279,6 +1346,43 @@ function startTour() {
     settings().toured = true;
     persist();
   });
+}
+
+function showMixer() {
+  const levels = (settings().volumes[song.id] ||= {});
+  const percent = id => Math.round((levels[id] ?? 1) * 100);
+  const closed = showDialog(`
+    <h3>Mixer - ${escape(song.title)}</h3>
+    <div class="mixer">
+      ${song.parts.map(p => `<div class="row"><label class="label" for="mix-${p.id}">${escape(p.name)}</label>
+        <input id="mix-${p.id}" class="slider" type="range" min="0" max="150" step="5" value="${percent(p.id)}" data-part="${p.id}">
+        <output>${percent(p.id)}%</output></div>`).join('')}
+    </div>
+    <div class="button-row"><button class="btn" data-value="reset">Reset</button><button class="btn default" data-value="ok">Done</button></div>`);
+  const body = $('#dialog-body');
+  const onInput = event => {
+    const slider = event.target.closest('[data-part]');
+    if (!slider) return;
+    levels[slider.dataset.part] = Number(slider.value) / 100;
+    slider.nextElementSibling.textContent = `${slider.value}%`;
+    player.volumes = levels;
+    persist();
+  };
+  body.addEventListener('input', onInput);
+  closed.then(({ value }) => {
+    body.removeEventListener('input', onInput);
+    if (value === 'reset') {
+      delete settings().volumes[song.id];
+      player.volumes = {};
+      persist();
+      toast('Mixer reset.');
+    }
+  });
+}
+
+function setPedal(down) {
+  player.setPedal(down);
+  $('#pedal').setAttribute('aria-pressed', String(down));
 }
 
 function toggleLabels() {

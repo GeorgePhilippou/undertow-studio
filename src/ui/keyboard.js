@@ -239,6 +239,24 @@ export class Keyboard {
     }
   }
 
+  // Briefly marks keys or pads that were not what the song wanted.
+  flashWrong(keys, chord) {
+    const elements = [];
+    if (chord) {
+      const index = this.pads.findIndex(p => p.name === chord);
+      if (index >= 0) elements.push(this.padsElement.querySelector(`[data-index="${index}"]`));
+    } else {
+      for (const key of keys) {
+        if (typeof key === 'number') elements.push(this.keys.get(key));
+        else elements.push(this.drumElement.querySelector(`[data-index="${this.drums.indexOf(key)}"]`));
+      }
+    }
+    for (const element of elements.filter(Boolean)) {
+      element.classList.add('wrong');
+      setTimeout(() => element.classList.remove('wrong'), 350);
+    }
+  }
+
   releaseAll() {
     for (const midi of [...this.down]) this.release(midi);
     this.pointers.clear();
