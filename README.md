@@ -51,6 +51,7 @@ Browser checks need Node, the `playwright` package and Chromium (set `CHROMIUM_P
 ```sh
 node tests/app.cjs     # songs, practice modes, recording, editing, layouts
 node tests/sound.cjs   # every song renders audibly without clipping
+node tests/balloons.cjs  # every tour step and help balloon points at its control
 ```
 
 `python3 scripts/package.py` copies the site into `dist/`. Pushes to `main` build and deploy `dist/` with GitHub Actions.

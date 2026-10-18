@@ -6,9 +6,53 @@ import { escape } from './mac.js';
 let balloon = null;
 let hideTimer = null;
 
+const GAP = 18; // length of the tail
+const MARGIN = 8;
+const TOP = 30; // keep clear of the menu bar
+const TAIL_MIN = 10;
+
+// Tries each side in turn and keeps the first where the balloon fits on screen
+// and its tail can reach the target. Targets in the menu bar always get a
+// balloon below them.
+function choosePlacement(box, width, height) {
+  const viewWidth = window.innerWidth;
+  const viewHeight = window.innerHeight;
+  const anchorX = box.left + Math.min(box.width, 120) / 2;
+  const anchorY = box.top + Math.min(box.height, 60) / 2;
+  const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+  const sides = box.bottom <= 40 ? ['below', 'right', 'left', 'above'] : ['right', 'below', 'left', 'above'];
+  const candidates = sides.map(side => {
+    if (side === 'right' || side === 'left') {
+      const left = side === 'right' ? box.right + GAP : box.left - GAP - width;
+      const top = clamp(anchorY - 24, TOP, viewHeight - height - MARGIN);
+      const tail = anchorY - top - 8;
+      return {
+        side, left, top, tail,
+        fits: left >= MARGIN && left + width <= viewWidth - MARGIN && top + height <= viewHeight - MARGIN,
+        reaches: tail >= TAIL_MIN && tail <= height - 16 - TAIL_MIN,
+        tipX: side === 'right' ? left - GAP : left + width + GAP,
+      };
+    }
+    const top = side === 'below' ? box.bottom + GAP : box.top - GAP - height;
+    const left = clamp(anchorX - 30, MARGIN, viewWidth - width - MARGIN);
+    const tail = anchorX - left - 8;
+    return {
+      side, left, top, tail,
+      fits: top >= TOP - 4 && top + height <= viewHeight - MARGIN,
+      reaches: tail >= TAIL_MIN && tail <= width - 16 - TAIL_MIN,
+      tipY: side === 'below' ? top - GAP : top + height + GAP,
+    };
+  });
+  const best = candidates.find(c => c.fits && c.reaches) || candidates.find(c => c.fits) || candidates[0];
+  const vertical = best.side === 'right' || best.side === 'left';
+  best.tail = clamp(best.tail, TAIL_MIN, (vertical ? height : width) - 16 - TAIL_MIN);
+  if (vertical) best.tipY = best.top + best.tail + 8;
+  else best.tipX = best.left + best.tail + 8;
+  return best;
+}
+
 export function showBalloon(target, html, { buttons = '' } = {}) {
   hideBalloon();
-  const box = target.getBoundingClientRect();
   balloon = document.createElement('div');
   balloon.className = 'balloon';
   balloon.setAttribute('role', 'tooltip');
@@ -16,36 +60,14 @@ export function showBalloon(target, html, { buttons = '' } = {}) {
   document.body.append(balloon);
   const width = balloon.offsetWidth;
   const height = balloon.offsetHeight;
-  const gap = 18;
-  const room = {
-    right: window.innerWidth - box.right,
-    left: box.left,
-    below: window.innerHeight - box.bottom,
-    above: box.top - 26,
-  };
-  let side;
-  if (room.right >= width + gap + 8) side = 'right';
-  else if (room.below >= height + gap + 8) side = 'below';
-  else if (room.left >= width + gap + 8) side = 'left';
-  else side = 'above';
-  let left;
-  let top;
-  if (side === 'right' || side === 'left') {
-    left = side === 'right' ? box.right + gap : box.left - gap - width;
-    top = Math.min(Math.max(30, box.top + Math.min(box.height, 60) / 2 - 24), window.innerHeight - height - 8);
-  } else {
-    left = Math.min(Math.max(8, box.left + Math.min(box.width, 120) / 2 - 30), window.innerWidth - width - 8);
-    top = side === 'below' ? box.bottom + gap : Math.max(30, box.top - gap - height);
-  }
-  balloon.style.left = `${left}px`;
-  balloon.style.top = `${top}px`;
-  balloon.classList.add(side);
-  // Point the tail at the middle of the target, as far as the balloon allows.
-  if (side === 'right' || side === 'left') {
-    balloon.style.setProperty('--tail', `${Math.max(14, Math.min(height - 28, box.top + Math.min(box.height, 60) / 2 - top - 8))}px`);
-  } else {
-    balloon.style.setProperty('--tail', `${Math.max(14, Math.min(width - 28, box.left + Math.min(box.width, 120) / 2 - left - 8))}px`);
-  }
+  const place = choosePlacement(target.getBoundingClientRect(), width, height);
+  balloon.style.left = `${place.left}px`;
+  balloon.style.top = `${place.top}px`;
+  balloon.style.setProperty('--tail', `${place.tail}px`);
+  balloon.classList.add(place.side);
+  // Where the tail's tip lands, kept for checks.
+  balloon.dataset.tipX = Math.round(place.tipX);
+  balloon.dataset.tipY = Math.round(place.tipY);
   return balloon;
 }
 
@@ -113,6 +135,7 @@ export function runTour(steps) {
         buttons: `${last ? '' : '<button class="btn" data-tour="skip">Skip</button>'}<button class="btn default" data-tour="next">${last ? 'Done' : 'Next'}</button>`,
       });
       element.classList.add('tour');
+      if (typeof step.target === 'string') element.dataset.target = step.target;
       element.addEventListener('click', event => {
         const action = event.target.closest('[data-tour]')?.dataset.tour;
         if (action === 'next') next();

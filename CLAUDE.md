@@ -12,7 +12,7 @@ Saved work: the desk stores everything under the localStorage key `undertow-desk
 
 Serve the root with `python3 -m http.server 8000`. Sources: `index.html`, `mac.css`, `src/` (songs, player, render, storage, main, `audio/`, `ui/`).
 
-Browser checks use Node, the `playwright` package and Chromium; set `CHROMIUM_PATH` to use a specific executable. Run `node tests/app.cjs` and `node tests/sound.cjs` with the server running; set `UNDERTOW_URL` to test another address. Signal checks prove audibility and headroom, not resemblance to the records. Physical iPad Safari, Apple Pencil and MIDI hardware remain unverified.
+Browser checks use Node, the `playwright` package and Chromium; set `CHROMIUM_PATH` to use a specific executable. Run `node tests/app.cjs`, `node tests/sound.cjs` and `node tests/balloons.cjs` with the server running; set `UNDERTOW_URL` to test another address. Signal checks prove audibility and headroom, not resemblance to the records. Physical iPad Safari, Apple Pencil and MIDI hardware remain unverified.
 
 `sw.js` precaches the core files listed in `CORE` and serves pages and code network-first, so a deploy shows up on the next online load. Add new source files to `CORE`. Give new controls a `data-help` balloon.
 
