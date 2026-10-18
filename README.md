@@ -13,7 +13,11 @@ Open https://GeorgePhilippou.github.io/undertow-studio/, tap **Start**, choose a
   3. **Slow** and 4. **Full Speed:** your part drops out, the dotted keys show what comes next, and you get a score after each time round; 80% ticks the step off.
   5. **Record** yourself over the band.
 - **Record:** a bar of count-in, then play over the backing and press Stop. Takes can be played back, saved as WAV, or used as the song's part. That is how you correct a song by ear.
-- **Keyboard window:** a multi-touch piano with gliding and Apple Pencil pressure, one pad per chord, and drum pads. Computer keys (A W S E D…) and Web MIDI keyboards also work.
+- **Keyboard window:** a multi-touch piano with gliding and Apple Pencil pressure, a sustain Pedal (also Shift or a MIDI pedal), one pad per chord, and drum pads. Computer keys (A W S E D…) and Web MIDI keyboards also work.
+- **Feedback as you play:** wrong notes and chords flash crossed out, the counter flashes on every beat, and *Guide* plays your part quietly while you practise it.
+- **Mixer:** Sound ▸ Mixer or the Mixer button sets each part's level; levels are kept per song and used for WAV export.
+- **Sound:** a sampled grand piano, a plucked-string guitar, analogue keys and pads, notes spread across the stereo field like a real keyboard, a warm room reverb, and a breathing organ vibrato.
+- **On iPad:** the screen stays awake while music plays, sound resumes with a tap after an interruption, and saved files open the share sheet (Files, AirDrop, Messages).
 - **Drum Machine:** a step grid with its own Play button, ready-made beats to start from, three synthesised kits, and Add Drums for songs that have none.
 - **New Song:** start your own loop and build it up from takes and drum steps.
 - **Loop a section:** drag across bar numbers in the roll to repeat just those bars; Loop All goes back to the whole passage.

@@ -103,6 +103,7 @@
 
       <div class="message" aria-live="polite">
         <strong id="next-label"></strong><span id="next-detail"></span><span id="score" class="score"></span>
+        <label id="guide-box" class="check" hidden data-help="Guide: hear your part quietly while you practise it, so you always know how it goes."><input id="guide" type="checkbox"> Guide</label>
         <label id="trainer-box" class="check" hidden data-help="After a perfect time round, the song gets a little faster, up to full speed."><input id="trainer" type="checkbox"> Speed up when perfect</label>
         <button id="loop-all" class="btn square" hidden data-help="Stop looping a section and play the whole passage again.">Loop All</button>
       </div>
@@ -126,6 +127,7 @@
           <output id="octave">C3</output>
           <button id="octave-up" class="btn" aria-label="Octave up">▶</button>
         </span>
+        <button id="pedal" class="btn" aria-pressed="false" data-help="Sustain pedal: tap to hold notes on after you let go, tap again to lift it. Shift does the same on a computer keyboard, and MIDI pedals work too.">Pedal</button>
         <select id="instrument" class="popup hide-phone" aria-label="Instrument" data-help="The sound you play with. Sound > Use Original Sound puts it back."></select>
       </div>
       <div id="piano" class="piano" aria-label="Piano keyboard" data-help="Play with several fingers, slide along the keys, or press harder with Apple Pencil for louder notes. Dotted keys are what to play next."></div>

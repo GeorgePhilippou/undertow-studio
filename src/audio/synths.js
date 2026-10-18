@@ -110,14 +110,23 @@ function musicbox(context, output, midi, velocity, time) {
   return voice;
 }
 
+// Reed organ with a gentle vibrato, like air moving through a harmonium.
 function organ(context, output, midi, velocity, time) {
   const hz = frequency(midi);
   const voice = envelope(context, output, time, { attack: 0.06, decay: 1, sustain: 0.85, release: 0.25, peak: 0.06 + velocity * 0.04 });
+  const vibrato = voice.add(context.createOscillator());
+  vibrato.frequency.value = 5.6;
+  const depth = context.createGain();
+  depth.gain.setValueAtTime(0, time);
+  depth.gain.linearRampToValueAtTime(7, time + 0.4);
+  vibrato.connect(depth);
+  vibrato.start(time);
   [[0.5, 0.6], [1, 1], [2, 0.5], [3, 0.25]].forEach(([ratio, level]) => {
     const partial = context.createGain();
     partial.gain.value = level;
     partial.connect(voice.gain);
-    voice.add(oscillator(context, 'sine', hz * ratio, 0, time, partial));
+    const osc = voice.add(oscillator(context, 'sine', hz * ratio, 0, time, partial));
+    depth.connect(osc.detune);
   });
   return voice;
 }
@@ -135,6 +144,64 @@ function bass(context, output, midi, velocity, time) {
   return voice;
 }
 
+// Plucked string (Karplus-Strong): a burst of noise circulating in a tuned,
+// slightly lossy delay line. Each pitch is rendered once and reused.
+const strings = new Map();
+
+function stringBuffer(context, midi) {
+  const key = `${context.sampleRate}:${midi}`;
+  if (strings.has(key)) return strings.get(key);
+  const rate = context.sampleRate;
+  const length = Math.round(rate * 3);
+  const buffer = context.createBuffer(1, length, rate);
+  const out = buffer.getChannelData(0);
+  const period = rate / frequency(midi);
+  const delay = period - 0.5; // the averaging filter adds half a sample
+  const whole = Math.floor(delay);
+  const frac = delay - whole;
+  const loss = 0.996 + Math.min(0.0035, (60 - Math.min(60, midi - 30)) * 0.00004);
+  let previous = 0;
+  for (let i = 0; i < length; i++) {
+    let sample;
+    if (i < period) {
+      // A softened pick: noise smoothed a little so it is not too bright.
+      previous += 0.55 * ((Math.random() * 2 - 1) - previous);
+      sample = previous;
+    } else {
+      const a = out[i - whole] * (1 - frac) + out[i - whole - 1] * frac;
+      const b = out[i - whole - 1] * (1 - frac) + (out[i - whole - 2] ?? 0) * frac;
+      sample = loss * 0.5 * (a + b);
+    }
+    out[i] = sample;
+  }
+  strings.set(key, buffer);
+  return buffer;
+}
+
+function guitar(context, output, midi, velocity, time) {
+  const source = context.createBufferSource();
+  source.buffer = stringBuffer(context, midi);
+  const tone = context.createBiquadFilter();
+  tone.type = 'lowpass';
+  tone.frequency.value = 1800 + velocity * 4200;
+  const body = context.createBiquadFilter();
+  body.type = 'peaking';
+  body.frequency.value = 220;
+  body.gain.value = 4;
+  const gain = context.createGain();
+  gain.gain.value = 0.3 + velocity * 0.5;
+  source.connect(tone).connect(body).connect(gain).connect(output);
+  source.start(time);
+  source.stop(time + source.buffer.duration);
+  return {
+    release(at) {
+      // Lifting the finger damps the string.
+      gain.gain.setTargetAtTime(0, Math.max(at, time), 0.06);
+      try { source.stop(Math.max(at, time) + 0.4); } catch { /* already stopped */ }
+    },
+  };
+}
+
 // Simple triangle piano used only while the samples are loading.
 function fallbackPiano(context, output, midi, velocity, time) {
   const hz = frequency(midi);
@@ -144,4 +211,4 @@ function fallbackPiano(context, output, midi, velocity, time) {
   return voice;
 }
 
-export const SYNTHS = { prophet, lansky, epiano, musicbox, organ, bass, fallbackPiano };
+export const SYNTHS = { prophet, lansky, epiano, musicbox, organ, bass, guitar, fallbackPiano };

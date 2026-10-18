@@ -6,7 +6,7 @@ import { loopEvents } from './songs.js';
 const RATE = 44100;
 const TAIL = 3;
 
-export async function renderWav(song, { beats, muted = new Set(), take = null, instruments = {} }) {
+export async function renderWav(song, { beats, muted = new Set(), take = null, instruments = {}, volumes = {} }) {
   const seconds = beats * (60 / song.bpm) + TAIL;
   const context = new OfflineAudioContext(2, Math.ceil(seconds * RATE), RATE);
   await loadPiano(context);
@@ -21,7 +21,7 @@ export async function renderWav(song, { beats, muted = new Set(), take = null, i
   for (const part of song.parts) {
     if (muted.has(part.id) || take?.part === part.id) continue;
     const instrument = instruments[part.id] || part.instrument;
-    const output = engine.channel(part.id, { volume: part.volume, instrument, kit: part.kit });
+    const output = engine.channel(part.id, { volume: (part.volume ?? 1) * (volumes[part.id] ?? 1), instrument, kit: part.kit });
     const events = loopEvents(song, part);
     for (let offset = 0; offset < beats; offset += song.loop) {
       for (const event of events) if (offset + event.beat < beats) play(part, event, offset + event.beat, output, instrument);

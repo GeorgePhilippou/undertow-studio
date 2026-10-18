@@ -253,49 +253,53 @@ export const SONGS = [
     bars: [4],
     key: 'F major',
     youtube: 'u5CVsCnxyXg',
-    about: 'The lullaby introduction: F major turning to B-flat minor, with a glockenspiel line ringing over the chords.',
-    accuracy: 'The F to B-flat minor introduction, the key of F and 76 BPM match published chord charts. The glockenspiel pattern and the chord rhythm are reconstructions.',
+    about: 'The lullaby introduction: a picked guitar moving between F major and B-flat minor, the top notes stepping up a half step each time, with a glockenspiel ringing above.',
+    accuracy: 'Checked: F to B-flat minor, 76 BPM, and the guitar voicings, which are the D and Gm shapes with a capo on the third fret given by several tabs (F-C-F-A and F-Db-F-Bb). Reconstructed: the order of the picked notes and the glockenspiel line.',
     sources: [
+      ['Guitar Alliance - intro with capo 3', 'https://guitaralliance.net/no-surprises-by-radiohead/'],
+      ['Boite a chansons - capo III, D and Gm', 'https://www.boiteachansons.net/en/partitions/radiohead/no-surprises'],
       ['E-Chords - chords', 'https://www.e-chords.com/chords/radiohead/no-surprises'],
-      ['Ultimate Guitar - chords', 'https://tabs.ultimate-guitar.com/tab/radiohead/no-surprises-chords-1050911'],
     ],
     chords: {
-      'F': 'F2 | F3 A3 C4',
-      'B♭m': 'F2 | F3 Bb3 Db4',
+      'F': '| F3 C4 F4 A4',
+      'B♭m': '| F3 Db4 F4 Bb4',
     },
     parts: [
       {
-        id: 'chords', name: 'Chords', instrument: 'epiano', length: 8, learn: true,
+        id: 'guitar', name: 'Guitar', instrument: 'guitar', length: 8, learn: true,
         notes: `
-          0    F2 [F]       1.9  0.7
-          2    [F]          1.9  0.5
-          4    F2 [B♭m]     1.9  0.7
-          6    [B♭m]        1.9  0.5
+          0    F3 [F]     4    0.7
+          0.5  C4         3.5  0.5
+          1    F4         3    0.55
+          1.5  A4         2.5  0.6
+          2    F4         2    0.5
+          2.5  C4         1.5  0.45
+          3    A4         1    0.55
+          3.5  F4         0.5  0.45
+          4    F3 [B♭m]   4    0.7
+          4.5  Db4        3.5  0.5
+          5    F4         3    0.55
+          5.5  Bb4        2.5  0.6
+          6    F4         2    0.5
+          6.5  Db4        1.5  0.45
+          7    Bb4        1    0.55
+          7.5  F4         0.5  0.45
         `,
       },
       {
-        id: 'glock', name: 'Glockenspiel', instrument: 'musicbox', length: 8, volume: 0.8,
+        id: 'glock', name: 'Glockenspiel', instrument: 'musicbox', length: 8, volume: 0.55,
         notes: `
-          0    C6   0.5  0.7
-          0.5  A5   0.5  0.5
-          1    F5   0.5  0.55
-          1.5  A5   0.5  0.5
-          2    C6   0.5  0.65
-          2.5  A5   0.5  0.5
-          3    F5   0.5  0.55
-          3.5  A5   0.5  0.5
-          4    Db6  0.5  0.7
-          4.5  Bb5  0.5  0.5
-          5    F5   0.5  0.55
-          5.5  Bb5  0.5  0.5
-          6    Db6  0.5  0.65
-          6.5  Bb5  0.5  0.5
-          7    F5   0.5  0.55
-          7.5  Bb5  0.5  0.5
+          0    A5   1    0.6
+          1.5  C6   1    0.5
+          3    A5   1    0.5
+          4    Bb5  1    0.6
+          5.5  Db6  1    0.5
+          7    Bb5  1    0.5
         `,
       },
     ],
   },
+
 
   {
     id: 'videotape',
@@ -410,59 +414,62 @@ export const SONGS = [
     title: '15 Step',
     album: 'In Rainbows',
     year: 2007,
-    bpm: 184,
+    bpm: 188,
     bars: [5],
     key: 'G# minor',
     youtube: 'xpqk9MD6vLM',
-    about: 'A beat in five: kick on 1 and 4, snare and claps on the and of 2 and 5. Play the drums yourself, or the chords over them.',
-    accuracy: 'The 5/4 meter, G# minor and about 184 BPM match published sheet music; the kick and snare placement follows a published groove analysis, and the bass stresses B on each downbeat as described by Bass Magazine. The chord order and the hi-hats are a reconstruction from community tabs.',
+    about: 'A drum-machine groove in five, felt as 3 + 2: kick on 1 and 4, snare and claps on the and of 2 and 5. Play the drums yourself, or the guitar chords over them.',
+    accuracy: 'Checked: 5/4 felt as 3 + 2, G# minor, 184-188 BPM, kick on 1 and 4 with snare on the and of 2 and 5, the bass stressing B, and guitar chords from tabs played tuned a half step down (Am, D and Em shapes sounding G#m, C# and D#m). Reconstructed: the order and rhythm of the chords, the hi-hats and the drum sounds; the original beat came from a laptop, not a drum machine kit.',
     sources: [
       ['Musicnotes - published sheet music', 'https://www.musicnotes.com/sheetmusic/radiohead/15-step/MN0103664'],
       ['Sunhouse - grooves in five', 'https://sunhou.se/blog/dive-into-five'],
+      ['Medium - 15 Step, odd meters', 'https://medium.com/@austinalbyauralaesthetics/15-step-by-radiohead-94fb4a05c08'],
       ['Bass Magazine - Colin Greenwood bass lines', 'https://bassmagazine.com/transcription-colin-greenwoods-radiohead-bass-line/'],
+      ['Ultimate Guitar - tab', 'https://tabs.ultimate-guitar.com/tab/radiohead/15-step-tabs-774191'],
     ],
     chords: {
-      'G#m': '| G#3 B3 D#4',
-      'C#': '| G#3 C#4 F4',
-      'D#m': '| A#3 D#4 F#4',
+      'G#m': '| G#2 D#3 G#3 B3 D#4',
+      'C#': '| C#3 G#3 C#4 F4',
+      'D#m': '| D#2 A#2 D#3 F#3 A#3 D#4',
     },
     parts: [
       {
         id: 'drums', name: 'Drums', kit: 'electro', learn: true,
         drums: {
-          kick:  'x...........x.......',
+          kick:  'X...........x.......',
           snare: '......x...........x.',
           clap:  '......x...........x.',
-          hat:   'o.o.o.o.o.o.o.o.o.o.',
+          hat:   'x.o.o.x.o.o.x.o.x.o.',
         },
       },
       {
-        id: 'keys', name: 'Chords', instrument: 'epiano', length: 20, volume: 0.75,
+        id: 'guitar', name: 'Guitar', instrument: 'guitar', length: 20, volume: 0.8,
         notes: `
-          0    [G#m]   0.5  0.65
-          1.5  [G#m]   0.5  0.5
-          3    [G#m]   0.5  0.55
-          5    [C#]    0.5  0.65
-          6.5  [C#]    0.5  0.5
-          8    [C#]    0.5  0.55
-          10   [D#m]   0.5  0.65
-          11.5 [D#m]   0.5  0.5
-          13   [D#m]   0.5  0.55
-          15   [C#]    0.5  0.65
-          16.5 [C#]    0.5  0.5
-          18   [C#]    0.5  0.55
+          0    [G#m]   1.4  0.65
+          1.5  [G#m]   1.4  0.5
+          3    [G#m]   1.9  0.55
+          5    [C#]    1.4  0.65
+          6.5  [C#]    1.4  0.5
+          8    [C#]    1.9  0.55
+          10   [D#m]   1.4  0.65
+          11.5 [D#m]   1.4  0.5
+          13   [D#m]   1.9  0.55
+          15   [C#]    1.4  0.65
+          16.5 [C#]    1.4  0.5
+          18   [C#]    1.9  0.55
         `,
       },
       {
         id: 'bass', name: 'Bass', instrument: 'bass', length: 5, volume: 0.8,
         notes: `
-          0    B1    1    0.75
-          2.5  G#1   0.5  0.55
-          3.5  D#2   0.5  0.5
+          0    B1    1.4  0.75
+          3    G#1   0.9  0.55
+          4.5  D#2   0.4  0.5
         `,
       },
     ],
   },
+
 
   {
     id: 'motionpicture',
