@@ -44,7 +44,7 @@
 
   <section id="songs-window" class="window" aria-label="Songs">
     <header class="titlebar"><button class="box close" data-close aria-label="Close"></button><h2>Songs</h2></header>
-    <div class="window-body"><ul id="song-list" class="song-list" data-help="Choose a song. Each one is a short passage with its own sound. Your best Play Along score shows under its name."></ul></div>
+    <div class="window-body"><ul id="song-list" class="song-list" data-help="Choose a song. Each one is a short passage with its own sound. Your lesson progress and best score show under its name."></ul></div>
     <div class="songs-footer">
       <button id="new-song" class="btn" data-help="Start a song of your own: choose a tempo and length, then record keys, bass or drums.">New Song…</button>
     </div>
@@ -66,7 +66,7 @@
       </div>
 
       <div class="toolbar">
-        <button id="play" class="btn default" aria-pressed="false" data-help="Play or stop the song (Space). In Listen it plays everything; in Play Along and Wait for Me it leaves your part to you."><span data-icon="play"></span><span>Play</span></button>
+        <button id="play" class="btn default" aria-pressed="false" data-help="Play or stop the song (Space). In step 1 it plays everything; in the later steps it leaves your part to you."><span data-icon="play"></span><span>Play</span></button>
         <button id="stop" class="btn" data-help="Stop and go back to the start."><span data-icon="stop"></span><span>Stop</span></button>
         <button id="record" class="btn record" aria-pressed="false" data-help="Record yourself (R). After a bar of clicks, play over the band; press again to stop. Every take is kept in the Takes window."><span data-icon="record"></span><span>Record</span></button>
         <output id="counter" class="counter" data-help="Where the song is: bar and beat.">1 : 1</output>
@@ -79,10 +79,14 @@
         <label class="check" data-help="A metronome click on every beat, louder on the first beat of the bar."><input id="metronome" type="checkbox"> Click</label>
       </div>
 
-      <div class="practice" role="radiogroup" aria-label="Practice mode" data-help="Listen: hear the whole song. Play Along: the song keeps going without your part and scores you each time round. Wait for Me: the song waits at every chord until you play it.">
-        <label class="radio"><input type="radio" name="mode" value="listen" checked> Listen</label>
-        <label class="radio"><input type="radio" name="mode" value="along"> Play Along</label>
-        <label class="radio"><input type="radio" name="mode" value="wait"> Wait for Me</label>
+      <div class="practice">
+        <span id="steps" class="steps" role="group" aria-label="Lesson steps">
+          <button data-step="1" aria-pressed="true" data-help="Step 1: press Play and listen all the way through while the keys light up.">1 Listen</button>
+          <button data-step="2" aria-pressed="false" data-help="Step 2: the song waits at each chord until you play it, so you can learn at your own pace.">2 Learn</button>
+          <button data-step="3" aria-pressed="false" data-help="Step 3: play along at 75% speed. Score 80% or more to tick it off.">3 Slow</button>
+          <button data-step="4" aria-pressed="false" data-help="Step 4: play along at full speed. Score 80% or more to tick it off.">4 Full Speed</button>
+          <button data-step="5" aria-pressed="false" data-help="Step 5: record yourself playing over the band.">5 Record</button>
+        </span>
         <span class="spacer"></span>
         <label class="label" for="my-part">I'm playing</label>
         <select id="my-part" class="popup" data-help="The part you are learning or recording. The other parts are the band."></select>
@@ -135,15 +139,17 @@
   <header class="titlebar"><button class="box close" data-close aria-label="Close"></button><h2>Drum Machine</h2></header>
   <div class="window-body">
     <div class="toolbar">
-      <select id="kit" class="popup" aria-label="Drum kit"></select>
+      <button id="drum-play" class="btn default" aria-pressed="false" data-help="Play or stop the song with your beat (Space)."><span data-icon="play"></span><span>Play</span></button>
+      <select id="beat-preset" class="popup" aria-label="Start from a beat" data-help="Fill the grid with a ready-made beat, then change it to taste."></select>
+      <select id="kit" class="popup" aria-label="Drum kit" data-help="The drum sounds. Kid A Machine is crunchy, Drum Machine is clean, Soft Room is gentle."></select>
       <span class="spacer"></span>
-      <button id="drum-prev" class="btn square" aria-label="Previous bar">◀</button>
-      <output id="drum-page" class="small">Bar 1</output>
-      <button id="drum-next" class="btn square" aria-label="Next bar">▶</button>
-      <button id="drum-clear" class="btn">Clear</button>
+      <button id="drum-prev" class="btn square" aria-label="Earlier beats">◀</button>
+      <output id="drum-page" class="small">Beats 1-4</output>
+      <button id="drum-next" class="btn square" aria-label="Later beats">▶</button>
+      <button id="drum-clear" class="btn" data-help="Remove every hit. Edit > Undo brings them back.">Clear</button>
     </div>
-    <div id="drum-grid" class="grid" style="margin-top:12px" data-help="One row per drum, one square per sixteenth note. Tap to add or remove a hit."></div>
-    <p class="small" style="margin:10px 0 0">Tap a square to add or remove a hit. Changes are kept with this song; Edit ▸ Revert restores the original.</p>
+    <div id="drum-grid" class="grid" style="margin-top:12px" data-help="One row per drum, one square per sixteenth note, four squares to a beat. Tap to add or remove a hit."></div>
+    <p class="small" style="margin:10px 0 0">Tap a square to add or remove a hit; it plays straight away and the song picks it up on the next time round. Edit > Revert to Original restores the song's own beat.</p>
   </div>
 </section>
 

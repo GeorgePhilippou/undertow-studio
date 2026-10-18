@@ -621,3 +621,23 @@ dialog::backdrop { background: transparent; }
 .balloon.above::after { top: calc(100% - 2px); left: calc(var(--tail) + 2px); border-width: 15px 6px 0 6px; border-top-color: var(--paper); }
 .balloon-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
 .balloon-buttons .btn { min-height: 30px; }
+
+/* ---------------------------------------------------------------- lesson steps */
+
+.steps { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--ink); border-radius: 6px; overflow: hidden; }
+.steps button { border: 0; background: var(--paper); padding: 4px 12px 4px 10px; min-height: 34px; display: inline-flex; align-items: center; gap: 6px; }
+.steps button + button { border-left: 1px solid var(--ink); }
+.steps button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+.steps button.done::after {
+  content: '';
+  width: 12px;
+  height: 10px;
+  background: currentColor;
+  clip-path: polygon(0 50%, 17% 33%, 40% 60%, 83% 0, 100% 17%, 40% 100%);
+}
+.steps button.next:not([aria-pressed='true']), .btn.next { animation: next 1.2s steps(2) infinite; }
+@keyframes next { 50% { background: var(--paper) var(--light); } }
+.song-list .progress { display: inline-flex; gap: 2px; margin-left: 6px; vertical-align: middle; }
+.song-list .progress i { width: 7px; height: 7px; border: 1px solid currentColor; }
+.song-list .progress i.on { background: currentColor; }
+.drum-empty { padding: 18px 4px; display: grid; gap: 12px; justify-items: start; }

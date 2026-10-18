@@ -25,7 +25,7 @@ async function pressPad(page, index) {
 
   // Songs.
   const ids = await page.$$eval('#song-list [data-song]', buttons => buttons.map(b => b.dataset.song));
-  check(ids.join() === 'everything,idioteque,karma,pyramid,codex', 'five songs are listed in order');
+  check(ids.join() === 'everything,idioteque,karma,pyramid,codex,nosurprises,videotape,truelove,fifteenstep,motionpicture', 'ten songs are listed in order');
   for (const id of ids) {
     await page.click(`[data-song="${id}"]`);
     const title = await page.textContent('#song-title');
@@ -44,7 +44,7 @@ async function pressPad(page, index) {
 
   // Wait for Me on chord pads.
   await page.click('[data-song="idioteque"]');
-  await page.click('input[value="wait"]');
+  await page.click('[data-step="2"]');
   await page.click('[data-tab="chords"]');
   check(await page.$$eval('#pads .pad', pads => pads.length) === 4, 'Idioteque shows four chord pads');
   await page.click('#play');
@@ -62,7 +62,7 @@ async function pressPad(page, index) {
 
   // Play Along scoring after one time round, at the fastest speed.
   await page.click('[data-song="everything"]');
-  await page.click('input[value="along"]');
+  await page.click('[data-step="4"]');
   await page.click('#faster');
   await page.click('#faster');
   await page.click('#play');
@@ -71,7 +71,7 @@ async function pressPad(page, index) {
   await page.click('#stop');
   await page.click('#slower');
   await page.click('#slower');
-  await page.click('input[value="listen"]');
+  await page.click('[data-step="1"]');
 
   // Recording with the computer keyboard, then Use as Part and Undo.
   await page.click('[data-song="pyramid"]');
@@ -178,7 +178,7 @@ async function pressPad(page, index) {
 
   // Perfect Play Along: ticks in the roll, best score in the list.
   await page.click('[data-song="pyramid"]');
-  await page.click('input[value="along"]');
+  await page.click('[data-step="4"]');
   await page.click('[data-tab="chords"]');
   await page.click('#play');
   const pass = await page.evaluate(() => new Promise(resolve => {
@@ -203,7 +203,71 @@ async function pressPad(page, index) {
   check(await page.evaluate(() => [...undertow.player.marks.values()].every(m => m === 'hit')), 'every chord gets a tick');
   check((await page.textContent('[data-song="pyramid"]')).includes('Best 100%'), 'the best score shows in the Songs list');
   await page.click('#stop');
-  await page.click('input[value="listen"]');
+  await page.click('[data-step="1"]');
+
+  // Lesson steps: the perfect full-speed pass above ticks off steps 3 and 4.
+  check(await page.evaluate(() => JSON.stringify(undertow.data.progress.pyramid?.slice(3, 5))) === '[true,true]', 'a good full-speed pass ticks off steps 3 and 4');
+  check(await page.$$eval('#steps .done', buttons => buttons.map(b => b.dataset.step).join()) === '3,4,5', 'ticked steps (including the take recorded earlier) show in the lesson strip');
+  check(await page.$$eval('[data-song="pyramid"] .progress i.on', boxes => boxes.length) === 3, 'the Songs list shows lesson progress');
+  await page.click('[data-step="1"]');
+  await page.click('#faster');
+  await page.click('#faster');
+  await page.click('#play');
+  await page.waitForFunction(() => undertow.data.progress.pyramid?.[1], null, { timeout: 12000 });
+  check(true, 'listening all the way round ticks off step 1');
+  await page.click('#stop');
+  await page.click('#slower');
+  await page.click('#slower');
+  await page.click('[data-step="2"]');
+  check(await page.evaluate(() => undertow.player.mode) === 'wait', 'step 2 switches to Wait for Me');
+  await page.click('#play');
+  for (let i = 0; i < 5; i++) {
+    await page.waitForFunction(() => undertow.player.holding, null, { timeout: 8000 });
+    const chord = await page.evaluate(() => undertow.player.waitTarget.chord);
+    const index = await page.evaluate(name => undertow.keyboard.pads.findIndex(p => p.name === name), chord);
+    await pressPad(page, index);
+  }
+  await page.waitForFunction(() => undertow.data.progress.pyramid?.[2], null, { timeout: 4000 });
+  check(true, 'playing every chord in Wait for Me ticks off step 2');
+  await page.click('#stop');
+  await page.click('[data-step="3"]');
+  check(await page.textContent('#tempo') === '75% (58)', 'step 3 slows the song to 75%');
+  await page.click('[data-step="1"]');
+  await page.click('[data-tab="keys"]');
+
+  // Drum machine on a song with no drums.
+  await page.click('[data-song="codex"]');
+  check((await page.textContent('#open-drums')).startsWith('Add Drums'), 'songs without drums offer Add Drums');
+  await page.click('#open-drums');
+  const covers = await page.evaluate(() => {
+    const a = document.getElementById('drum-window').getBoundingClientRect();
+    const b = document.getElementById('play').getBoundingClientRect();
+    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+  });
+  check(!covers, 'the Drum Machine does not cover the Play button');
+  await page.click('#add-drums');
+  check(await page.evaluate(() => undertow.song.parts.some(p => p.id === 'drums' && p.kind === 'drums')), 'Add Drums gives the song a drum part');
+  await page.selectOption('#beat-preset', 'backbeat');
+  check(await page.evaluate(() => undertow.song.parts.find(p => p.id === 'drums').events.length) === 48, 'a ready-made beat fills the grid across the loop (8 kicks, 8 snares, 32 hats)');
+  check(await page.textContent('#drum-page') === 'Beats 1-4 of 16', 'the grid is labelled in beats');
+  await page.evaluate(() => {
+    window.drumHits = 0;
+    const original = undertow.engine.drum.bind(undertow.engine);
+    undertow.engine.drum = (...args) => { window.drumHits++; return original(...args); };
+  });
+  await page.click('#drum-play');
+  await wait(1500);
+  check(await page.evaluate(() => undertow.player.state === 'playing' && window.drumHits > 2), 'the Drum Machine\'s own Play button plays the beat');
+  await page.click('#drum-play');
+  check(await page.evaluate(() => undertow.player.state) === 'stopped', 'and stops it again');
+  await page.reload();
+  await page.click('#boot-start');
+  await page.waitForFunction(() => window.undertow && !document.getElementById('boot'));
+  check(await page.evaluate(() => undertow.song.id === 'codex' && undertow.song.parts.find(p => p.id === 'drums')?.events.length === 48), 'added drums survive a reload');
+  await page.click('[data-song="idioteque"]');
+  await page.click('#open-drums');
+  check(await page.textContent('#drum-page') === 'Beats 1-4 of 6', 'the six-beat Idioteque pattern pages in beats');
+  await page.click('#drum-window [data-close]');
 
   // Balloon Help.
   await page.click('[data-menu="help"]');

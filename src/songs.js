@@ -242,6 +242,262 @@ export const SONGS = [
       },
     ],
   },
+
+  {
+    id: 'nosurprises',
+    legacyIndex: 6,
+    title: 'No Surprises',
+    album: 'OK Computer',
+    year: 1997,
+    bpm: 76,
+    bars: [4],
+    key: 'F major',
+    youtube: 'u5CVsCnxyXg',
+    about: 'The lullaby introduction: F major turning to B-flat minor, with a glockenspiel line ringing over the chords.',
+    accuracy: 'The F to B-flat minor introduction, the key of F and 76 BPM match published chord charts. The glockenspiel pattern and the chord rhythm are reconstructions.',
+    sources: [
+      ['E-Chords - chords', 'https://www.e-chords.com/chords/radiohead/no-surprises'],
+      ['Ultimate Guitar - chords', 'https://tabs.ultimate-guitar.com/tab/radiohead/no-surprises-chords-1050911'],
+    ],
+    chords: {
+      'F': 'F2 | F3 A3 C4',
+      'B♭m': 'F2 | F3 Bb3 Db4',
+    },
+    parts: [
+      {
+        id: 'chords', name: 'Chords', instrument: 'epiano', length: 8, learn: true,
+        notes: `
+          0    F2 [F]       1.9  0.7
+          2    [F]          1.9  0.5
+          4    F2 [B♭m]     1.9  0.7
+          6    [B♭m]        1.9  0.5
+        `,
+      },
+      {
+        id: 'glock', name: 'Glockenspiel', instrument: 'musicbox', length: 8, volume: 0.8,
+        notes: `
+          0    C6   0.5  0.7
+          0.5  A5   0.5  0.5
+          1    F5   0.5  0.55
+          1.5  A5   0.5  0.5
+          2    C6   0.5  0.65
+          2.5  A5   0.5  0.5
+          3    F5   0.5  0.55
+          3.5  A5   0.5  0.5
+          4    Db6  0.5  0.7
+          4.5  Bb5  0.5  0.5
+          5    F5   0.5  0.55
+          5.5  Bb5  0.5  0.5
+          6    Db6  0.5  0.65
+          6.5  Bb5  0.5  0.5
+          7    F5   0.5  0.55
+          7.5  Bb5  0.5  0.5
+        `,
+      },
+    ],
+  },
+
+  {
+    id: 'videotape',
+    legacyIndex: null,
+    title: 'Videotape',
+    album: 'In Rainbows',
+    year: 2007,
+    bpm: 72,
+    bars: [4],
+    key: 'A major',
+    youtube: null,
+    about: 'The closing piano: A, C-sharp minor, E and back to A, in steady repeated chords with E ringing on top.',
+    accuracy: 'The A, C#m, E cycle, the key of A and about 72 BPM follow Hooktheory and published chord charts. The steady chord pulse and voicings are a reconstruction; on the record the changes famously feel pushed half a beat early.',
+    sources: [
+      ['Hooktheory - Videotape', 'https://www.hooktheory.com/theorytab/view/radiohead/videotape'],
+      ['Songsterr - chords', 'https://www.songsterr.com/a/wsa/radiohead-videotape-chords-s51307'],
+      ['Open Culture - the secret rhythm', 'https://openculture.com/2017/08/the-secret-rhythm-behind-radioheads-videotape-now-finally-revealed.html'],
+    ],
+    chords: {
+      'A': 'A1 A2 | E3 A3 C#4 E4',
+      'C#m': 'C#2 C#3 | E3 G#3 C#4 E4',
+      'E': 'E1 E2 | E3 G#3 B3 E4',
+    },
+    parts: [
+      {
+        id: 'piano', name: 'Piano', instrument: 'piano', length: 16, learn: true,
+        notes: `
+          0    A1 A2 [A]       1    0.7
+          1    [A]             1    0.45
+          2    [A]             1    0.55
+          3    [A]             1    0.45
+          4    C#2 C#3 [C#m]   1    0.7
+          5    [C#m]           1    0.45
+          6    [C#m]           1    0.55
+          7    [C#m]           1    0.45
+          8    E1 E2 [E]       1    0.7
+          9    [E]             1    0.45
+          10   [E]             1    0.55
+          11   [E]             1    0.45
+          12   A1 A2 [A]       1    0.65
+          13   [A]             1    0.45
+          14   [A]             1    0.5
+          15   [A]             1    0.4
+        `,
+      },
+    ],
+  },
+
+  {
+    id: 'truelove',
+    legacyIndex: null,
+    title: 'True Love Waits',
+    album: 'A Moon Shaped Pool',
+    year: 2016,
+    bpm: 69,
+    bars: [4],
+    key: 'C',
+    youtube: null,
+    about: 'The layered pianos of the album version: C, an aching E over C, A minor and A-flat, one chord to a bar.',
+    accuracy: 'The chord cycle (C, E/C, Am, A-flat) comes from published charts of live versions and a piano arrangement in C at 69 BPM. The two interlocking piano parts are a reconstruction of the album texture.',
+    sources: [
+      ['Songsterr - live chords', 'https://www.songsterr.com/a/wsa/radiohead-true-love-waits-live-in-oslo-chords-s17090'],
+      ['Super Simple Piano - arrangement', 'https://www.supersimplepiano.com/player/true-love-waits-852847401157962683/leadsheet'],
+    ],
+    chords: {
+      'C': 'C2 | E3 G3 C4',
+      'E/C': 'C2 | E3 G#3 B3',
+      'Am': 'A1 | E3 A3 C4',
+      'A♭maj7': 'Ab1 | Eb3 G3 C4',
+    },
+    parts: [
+      {
+        id: 'piano', name: 'Piano', instrument: 'piano', length: 16, learn: true,
+        notes: `
+          0    C2 [C]          3.9  0.65
+          4    C2 [E/C]        3.9  0.65
+          8    A1 [Am]         3.9  0.65
+          12   Ab1 [A♭maj7]    3.9  0.65
+        `,
+      },
+      {
+        id: 'piano2', name: 'Second Piano', instrument: 'piano', length: 16, volume: 0.7,
+        notes: `
+          0    G4   0.5  0.45
+          0.5  C5   0.5  0.4
+          1    E5   1    0.45
+          2    C5   0.5  0.4
+          2.5  G4   1.5  0.4
+          4    G#4  0.5  0.45
+          4.5  B4   0.5  0.4
+          5    E5   1    0.45
+          6    B4   0.5  0.4
+          6.5  G#4  1.5  0.4
+          8    A4   0.5  0.45
+          8.5  C5   0.5  0.4
+          9    E5   1    0.45
+          10   C5   0.5  0.4
+          10.5 A4   1.5  0.4
+          12   G4   0.5  0.45
+          12.5 C5   0.5  0.4
+          13   Eb5  1    0.45
+          14   C5   0.5  0.4
+          14.5 G4   1.5  0.4
+        `,
+      },
+    ],
+  },
+
+  {
+    id: 'fifteenstep',
+    legacyIndex: 9,
+    title: '15 Step',
+    album: 'In Rainbows',
+    year: 2007,
+    bpm: 184,
+    bars: [5],
+    key: 'G# minor',
+    youtube: 'xpqk9MD6vLM',
+    about: 'A beat in five: kick on 1 and 4, snare and claps on the and of 2 and 5. Play the drums yourself, or the chords over them.',
+    accuracy: 'The 5/4 meter, G# minor and about 184 BPM match published sheet music; the kick and snare placement follows a published groove analysis, and the bass stresses B on each downbeat as described by Bass Magazine. The chord order and the hi-hats are a reconstruction from community tabs.',
+    sources: [
+      ['Musicnotes - published sheet music', 'https://www.musicnotes.com/sheetmusic/radiohead/15-step/MN0103664'],
+      ['Sunhouse - grooves in five', 'https://sunhou.se/blog/dive-into-five'],
+      ['Bass Magazine - Colin Greenwood bass lines', 'https://bassmagazine.com/transcription-colin-greenwoods-radiohead-bass-line/'],
+    ],
+    chords: {
+      'G#m': '| G#3 B3 D#4',
+      'C#': '| G#3 C#4 F4',
+      'D#m': '| A#3 D#4 F#4',
+    },
+    parts: [
+      {
+        id: 'drums', name: 'Drums', kit: 'electro', learn: true,
+        drums: {
+          kick:  'x...........x.......',
+          snare: '......x...........x.',
+          clap:  '......x...........x.',
+          hat:   'o.o.o.o.o.o.o.o.o.o.',
+        },
+      },
+      {
+        id: 'keys', name: 'Chords', instrument: 'epiano', length: 20, volume: 0.75,
+        notes: `
+          0    [G#m]   0.5  0.65
+          1.5  [G#m]   0.5  0.5
+          3    [G#m]   0.5  0.55
+          5    [C#]    0.5  0.65
+          6.5  [C#]    0.5  0.5
+          8    [C#]    0.5  0.55
+          10   [D#m]   0.5  0.65
+          11.5 [D#m]   0.5  0.5
+          13   [D#m]   0.5  0.55
+          15   [C#]    0.5  0.65
+          16.5 [C#]    0.5  0.5
+          18   [C#]    0.5  0.55
+        `,
+      },
+      {
+        id: 'bass', name: 'Bass', instrument: 'bass', length: 5, volume: 0.8,
+        notes: `
+          0    B1    1    0.75
+          2.5  G#1   0.5  0.55
+          3.5  D#2   0.5  0.5
+        `,
+      },
+    ],
+  },
+
+  {
+    id: 'motionpicture',
+    legacyIndex: null,
+    title: 'Motion Picture Soundtrack',
+    album: 'Kid A',
+    year: 2000,
+    bpm: 70,
+    bars: [4],
+    key: 'G',
+    youtube: null,
+    about: 'The closing hymn of Kid A on a wheezing organ: G, C, B minor, C.',
+    accuracy: 'The G, C, Bm, C progression follows published commentary and chord charts. The organ voicing, one chord to a bar and the tempo are estimates.',
+    sources: [
+      ['Audiofanzine - Thom Yorke\'s chords', 'https://en.audiofanzine.com/music-theory/editorial/articles/instruction/thom-yorke-s-signature-strange-chords.html'],
+      ['Guitar Tabs Explorer - chords', 'https://www.guitartabsexplorer.com/radiohead/motion-picture-soundtrack-acoustic-chords'],
+    ],
+    chords: {
+      'G': 'G1 G2 | B3 D4 G4',
+      'C': 'C2 C3 | C4 E4 G4',
+      'Bm': 'B1 B2 | B3 D4 F#4',
+    },
+    parts: [
+      {
+        id: 'organ', name: 'Organ', instrument: 'organ', length: 16, learn: true,
+        notes: `
+          0    G1 G2 [G]     3.9  0.7
+          4    C2 C3 [C]     3.9  0.7
+          8    B1 B2 [Bm]    3.9  0.7
+          12   C2 C3 [C]     3.9  0.7
+        `,
+      },
+    ],
+  }
+
 ];
 
 // ---------------------------------------------------------------------------
