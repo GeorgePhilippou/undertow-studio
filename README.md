@@ -6,13 +6,15 @@ Open https://GeorgePhilippou.github.io/undertow-studio/, tap **Start**, choose a
 
 ## What it does
 
-- **Songs:** Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song and Codex. Each is a short, looping passage with its own sound. Get Info explains what is checked against published analyses and what is a reconstruction.
-- **Listen:** the song plays while the note roll and the keyboard show your part.
-- **Play Along:** your part drops out, the dotted keys show what comes next, and you get a score after each time round.
-- **Wait for Me:** the song stops at every chord until you play it. Any octave counts, and on chord pads only the right chord counts.
+- **Songs:** Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, No Surprises, Videotape, True Love Waits, 15 Step and Motion Picture Soundtrack. Each is a short, looping passage with its own sound. Get Info explains what is checked against published analyses and what is a reconstruction.
+- **Five lesson steps** for every song, each ticked off as you go and shown in the Songs list:
+  1. **Listen** while the note roll and the keyboard show your part.
+  2. **Learn:** the song stops at every chord until you play it. Any octave counts, and on chord pads only the right chord counts.
+  3. **Slow** and 4. **Full Speed:** your part drops out, the dotted keys show what comes next, and you get a score after each time round; 80% ticks the step off.
+  5. **Record** yourself over the band.
 - **Record:** a bar of count-in, then play over the backing and press Stop. Takes can be played back, saved as WAV, or used as the song's part. That is how you correct a song by ear.
 - **Keyboard window:** a multi-touch piano with gliding and Apple Pencil pressure, one pad per chord, and drum pads. Computer keys (A W S E D…) and Web MIDI keyboards also work.
-- **Drum Machine:** a step grid for the drum part, with three synthesised kits.
+- **Drum Machine:** a step grid with its own Play button, ready-made beats to start from, three synthesised kits, and Add Drums for songs that have none.
 - **New Song:** start your own loop and build it up from takes and drum steps.
 - **Loop a section:** drag across bar numbers in the roll to repeat just those bars; Loop All goes back to the whole passage.
 - **See how you did:** ticks and crosses on each chord after every time round, your best score under each song, and *Speed up when perfect* to step the tempo up as you improve.
@@ -39,6 +41,7 @@ Open http://localhost:8000. The page is plain HTML, CSS and ES modules with no d
 | --- | --- |
 | `index.html`, `mac.css` | The desk: menu bar, windows and one-bit System 7 style |
 | `src/songs.js` | Song data in plain text; see [SONGS.md](SONGS.md) |
+| `src/beats.js` | Ready-made beats for the Drum Machine |
 | `src/player.js` | Transport, looping, count-in, practice modes and recording |
 | `src/audio/` | Sampled piano, synthesisers, drum kits, reverb and limiter |
 | `src/render.js` | Offline WAV export |

@@ -5,6 +5,7 @@ import { Engine, INSTRUMENTS, loadPiano } from './audio/engine.js';
 import { KITS, DRUM_VOICES, DRUM_LABELS } from './audio/drums.js';
 import { Player, takeToPart } from './player.js';
 import { renderWav } from './render.js';
+import { BEATS, beatEvents } from './beats.js';
 import * as storage from './storage.js';
 import { Keyboard } from './ui/keyboard.js';
 import { drawRoll } from './ui/roll.js';
@@ -22,6 +23,7 @@ const PIANO_KEYS = 'awsedftgyhujkolp;';
 let data = storage.load();
 data.settings = { parts: {}, instruments: {}, kits: {}, muted: {}, octave: {}, ...data.settings };
 data.scores ||= {};
+data.progress ||= {};
 const settings = () => data.settings;
 const undoStack = [];
 let song = null;
@@ -55,6 +57,12 @@ function buildSong(raw) {
     const edited = edits[part.id] ? { ...part, kind, events: structuredClone(edits[part.id].events), length: edits[part.id].length } : part;
     return kind === 'drums' && kit ? { ...edited, kit } : edited;
   });
+  // A drum part added in the Drum Machine to a song that had none.
+  for (const [id, edit] of Object.entries(edits)) {
+    if (edit.added && !parts.some(p => p.id === id)) {
+      parts.push({ ...edit.added, id, kind: 'drums', events: structuredClone(edit.events), length: edit.length, ...(kit ? { kit } : {}) });
+    }
+  }
   return prepareSong({ ...raw, parts });
 }
 
@@ -68,7 +76,7 @@ function selectSong(id) {
   player.myPart = settings().parts[song.id] || null;
   player.muted = new Set(settings().muted[song.id] || []);
   player.setSong(song);
-  player.setMode(currentMode());
+  player.setMode(currentStep().mode);
   selectedTake = null;
   drumPage = 0;
   $('#score').textContent = '';
@@ -97,6 +105,7 @@ function renderSong() {
   renderTracks();
   renderKeyboard();
   renderSpeed();
+  renderSteps();
   renderTakes();
   renderDrumMachine();
 }
@@ -105,7 +114,7 @@ function renderSongList() {
   const item = s => `
     <li><button data-song="${s.id}" aria-current="${s.id === song.id}">
       ${s.custom ? ICONS.mine : ICONS.song}<span>${escape(s.title)}</span>
-      <span class="meta">${escape(s.custom ? `${s.bpm} BPM` : `${s.album}, ${s.year}`)}${scoreLabel(s.id)}</span>
+      <span class="meta">${escape(s.custom ? `${s.bpm} BPM` : `${s.album}, ${s.year}`)}${progressLabel(s.id)}${scoreLabel(s.id)}</span>
     </button></li>`;
   const mine = data.songs;
   $('#song-list').innerHTML = SONGS.map(item).join('') +
@@ -126,7 +135,7 @@ function renderTracks() {
   const hasDrums = song.parts.some(p => p.kind === 'drums');
   $('#tracks').innerHTML = `<span class="label">Hear:</span>` + song.parts.map(p => `
     <label class="check"><input type="checkbox" data-part="${p.id}" ${player.muted.has(p.id) ? '' : 'checked'}> ${escape(p.name)}${p.id === player.myPart ? ' (you)' : ''}</label>`).join('') +
-    (hasDrums ? '<span class="spacer" style="flex:1"></span><button id="open-drums" class="btn">Drum Machine…</button>' : '');
+    `<span class="spacer" style="flex:1"></span><button id="open-drums" class="btn" data-help="${hasDrums ? 'Edit the drum beat on a grid, or start from a ready-made beat.' : 'This song has no drums yet. Open the Drum Machine to add a beat of your own.'}">${hasDrums ? 'Drum Machine...' : 'Add Drums...'}</button>`;
 }
 
 function myPart() {
@@ -215,7 +224,77 @@ function useOriginalSound() {
 
 // ---------------------------------------------------------------- transport
 
-const currentMode = () => $('input[name="mode"]:checked')?.value || 'listen';
+// ---------------------------------------------------------------- lesson steps
+
+const STEPS = [
+  { label: 'Listen', mode: 'listen', hint: 'Press Play and listen all the way round. Watch the keys light up.' },
+  { label: 'Learn', mode: 'wait', hint: 'Press Play. The song waits at each chord until you play it. Any octave counts; the Chords tab gives one pad per chord.' },
+  { label: 'Slow', mode: 'along', speed: 0.75, hint: 'Press Play and keep up at 75% speed. Score 80% to tick this off.' },
+  { label: 'Full Speed', mode: 'along', speed: 1, hint: 'Now at full speed. Score 80% to tick this off.' },
+  { label: 'Record', mode: 'listen', hint: 'Press Record and play your part over the band. Every take is kept.' },
+];
+
+function currentStepNumber() {
+  return (settings().steps ||= {})[song?.id] || 1;
+}
+
+function currentStep() {
+  return STEPS[currentStepNumber() - 1];
+}
+
+// The step's instructions, worded for drums when the part is a drum part.
+function stepHint() {
+  const drums = myPart()?.kind === 'drums';
+  if (drums && currentStepNumber() === 2) return 'Press Play. The song waits at each beat until you tap those drums on the pads.';
+  if (drums && currentStepNumber() === 1) return 'Press Play and listen all the way round. Watch the pads light up.';
+  return currentStep().hint;
+}
+
+function setStep(number) {
+  const step = STEPS[number - 1];
+  const running = player.state === 'playing';
+  player.stop();
+  (settings().steps ||= {})[song.id] = number;
+  player.setMode(step.mode);
+  if (step.speed) {
+    settings().speed = step.speed;
+    renderSpeed();
+  }
+  $('#score').textContent = '';
+  persist();
+  renderSteps();
+  if (running && number !== 5) play();
+}
+
+function renderSteps() {
+  const done = data.progress[song.id] || [];
+  const current = currentStepNumber();
+  const next = [1, 2, 3, 4, 5].find(n => !done[n]);
+  $$('#steps [data-step]').forEach(button => {
+    const n = Number(button.dataset.step);
+    button.setAttribute('aria-pressed', String(n === current));
+    button.classList.toggle('done', Boolean(done[n]));
+    button.classList.toggle('next', n === next && n !== current);
+  });
+  $('#record').classList.toggle('next', current === 5 && !done[5]);
+}
+
+function completeStep(number) {
+  const done = (data.progress[song.id] ||= []);
+  if (done[number]) return;
+  done[number] = true;
+  persist();
+  renderSteps();
+  renderSongList();
+  const next = [1, 2, 3, 4, 5].find(n => !done[n]);
+  toast(next ? `Step ${number} done. Next: ${next} ${STEPS[next - 1].label}.` : `All five steps done for ${song.title}. Well played!`);
+}
+
+function progressLabel(id) {
+  const done = data.progress[id] || [];
+  if (!done.some(Boolean)) return '';
+  return `<span class="progress" aria-label="${done.filter(Boolean).length} of 5 steps done">${[1, 2, 3, 4, 5].map(n => `<i class="${done[n] ? 'on' : ''}"></i>`).join('')}</span>`;
+}
 
 function togglePlay() {
   if (player.state === 'playing' || player.state === 'take') player.stop();
@@ -236,6 +315,8 @@ function renderTransport(state) {
   $('#play').setAttribute('aria-pressed', String(state === 'playing' || state === 'take'));
   $('#record').setAttribute('aria-pressed', String(state === 'recording'));
   $('#take-play').textContent = state === 'take' ? 'Stop' : 'Play';
+  $('#drum-play').setAttribute('aria-pressed', String(state === 'playing'));
+  $('#drum-play span:last-child').textContent = state === 'playing' ? 'Stop' : 'Play';
   if (state === 'stopped') keyboard.highlight({});
 }
 
@@ -260,6 +341,10 @@ player.on('state', renderTransport);
 player.on('pass', ({ hit, total, section }) => {
   if (!total) return;
   const percent = Math.round((hit / total) * 100);
+  if (percent >= 80 && !section) {
+    completeStep(3);
+    if ((settings().speed || 1) >= 1) completeStep(4);
+  }
   $('#score').textContent = hit === total ? `Perfect - all ${total} notes in time` : `Last time round: ${hit} of ${total} notes (${percent}%)`;
   if (!section) {
     const best = data.scores[song.id];
@@ -286,8 +371,13 @@ player.on('take', take => {
   persist();
   selectedTake = take.id;
   renderTakes();
-  openFloating($('#takes-window'), $('#song-window'));
+  openFloating($('#takes-window'), $('#keys-window'));
   toast('Take recorded. Play it back, save it, or use it as the part.');
+  completeStep(5);
+});
+
+player.on('advance', () => {
+  if (player.waitIndex >= player.targets.length && !player.section) completeStep(2);
 });
 
 // ---------------------------------------------------------------- live display
@@ -342,6 +432,8 @@ function frame() {
     keyboard.highlight({ targets: targetSet, sounding, chord: showTarget ? target?.chord : null, soundingChord: mode === 'listen' ? soundingChord : null });
   }
 
+  if (running && mode === 'listen' && player.state === 'playing' && !player.section && beat >= player.span - 0.05) completeStep(1);
+
   // Message line.
   let label = '';
   let detail = '';
@@ -357,14 +449,14 @@ function frame() {
       : 'Drag across notes to rub them out. Edit > Undo puts them back.';
   } else if (mode === 'listen') {
     label = running ? soundingChord || 'Listening' : 'Listen first';
-    detail = running ? 'Watch the keys. When it feels familiar, choose Play Along.' : 'Press Play to hear it. Drag across bar numbers to loop just those bars.';
+    detail = running ? (myPart()?.kind === 'drums' ? 'Watch the pads light up with each hit.' : 'Watch the keys light up as each chord plays.') : stepHint();
   } else if (mode === 'along') {
     label = target ? `Next: ${target.chord || describe(target)}` : 'Play Along';
-    detail = target?.chord ? describe(target) : running ? '' : 'Press Play. The song plays without your part; keep up with it.';
+    detail = target?.chord ? describe(target) : running ? '' : stepHint();
   } else {
     label = target ? `${player.holding ? 'Your turn' : 'Next'}: ${target.chord || describe(target)}` : 'Wait for Me';
     detail = target ? `${target.chord ? describe(target) : ''}${player.holding ? ' - the song waits for you' : ''}` : '';
-    if (!running) detail = 'Press Play. The song stops at each chord until you play it - any octave counts.';
+    if (!running) detail = stepHint();
   }
   if (player.section && player.state !== 'recording') detail = `Looping ${barsLabel(player.section)}. ${detail}`;
   if ($('#next-label').textContent !== label) $('#next-label').textContent = label;
@@ -618,8 +710,12 @@ function renderDrumMachine() {
   if (win.hidden) return;
   const part = drumPart();
   const grid = $('#drum-grid');
+  $('#beat-preset').innerHTML = '<option value="">Start from a beat...</option>' + BEATS.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  for (const id of ['#beat-preset', '#kit', '#drum-prev', '#drum-next', '#drum-clear']) $(id).disabled = !part;
   if (!part) {
-    grid.innerHTML = '<p class="small">This song has no drum part.</p>';
+    grid.style.gridTemplateColumns = '1fr';
+    grid.innerHTML = `<div class="drum-empty"><p class="small" style="margin:0">${escape(song.title)} has no drum part yet. Add one to make your own beat to play along with.</p><button id="add-drums" class="btn default">Add Drums</button></div>`;
+    $('#drum-page').textContent = '';
     return;
   }
   $('#kit').innerHTML = Object.entries(KITS).map(([id, kit]) => `<option value="${id}" ${id === part.kit ? 'selected' : ''}>${kit.name}</option>`).join('');
@@ -628,7 +724,8 @@ function renderDrumMachine() {
   drumPage = Math.min(drumPage, pages - 1);
   const first = drumPage * 16;
   const count = Math.min(16, steps - first);
-  $('#drum-page').textContent = pages > 1 ? `Bar ${drumPage + 1} of ${pages}` : 'One bar';
+  const beats = `${first / 4 + 1}-${(first + count) / 4}`;
+  $('#drum-page').textContent = pages > 1 ? `Beats ${beats} of ${part.length}` : `${part.length} beats`;
   $('#drum-prev').disabled = drumPage === 0;
   $('#drum-next').disabled = drumPage >= pages - 1;
   const hits = new Map(part.events.map(e => [`${e.drum}:${Math.round(e.beat * 4)}`, e]));
@@ -646,13 +743,36 @@ function renderDrumMachine() {
   grid.innerHTML = html;
 }
 
+function addDrums() {
+  pushUndo('Add Drums');
+  const length = song.loop <= 16 ? song.loop : song.cycle;
+  (data.edits[song.id] ||= { parts: {} }).parts.drums = { added: { name: 'Drums', kit: 'electro' }, events: [], length };
+  persist();
+  refreshSong();
+  renderParts();
+  toast('Drums added. Tap squares, or start from a ready-made beat.');
+}
+
+function applyBeat(id) {
+  const beat = BEATS.find(b => b.id === id);
+  const part = drumPart();
+  if (!beat || !part) return;
+  pushUndo('Beat');
+  const edit = (data.edits[song.id] ||= { parts: {} }).parts[part.id] || {};
+  data.edits[song.id].parts[part.id] = { ...edit, events: beatEvents(beat, part.length), length: part.length };
+  persist();
+  refreshSong();
+  toast(`${beat.name} beat. Tap squares to change it; Edit > Undo goes back.`);
+}
+
 function toggleDrum(voice, step) {
   const part = drumPart();
   const events = part.events.filter(e => !(e.drum === voice && Math.round(e.beat * 4) === step));
   const removed = events.length !== part.events.length;
   if (!removed) events.push({ beat: step / 4, drum: voice, velocity: 0.8, length: 0.25, notes: [] });
   pushUndo('Drum Edit');
-  (data.edits[song.id] ||= { parts: {} }).parts[part.id] = { events, length: part.length };
+  const edit = (data.edits[song.id] ||= { parts: {} }).parts[part.id] || {};
+  data.edits[song.id].parts[part.id] = { ...edit, events, length: part.length };
   persist();
   refreshSong();
   if (!removed) player.drumHit(voice, 0.8);
@@ -662,7 +782,8 @@ function clearDrums() {
   const part = drumPart();
   if (!part) return;
   pushUndo('Clear Drums');
-  (data.edits[song.id] ||= { parts: {} }).parts[part.id] = { events: [], length: part.length };
+  const edit = (data.edits[song.id] ||= { parts: {} }).parts[part.id] || {};
+  data.edits[song.id].parts[part.id] = { ...edit, events: [], length: part.length };
   persist();
   refreshSong();
 }
@@ -733,12 +854,14 @@ function showHelp() {
     <h3>How to Use Undertow</h3>
     <ul>
       <li><b>Choose a song</b> from the Songs window or the Song menu.</li>
-      <li><b>Listen</b> - press Play. The roll and the keys show your part as it plays.</li>
-      <li><b>Play Along</b> - the song plays without your part. The dotted keys show what comes next; your score appears after each time round.</li>
-      <li><b>Wait for Me</b> - the song stops at every chord until you play it. Any octave counts.</li>
-      <li><b>Record</b> - press Record, play over the count-in and the backing, then press Stop. Your take appears in the Takes window, where you can play it, save it as a WAV file, or <i>Use as Part</i> to correct a song by ear.</li>
+      <li><b>Follow the five steps</b> along the top. Each gets a tick when you've done it, and your progress shows in the Songs list.</li>
+      <li><b>1 Listen</b> - press Play. The roll and the keys show your part as it plays.</li>
+      <li><b>2 Learn</b> - the song stops at every chord until you play it. Any octave counts.</li>
+      <li><b>3 Slow, 4 Full Speed</b> - the song plays without your part. The dotted keys show what comes next; score 80% to tick the step off.</li>
+      <li><b>5 Record</b> - press Record, play over the count-in and the backing, then press Stop. Your take appears in the Takes window, where you can play it, save it as a WAV file, or <i>Use as Part</i> to correct a song by ear.</li>
       <li><b>Slower / faster</b> with − and +. <b>Click</b> adds a metronome.</li>
       <li><b>Chords</b> tab turns the keyboard into one pad per chord.</li>
+      <li><b>Drum Machine</b> - edit the beat on a grid, start from a ready-made beat, or add drums to a song that has none.</li>
     </ul>
     <h3>Keyboard shortcuts</h3>
     <ul>
@@ -922,12 +1045,12 @@ async function openClassic() {
 function openDrumMachine() {
   $('#drum-window').hidden = false;
   renderDrumMachine();
-  openFloating($('#drum-window'), $('#song-window'));
+  openFloating($('#drum-window'), $('#keys-window'));
 }
 
 function openTakes() {
   renderTakes();
-  openFloating($('#takes-window'), $('#song-window'));
+  openFloating($('#takes-window'), $('#keys-window'));
 }
 
 // ---------------------------------------------------------------- events
@@ -960,15 +1083,18 @@ function toggleCountIn() {
   persist();
   toast(player.countIn ? 'A bar of clicks plays before you start.' : 'Count-in off.');
 }
-$$('input[name="mode"]').forEach(input => input.addEventListener('change', () => {
-  const running = player.state === 'playing';
-  player.stop();
-  player.setMode(currentMode());
-  settings().mode = currentMode();
-  $('#score').textContent = '';
-  persist();
-  if (running) play();
-}));
+$('#steps').addEventListener('click', event => {
+  const button = event.target.closest('[data-step]');
+  if (button) setStep(Number(button.dataset.step));
+});
+$('#drum-window').addEventListener('click', event => {
+  if (event.target.closest('#add-drums')) addDrums();
+});
+$('#drum-play').addEventListener('click', togglePlay);
+$('#beat-preset').addEventListener('change', event => {
+  applyBeat(event.target.value);
+  event.target.value = '';
+});
 $('#my-part').addEventListener('change', event => {
   player.stop();
   player.setMyPart(event.target.value);
@@ -1114,8 +1240,6 @@ function tickClock() {
 renderIcons();
 tickClock();
 setInterval(tickClock, 10000);
-const savedMode = settings().mode;
-if (savedMode) $(`input[name="mode"][value="${savedMode}"]`).checked = true;
 player.metronome = $('#metronome').checked = Boolean(settings().metronome);
 player.countIn = settings().countIn !== false;
 $('#trainer').checked = Boolean(settings().trainer);
@@ -1146,7 +1270,7 @@ function startTour() {
   runTour([
     { target: narrow ? '#songs-button' : '#song-list', text: 'Choose a song here. Each one is a short passage with its own sound.' },
     { target: '#play', text: 'Press Play to hear it. The roll shows your part and the keys light up as it plays.' },
-    { target: '.practice', text: 'When it feels familiar, try Play Along, or Wait for Me, which stops at each chord until you play it.' },
+    { target: '#steps', text: 'Work through five steps: listen, learn chord by chord, play along slowly, then at full speed, then record. Each one gets a tick.' },
     { target: '#keys-tabs', text: 'Play with your fingers or Apple Pencil. The Chords tab gives you one big pad per chord.' },
     { target: '#tools', text: 'Drag across bar numbers to loop just those bars. The Pencil adds and removes notes.' },
     { target: '#record', text: 'Record yourself over the band. Every take is kept, and a good one can become the song\'s part.' },
