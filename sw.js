@@ -6,7 +6,7 @@ const CORE = [
   './', 'index.html', 'mac.css', 'icon.svg', 'manifest.webmanifest',
   'src/main.js', 'src/songs.js', 'src/beats.js', 'src/player.js', 'src/render.js', 'src/storage.js',
   'src/audio/engine.js', 'src/audio/piano.js', 'src/audio/synths.js', 'src/audio/drums.js',
-  'src/play/index.js', 'src/play/worlds.js', 'src/play/art.js', 'src/play/pieces.js',
+  'src/play/index.js', 'src/play/worlds.js', 'src/play/art.js', 'src/play/pieces.js', 'src/play/grains.js', 'src/play/tracks.js',
   'src/ui/mac.js', 'src/ui/icons.js', 'src/ui/keyboard.js', 'src/ui/roll.js', 'src/ui/balloons.js',
   'assets/fonts/chikarego2.woff2', 'assets/fonts/geneva-9.ttf',
 ];

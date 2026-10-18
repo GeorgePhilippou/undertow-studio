@@ -891,7 +891,8 @@ function showHelp() {
     <h3>Play</h3>
     <ul>
       <li><b>Touch anywhere</b> on the picture to play. Left is low, right is high, higher up is brighter. Slide to play more notes; use several fingers. Every note fits the music, so nothing sounds wrong.</li>
-      <li><b>Choose a world</b> - Kid A machines, OK Computer's glowing room or In Rainbows guitars - with the arrows or the World menu.</li>
+      <li><b>Your Song</b> plays a Radiohead track you own: load an MP3, M4A or WAV from Files. Left to right is the song; touch to hear any moment, slide to scrub, and higher up melts it into a cloud. The file stays on this device. (Apple Music downloads are copy-protected and cannot be opened.)</li>
+      <li><b>Choose a world</b> - Your Song, Kid A machines, OK Computer's glowing room or In Rainbows guitars - with the arrows or the World menu.</li>
       <li><b>Band</b> starts or stops the loop underneath you (Space). <b>Record</b> keeps the sound and the moving picture as a piece in My Pieces (R).</li>
       <li>The worlds are original music in the spirit of each album, not the songs themselves.</li>
     </ul>
@@ -1402,7 +1403,7 @@ function startTour() {
   if (screen() === 'play') {
     runTour([
       { target: '#art', text: 'Touch anywhere to play. Left is low, right is high, higher up is brighter. Every note fits, so nothing sounds wrong.' },
-      { target: '#world-select', text: 'Choose a sound world: Kid A machines, OK Computer\'s glowing room or In Rainbows guitars.' },
+      { target: '#world-select', text: 'Choose a world. Your Song plays a real Radiohead track you own; the others are Kid A machines, OK Computer\'s glowing room and In Rainbows guitars.' },
       { target: '#band', text: 'The band plays underneath you. Tap to start or stop it.' },
       { target: '#play-record', text: 'Record a piece: the sound and the moving picture together, kept in My Pieces.' },
       { target: '#screen-switch', text: 'Switch to Learn to practise Radiohead songs step by step.' },

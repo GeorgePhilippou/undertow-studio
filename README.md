@@ -8,12 +8,13 @@ Open https://GeorgePhilippou.github.io/undertow-studio/ and tap **Start**. Headp
 
 Undertow opens on **Play**: one window, one picture, touch anywhere.
 
+- **Your Song** - the real thing: load a Radiohead track you own (MP3, M4A or WAV from Files) and the screen becomes the song. Left to right is the track; touch to hear any moment, slide to scrub through it, and higher up slows it into a frozen, shimmering cloud of grains. The Song button plays it straight through to play over. The file stays on the device; nothing is uploaded or bundled. Apple Music downloads are copy-protected and cannot be opened.
 - **Three sound worlds**, each an original loop in the manner of an album, not a song from it:
   - **Kid A** - glass chords, a crunchy machine beat and a singing ondes-style voice that glides under your finger.
   - **OK Computer** - tape strings, electric piano and glockenspiel in a slow, glowing room.
   - **In Rainbows** - clean guitars weaving around each other over a steady groove; you pluck along.
 - **Nothing sounds wrong:** the surface plays only notes from the world's scale. Left is low, right is high, higher up is brighter; Apple Pencil pressure sets loudness. Several fingers, computer keys (A W S E D...) and MIDI keyboards all play.
-- **Living one-bit art:** each world has its own dithered black-and-white picture - signal interference, a night road, rippling arcs - that pulses with the band and ripples where you touch. It is original artwork, not album art.
+- **Living one-bit art:** each world has its own dithered black-and-white picture - your song's own waveform, signal interference, a night road, rippling arcs - that pulses with the music and ripples where you touch. It is original artwork, not album art.
 - **Record a piece:** the sound and the moving picture together as a video (sound only where a browser cannot record video). Pieces are kept on the device in My Pieces, and Save opens the share sheet.
 - **Band** on or off (Space), **Full Screen** from the window's zoom box.
 
@@ -66,7 +67,7 @@ Open http://localhost:8000. The page is plain HTML, CSS and ES modules with no d
 | `src/render.js` | Offline WAV export |
 | `src/ui/` | Menus and windows, keyboard and pads, note roll, Balloon Help, icons |
 | `sw.js`, `manifest.webmanifest` | Offline support and Home Screen install |
-| `src/play/` | Play screen: sound worlds, touch surface, generative art, recording pieces |
+| `src/play/` | Play screen: sound worlds, Your Song (grains, stored tracks), touch surface, generative art, recording pieces |
 | `src/main.js` | Wires the windows, menus and storage together |
 
 Browser checks need Node, the `playwright` package and Chromium (set `CHROMIUM_PATH` if it is not Playwright's own):

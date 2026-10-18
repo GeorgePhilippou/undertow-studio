@@ -43,6 +43,18 @@ const FIELDS = {
     else if (rung) v -= 0.25 + pulse * 0.2;
     return v;
   },
+  // Your Song: the shape of the track itself, quiet to loud from left to
+  // right, with a bright line wherever it is playing.
+  waveform(x, y, f) {
+    const { t, w, h, wave, heads, pulse } = f;
+    if (!wave) return 0.16 + 0.1 * Math.sin(x * 0.05 + t) * Math.cos(y * 0.04 - t * 0.7);
+    const amount = wave[Math.min(wave.length - 1, Math.floor((x / w) * wave.length))] || 0;
+    const distance = Math.abs(y - h * 0.5) / (h * 0.5);
+    const reach = 0.06 + amount * 0.5 * (1 + pulse * 0.15);
+    let v = distance < reach ? 0.9 - (distance / reach) * 0.5 : 0.06 + (1 - distance) * 0.08;
+    for (const head of heads) if (Math.abs(x - head) < 1) v = 1 - v;
+    return v;
+  },
   // In Rainbows: arcs of a rainbow over water, rippling outwards.
   ripples(x, y, f) {
     const { t, w, h, pulse } = f;
@@ -82,12 +94,12 @@ export class Art {
     if (this.ripples.length > 14) this.ripples.shift();
   }
 
-  draw({ field, beat = 0, playing = false, level = 0, steps = 0, lit = new Set() }) {
+  draw({ field, beat = 0, playing = false, level = 0, steps = 0, lit = new Set(), wave = null, heads = [] }) {
     this.resize();
     const { width: w, height: h } = this.canvas;
     const t = performance.now() / 1000;
     const phase = playing ? beat - Math.floor(beat) : 1;
-    const frame = { t, w, h, beat, pulse: playing ? Math.exp(-phase * 5) : 0, frame: Math.floor(t * 9) };
+    const frame = { t, w, h, beat, wave, heads, pulse: playing ? Math.exp(-phase * 5) : 0, frame: Math.floor(t * 9) };
     const shade = FIELDS[field] || FIELDS.signal;
     const live = this.ripples
       .map(r => ({ ...r, age: t - r.born }))

@@ -1,6 +1,38 @@
 // Checks for the Play screen: the touch-anywhere instrument, the sound
 // worlds, the art, recording and switching to Learn.
 const { BASE, launch, check } = require('./helpers.cjs');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+
+// A 20-second test recording: a soft chord that swells, then a pulsing beat.
+function testSong() {
+  const rate = 22050;
+  const samples = new Int16Array(rate * 20);
+  for (let i = 0; i < samples.length; i++) {
+    const t = i / rate;
+    const v = t < 10
+      ? (0.1 + 0.5 * (t / 10)) * (Math.sin(2 * Math.PI * 220 * t) + 0.6 * Math.sin(2 * Math.PI * 277.2 * t)) / 1.6
+      : 0.7 * Math.exp(-((t * 2) % 1) * 8) * Math.sin(2 * Math.PI * 110 * t);
+    samples[i] = Math.round(v * 32000);
+  }
+  const header = Buffer.alloc(44);
+  header.write('RIFF', 0);
+  header.writeUInt32LE(36 + samples.length * 2, 4);
+  header.write('WAVEfmt ', 8);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22);
+  header.writeUInt32LE(rate, 24);
+  header.writeUInt32LE(rate * 2, 28);
+  header.writeUInt16LE(2, 32);
+  header.writeUInt16LE(16, 34);
+  header.write('data', 36);
+  header.writeUInt32LE(samples.length * 2, 40);
+  const file = path.join(os.tmpdir(), 'Undertow test song.wav');
+  fs.writeFileSync(file, Buffer.concat([header, Buffer.from(samples.buffer)]));
+  return file;
+}
 
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -32,7 +64,7 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   // Every note on every world's surface belongs to its scale.
   const scales = await page.evaluate(async () => {
     const { WORLDS, surfaceNotes } = await import('./src/play/worlds.js');
-    return WORLDS.map(w => ({ id: w.id, ok: surfaceNotes(w).every(n => w.scale.includes(n % 12)), count: surfaceNotes(w).length }));
+    return WORLDS.filter(w => !w.track).map(w => ({ id: w.id, ok: surfaceNotes(w).every(n => w.scale.includes(n % 12)), count: surfaceNotes(w).length }));
   });
   for (const s of scales) check(s.ok && s.count >= 11, `${s.id}: ${s.count} notes, all in the world's scale`);
 
@@ -125,6 +157,55 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   await wait(300);
   const left = await page.evaluate(async () => (await (await import('./src/play/pieces.js')).listPieces()).length);
   check(left === 0, 'a piece can be deleted');
+
+  // Your Song: a recording you own, played by touch.
+  await page.evaluate(() => indexedDB.deleteDatabase('undertow-tracks'));
+  await page.selectOption('#world-select', 'yoursong');
+  check(await page.isVisible('#track-panel'), 'Your Song asks for a song you own');
+  await page.setInputFiles('#track-file', testSong());
+  await page.waitForFunction(() => undertow.play.track, null, { timeout: 10000 });
+  check(await page.evaluate(() => undertow.play.track.name) === 'Undertow test song', 'a loaded song is named from its file');
+  check(await page.isHidden('#track-panel'), 'the panel steps aside once a song is loaded');
+  const cloud = () => page.evaluate(() => {
+    const touch = [...undertow.play.touches.values()][0];
+    return { position: touch.cloud.now, grains: touch.cloud.grains };
+  });
+  await page.mouse.move(art.x + art.width * 0.75, art.y + art.height * 0.95);
+  await page.mouse.down();
+  const first = await cloud();
+  await wait(1000);
+  const second = await cloud();
+  check(first.position >= 14.9 && first.position < 15.4, `touching three-quarters across starts three-quarters into the song (${first.position.toFixed(2)} s)`);
+  const speed = second.position - first.position;
+  check(speed > 0.8 && speed < 1.2 && second.grains > 20, `low on the screen the song plays on at its own speed (${speed.toFixed(2)} s in 1 s)`);
+  await page.mouse.move(art.x + art.width * 0.25, art.y + 10, { steps: 8 });
+  await wait(400);
+  const frozenA = await cloud();
+  await wait(800);
+  const frozenB = await cloud();
+  check(Math.abs(frozenA.position - 5) < 0.3 && Math.abs(frozenB.position - frozenA.position) < 0.01, 'sliding to the top freezes that moment into a cloud');
+  await page.mouse.up();
+  const ink = await page.evaluate(() => {
+    const canvas = document.getElementById('art');
+    const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+    const column = x => { let n = 0; for (let y = 0; y < canvas.height; y++) if (data[(y * canvas.width + x) * 4] === 0) n++; return n; };
+    return { start: column(Math.floor(canvas.width * 0.05)), loud: column(Math.floor(canvas.width * 0.45)) };
+  });
+  check(ink.loud > ink.start * 1.3, `the picture draws the song's own shape (${ink.start} -> ${ink.loud} dark pixels)`);
+  await page.click('#band');
+  check(await page.evaluate(() => undertow.play.trackPlayer.playing) && (await page.textContent('#band')).includes('Song On'), 'the Song button plays the track straight through');
+  await page.reload();
+  await page.click('#boot-start');
+  await page.waitForFunction(() => window.undertow && undertow.play.track, null, { timeout: 10000 });
+  check(await page.evaluate(() => undertow.play.world.id === 'yoursong' && undertow.play.track.name === 'Undertow test song'), 'the song is still there after a reload');
+  await page.click('#track-button');
+  await page.waitForSelector('#dialog[open] [data-value="remove"]');
+  await page.click('#dialog [data-value="remove"]');
+  await page.waitForSelector('#dialog[open] [data-value="ok"]');
+  await page.click('#dialog [data-value="ok"]');
+  await wait(300);
+  check(await page.evaluate(() => undertow.play.track === null) && await page.isVisible('#track-panel'), 'a song can be removed from the device');
+  await page.selectOption('#world-select', 'kida');
 
   // Learn and back.
   await page.click('#screen-switch [data-screen="learn"]');
