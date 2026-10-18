@@ -202,6 +202,58 @@ function guitar(context, output, midi, velocity, time) {
   };
 }
 
+// Singing electronic lead in the spirit of the ondes Martenot: a pure tone
+// with a slow vibrato that can glide from note to note under the finger.
+function ondes(context, output, midi, velocity, time) {
+  const hz = frequency(midi);
+  const voice = envelope(context, output, time, { attack: 0.07, decay: 1.5, sustain: 0.85, release: 0.45, peak: 0.1 + velocity * 0.1 });
+  const filter = context.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 1400 + velocity * 2600;
+  filter.connect(voice.gain);
+  const vibrato = voice.add(context.createOscillator());
+  vibrato.frequency.value = 5.4;
+  const depth = context.createGain();
+  depth.gain.setValueAtTime(0, time);
+  depth.gain.linearRampToValueAtTime(14, time + 0.5);
+  vibrato.connect(depth);
+  vibrato.start(time);
+  const oscillators = [['sine', 1, 1], ['triangle', 1, 0.35], ['sine', 2, 0.12]].map(([type, ratio, level]) => {
+    const gain = context.createGain();
+    gain.gain.value = level;
+    gain.connect(filter);
+    const osc = voice.add(oscillator(context, type, hz * ratio, 0, time, gain));
+    depth.connect(osc.detune);
+    return { osc, ratio };
+  });
+  voice.setPitch = (next, at) => {
+    for (const { osc, ratio } of oscillators) osc.frequency.setTargetAtTime(frequency(next) * ratio, at, 0.045);
+  };
+  voice.setBrightness = (amount, at) => filter.frequency.setTargetAtTime(900 + amount * 4000, at, 0.05);
+  return voice;
+}
+
+// Tape-replay strings: three detuned saws, softened, with a slow wow.
+function tapeStrings(context, output, midi, velocity, time) {
+  const hz = frequency(midi);
+  const voice = envelope(context, output, time, { attack: 0.28, decay: 2, sustain: 0.8, release: 0.7, peak: 0.035 + velocity * 0.03 });
+  const filter = context.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 1500 + velocity * 900;
+  filter.connect(voice.gain);
+  const wow = voice.add(context.createOscillator());
+  wow.frequency.value = 0.55;
+  const depth = context.createGain();
+  depth.gain.value = 6;
+  wow.connect(depth);
+  wow.start(time);
+  for (const detune of [-9, 0, 8]) {
+    const osc = voice.add(oscillator(context, 'sawtooth', hz, detune, time, filter));
+    depth.connect(osc.detune);
+  }
+  return voice;
+}
+
 // Simple triangle piano used only while the samples are loading.
 function fallbackPiano(context, output, midi, velocity, time) {
   const hz = frequency(midi);
@@ -211,4 +263,4 @@ function fallbackPiano(context, output, midi, velocity, time) {
   return voice;
 }
 
-export const SYNTHS = { prophet, lansky, epiano, musicbox, organ, bass, guitar, fallbackPiano };
+export const SYNTHS = { prophet, lansky, epiano, musicbox, organ, bass, guitar, ondes, strings: tapeStrings, fallbackPiano };

@@ -2,7 +2,7 @@
 
 Read README.md and SONGS.md first.
 
-Undertow is a static iPad music desk in the style of a one-bit classic Macintosh (System 6/7). People play, practise and record recognisable Radiohead songs, electronic or piano, with native Web Audio. Keep the interface simple and consistent: black, white and dither patterns only; Chicago-style type for controls and titles, Geneva-style type for small text; every window, menu, button and dialog uses the shared styles in `mac.css`. The pixel fonts only cover basic ASCII; other characters (♭ ♯ ’ — ·) fall back to a system font, so prefer plain ASCII punctuation in UI strings.
+Undertow is a static iPad music instrument in the style of a one-bit classic Macintosh (System 6/7), built on native Web Audio. It opens on **Play**: touch anywhere to play scale-locked sound worlds inspired by Kid A, OK Computer and In Rainbows, over a band loop, with generative dithered art and recordable pieces (`src/play/`). **Learn** is the song desk for practising recognisable Radiohead songs. Worlds are original music and original art in the spirit of the albums; never copy songs or album artwork into them. Keep the interface simple and consistent: black, white and dither patterns only; Chicago-style type for controls and titles, Geneva-style type for small text; every window, menu, button and dialog uses the shared styles in `mac.css`. The pixel fonts only cover basic ASCII; other characters (♭ ♯ ’ — ·) fall back to a system font, so prefer plain ASCII punctuation in UI strings.
 
 Musical accuracy matters most. Song data in `src/songs.js` must say in `accuracy` what is checked against published analyses and what is reconstructed, with sources. Never present a reconstruction as an exact transcription. No recordings or vocals are bundled. Preserve source, piano-sample and font credits.
 
@@ -10,9 +10,9 @@ Saved work: the desk stores everything under the localStorage key `undertow-desk
 
 ## Work locally
 
-Serve the root with `python3 -m http.server 8000`. Sources: `index.html`, `mac.css`, `src/` (songs, player, render, storage, main, `audio/`, `ui/`).
+Serve the root with `python3 -m http.server 8000`. Sources: `index.html`, `mac.css`, `src/` (songs, player, render, storage, main, `audio/`, `ui/`, `play/`). Element ids must be unique; `tests/play.cjs` checks.
 
-Browser checks use Node, the `playwright` package and Chromium; set `CHROMIUM_PATH` to use a specific executable. Run `node tests/app.cjs`, `node tests/sound.cjs` and `node tests/balloons.cjs` with the server running; set `UNDERTOW_URL` to test another address. Signal checks prove audibility and headroom, not resemblance to the records. Physical iPad Safari, Apple Pencil and MIDI hardware remain unverified.
+Browser checks use Node, the `playwright` package and Chromium; set `CHROMIUM_PATH` to use a specific executable. Run `node tests/play.cjs`, `node tests/app.cjs`, `node tests/sound.cjs` and `node tests/balloons.cjs` with the server running; set `UNDERTOW_URL` to test another address. Signal checks prove audibility and headroom, not resemblance to the records. Physical iPad Safari, Apple Pencil and MIDI hardware remain unverified.
 
 `sw.js` precaches the core files listed in `CORE` and serves pages and code network-first, so a deploy shows up on the next online load. Add new source files to `CORE`. Give new controls a `data-help` balloon.
 

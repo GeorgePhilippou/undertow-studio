@@ -243,62 +243,7 @@ export const SONGS = [
     ],
   },
 
-  {
-    id: 'nosurprises',
-    legacyIndex: 6,
-    title: 'No Surprises',
-    album: 'OK Computer',
-    year: 1997,
-    bpm: 76,
-    bars: [4],
-    key: 'F major',
-    youtube: 'u5CVsCnxyXg',
-    about: 'The lullaby introduction: a picked guitar moving between F major and B-flat minor, the top notes stepping up a half step each time, with a glockenspiel ringing above.',
-    accuracy: 'Checked: F to B-flat minor, 76 BPM, and the guitar voicings, which are the D and Gm shapes with a capo on the third fret given by several tabs (F-C-F-A and F-Db-F-Bb). Reconstructed: the order of the picked notes and the glockenspiel line.',
-    sources: [
-      ['Guitar Alliance - intro with capo 3', 'https://guitaralliance.net/no-surprises-by-radiohead/'],
-      ['Boite a chansons - capo III, D and Gm', 'https://www.boiteachansons.net/en/partitions/radiohead/no-surprises'],
-      ['E-Chords - chords', 'https://www.e-chords.com/chords/radiohead/no-surprises'],
-    ],
-    chords: {
-      'F': '| F3 C4 F4 A4',
-      'B♭m': '| F3 Db4 F4 Bb4',
-    },
-    parts: [
-      {
-        id: 'guitar', name: 'Guitar', instrument: 'guitar', length: 8, learn: true,
-        notes: `
-          0    F3 [F]     4    0.7
-          0.5  C4         3.5  0.5
-          1    F4         3    0.55
-          1.5  A4         2.5  0.6
-          2    F4         2    0.5
-          2.5  C4         1.5  0.45
-          3    A4         1    0.55
-          3.5  F4         0.5  0.45
-          4    F3 [B♭m]   4    0.7
-          4.5  Db4        3.5  0.5
-          5    F4         3    0.55
-          5.5  Bb4        2.5  0.6
-          6    F4         2    0.5
-          6.5  Db4        1.5  0.45
-          7    Bb4        1    0.55
-          7.5  F4         0.5  0.45
-        `,
-      },
-      {
-        id: 'glock', name: 'Glockenspiel', instrument: 'musicbox', length: 8, volume: 0.55,
-        notes: `
-          0    A5   1    0.6
-          1.5  C6   1    0.5
-          3    A5   1    0.5
-          4    Bb5  1    0.6
-          5.5  Db6  1    0.5
-          7    Bb5  1    0.5
-        `,
-      },
-    ],
-  },
+
 
 
   {
@@ -408,7 +353,105 @@ export const SONGS = [
     ],
   },
 
+
+
+
   {
+    id: 'motionpicture',
+    legacyIndex: null,
+    title: 'Motion Picture Soundtrack',
+    album: 'Kid A',
+    year: 2000,
+    bpm: 70,
+    bars: [4],
+    key: 'G',
+    youtube: null,
+    about: 'The closing hymn of Kid A on a wheezing organ: G, C, B minor, C.',
+    accuracy: 'The G, C, Bm, C progression follows published commentary and chord charts. The organ voicing, one chord to a bar and the tempo are estimates.',
+    sources: [
+      ['Audiofanzine - Thom Yorke\'s chords', 'https://en.audiofanzine.com/music-theory/editorial/articles/instruction/thom-yorke-s-signature-strange-chords.html'],
+      ['Guitar Tabs Explorer - chords', 'https://www.guitartabsexplorer.com/radiohead/motion-picture-soundtrack-acoustic-chords'],
+    ],
+    chords: {
+      'G': 'G1 G2 | B3 D4 G4',
+      'C': 'C2 C3 | C4 E4 G4',
+      'Bm': 'B1 B2 | B3 D4 F#4',
+    },
+    parts: [
+      {
+        id: 'organ', name: 'Organ', instrument: 'organ', length: 16, learn: true,
+        notes: `
+          0    G1 G2 [G]     3.9  0.7
+          4    C2 C3 [C]     3.9  0.7
+          8    B1 B2 [Bm]    3.9  0.7
+          12   C2 C3 [C]     3.9  0.7
+        `,
+      },
+    ],
+  }
+
+];
+
+// Songs that did not sound like the records when checked by ear. They are not
+// listed in the app until their parts are corrected; the data stays here so
+// they can be fixed and moved back into SONGS.
+export const UNCHECKED_SONGS = [
+  {
+    id: 'nosurprises',
+    legacyIndex: 6,
+    title: 'No Surprises',
+    album: 'OK Computer',
+    year: 1997,
+    bpm: 76,
+    bars: [4],
+    key: 'F major',
+    youtube: 'u5CVsCnxyXg',
+    about: 'The lullaby introduction: a picked guitar moving between F major and B-flat minor, the top notes stepping up a half step each time, with a glockenspiel ringing above.',
+    accuracy: 'Checked: F to B-flat minor, 76 BPM, and the guitar voicings, which are the D and Gm shapes with a capo on the third fret given by several tabs (F-C-F-A and F-Db-F-Bb). Reconstructed: the order of the picked notes and the glockenspiel line.',
+    sources: [
+      ['Guitar Alliance - intro with capo 3', 'https://guitaralliance.net/no-surprises-by-radiohead/'],
+      ['Boite a chansons - capo III, D and Gm', 'https://www.boiteachansons.net/en/partitions/radiohead/no-surprises'],
+      ['E-Chords - chords', 'https://www.e-chords.com/chords/radiohead/no-surprises'],
+    ],
+    chords: {
+      'F': '| F3 C4 F4 A4',
+      'B♭m': '| F3 Db4 F4 Bb4',
+    },
+    parts: [
+      {
+        id: 'guitar', name: 'Guitar', instrument: 'guitar', length: 8, learn: true,
+        notes: `
+          0    F3 [F]     4    0.7
+          0.5  C4         3.5  0.5
+          1    F4         3    0.55
+          1.5  A4         2.5  0.6
+          2    F4         2    0.5
+          2.5  C4         1.5  0.45
+          3    A4         1    0.55
+          3.5  F4         0.5  0.45
+          4    F3 [B♭m]   4    0.7
+          4.5  Db4        3.5  0.5
+          5    F4         3    0.55
+          5.5  Bb4        2.5  0.6
+          6    F4         2    0.5
+          6.5  Db4        1.5  0.45
+          7    Bb4        1    0.55
+          7.5  F4         0.5  0.45
+        `,
+      },
+      {
+        id: 'glock', name: 'Glockenspiel', instrument: 'musicbox', length: 8, volume: 0.55,
+        notes: `
+          0    A5   1    0.6
+          1.5  C6   1    0.5
+          3    A5   1    0.5
+          4    Bb5  1    0.6
+          5.5  Db6  1    0.5
+          7    Bb5  1    0.5
+        `,
+      },
+    ],
+  },  {
     id: 'fifteenstep',
     legacyIndex: 9,
     title: '15 Step',
@@ -469,42 +512,6 @@ export const SONGS = [
       },
     ],
   },
-
-
-  {
-    id: 'motionpicture',
-    legacyIndex: null,
-    title: 'Motion Picture Soundtrack',
-    album: 'Kid A',
-    year: 2000,
-    bpm: 70,
-    bars: [4],
-    key: 'G',
-    youtube: null,
-    about: 'The closing hymn of Kid A on a wheezing organ: G, C, B minor, C.',
-    accuracy: 'The G, C, Bm, C progression follows published commentary and chord charts. The organ voicing, one chord to a bar and the tempo are estimates.',
-    sources: [
-      ['Audiofanzine - Thom Yorke\'s chords', 'https://en.audiofanzine.com/music-theory/editorial/articles/instruction/thom-yorke-s-signature-strange-chords.html'],
-      ['Guitar Tabs Explorer - chords', 'https://www.guitartabsexplorer.com/radiohead/motion-picture-soundtrack-acoustic-chords'],
-    ],
-    chords: {
-      'G': 'G1 G2 | B3 D4 G4',
-      'C': 'C2 C3 | C4 E4 G4',
-      'Bm': 'B1 B2 | B3 D4 F#4',
-    },
-    parts: [
-      {
-        id: 'organ', name: 'Organ', instrument: 'organ', length: 16, learn: true,
-        notes: `
-          0    G1 G2 [G]     3.9  0.7
-          4    C2 C3 [C]     3.9  0.7
-          8    B1 B2 [Bm]    3.9  0.7
-          12   C2 C3 [C]     3.9  0.7
-        `,
-      },
-    ],
-  }
-
 ];
 
 // ---------------------------------------------------------------------------

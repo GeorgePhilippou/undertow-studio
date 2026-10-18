@@ -13,6 +13,7 @@ import { MenuBar, setupWindows, openFloating, showDialog, alertBox, confirmBox, 
 import { ICONS, renderIcons } from './ui/icons.js';
 import { BalloonHelp, runTour, hideBalloon } from './ui/balloons.js';
 import { pianoReady } from './audio/piano.js';
+import { PlayScreen } from './play/index.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -887,7 +888,14 @@ function showInfo() {
 
 function showHelp() {
   showDialog(`
-    <h3>How to Use Undertow</h3>
+    <h3>Play</h3>
+    <ul>
+      <li><b>Touch anywhere</b> on the picture to play. Left is low, right is high, higher up is brighter. Slide to play more notes; use several fingers. Every note fits the music, so nothing sounds wrong.</li>
+      <li><b>Choose a world</b> - Kid A machines, OK Computer's glowing room or In Rainbows guitars - with the arrows or the World menu.</li>
+      <li><b>Band</b> starts or stops the loop underneath you (Space). <b>Record</b> keeps the sound and the moving picture as a piece in My Pieces (R).</li>
+      <li>The worlds are original music in the spirit of each album, not the songs themselves.</li>
+    </ul>
+    <h3>Learn</h3>
     <ul>
       <li><b>Choose a song</b> from the Songs window or the Song menu.</li>
       <li><b>Follow the five steps</b> along the top. Each gets a tick when you've done it, and your progress shows in the Songs list.</li>
@@ -1007,7 +1015,19 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
         '-',
         { label: 'Open Undertow Classic…', action: openClassic },
       ];
+    case 'world':
+      return playScreen.menu();
     case 'file':
+      if (screen() === 'play') {
+        return [
+          { label: 'My Pieces...', action: () => playScreen.showPieces() },
+          '-',
+          { label: 'Save a Copy...', shortcut: '⌘S', action: saveCopy },
+          { label: 'Open a Copy...', action: openCopy },
+          '-',
+          { label: 'Open Undertow Classic...', action: openClassic },
+        ];
+      }
       return [
         { label: 'New Song…', shortcut: '⌘N', action: newSong },
         '-',
@@ -1209,6 +1229,10 @@ document.addEventListener('keydown', event => {
     return;
   }
   if (event.repeat) return;
+  if (screen() === 'play') {
+    if (!document.getElementById('boot')) playScreen.keyDown(event);
+    return;
+  }
   if (event.key === 'Shift') {
     setPedal(true);
     return;
@@ -1238,6 +1262,10 @@ document.addEventListener('keydown', event => {
   }
 });
 document.addEventListener('keyup', event => {
+  if (screen() === 'play') {
+    playScreen.keyUp(event);
+    return;
+  }
   if (event.key === 'Shift') setPedal(false);
   const key = event.key.toLowerCase();
   heldKeys.get(key)?.();
@@ -1250,7 +1278,8 @@ function connectMidi() {
     const listen = input => {
       input.onmidimessage = ({ data: [status, note, velocity] }) => {
         const type = status & 0xf0;
-        if (type === 0x90 && velocity > 0) keyboard.press(note, velocity / 127);
+        if (screen() === 'play' && (type === 0x90 || type === 0x80)) playScreen.midiNote(note, type === 0x90 ? velocity / 127 : 0);
+        else if (type === 0x90 && velocity > 0) keyboard.press(note, velocity / 127);
         else if (type === 0x80 || (type === 0x90 && velocity === 0)) keyboard.release(note);
         else if (type === 0xb0 && note === 64) setPedal(velocity >= 64);
       };
@@ -1280,6 +1309,9 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     player.stop();
     keyboard.releaseAll();
+    if (screen() === 'play') playScreen.leave();
+  } else if (screen() === 'play' && !document.getElementById('boot')) {
+    playScreen.enter();
   }
 });
 window.addEventListener('resize', () => {
@@ -1312,6 +1344,14 @@ $('#trainer').checked = Boolean(settings().trainer);
 player.guide = $('#guide').checked = Boolean(settings().guide);
 keyboard.labels = Boolean(settings().labels);
 selectSong(settings().songId || SONGS[0].id);
+const playScreen = new PlayScreen({ engine, settings, persist, download, $ });
+playScreen.band.on('state', state => keepAwake(state !== 'stopped'));
+document.body.dataset.screen = screen();
+$$('#screen-switch [data-screen]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.screen === screen())));
+$('#screen-switch').addEventListener('click', event => {
+  const button = event.target.closest('[data-screen]');
+  if (button && button.dataset.screen !== screen()) setScreen(button.dataset.screen);
+});
 requestAnimationFrame(frame);
 
 $('#boot-start').addEventListener('click', async () => {
@@ -1321,9 +1361,35 @@ $('#boot-start').addEventListener('click', async () => {
   $('#boot').classList.add('leaving');
   setTimeout(() => {
     $('#boot').remove();
-    if (!settings().toured) startTour();
+    setScreen(screen());
   }, 300);
 });
+
+// ---------------------------------------------------------------- screens
+
+function screen() {
+  return settings().screen === 'learn' ? 'learn' : 'play';
+}
+
+// Play is the touch-anywhere instrument; Learn is the song desk.
+function setScreen(name) {
+  settings().screen = name;
+  persist();
+  document.body.dataset.screen = name;
+  $$('#screen-switch [data-screen]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.screen === name)));
+  menus.close();
+  if (name === 'play') {
+    player.stop();
+    keyboard.releaseAll();
+    if (!document.getElementById('boot')) playScreen.enter();
+    if (!settings().toured) startTour();
+  } else {
+    playScreen.leave();
+    renderKeyboard();
+    lastRoll = '';
+    if (!settings().learnToured) startTour();
+  }
+}
 
 // A soft open chord to say the sound is working.
 function startChord() {
@@ -1333,6 +1399,19 @@ function startChord() {
 }
 
 function startTour() {
+  if (screen() === 'play') {
+    runTour([
+      { target: '#art', text: 'Touch anywhere to play. Left is low, right is high, higher up is brighter. Every note fits, so nothing sounds wrong.' },
+      { target: '#world-select', text: 'Choose a sound world: Kid A machines, OK Computer\'s glowing room or In Rainbows guitars.' },
+      { target: '#band', text: 'The band plays underneath you. Tap to start or stop it.' },
+      { target: '#play-record', text: 'Record a piece: the sound and the moving picture together, kept in My Pieces.' },
+      { target: '#screen-switch', text: 'Switch to Learn to practise Radiohead songs step by step.' },
+    ]).then(() => {
+      settings().toured = true;
+      persist();
+    });
+    return;
+  }
   const narrow = window.matchMedia('(max-width: 860px)').matches;
   runTour([
     { target: narrow ? '#songs-button' : '#song-list', text: 'Choose a song here. Each one is a short passage with its own sound.' },
@@ -1343,7 +1422,7 @@ function startTour() {
     { target: '#record', text: 'Record yourself over the band. Every take is kept, and a good one can become the song\'s part.' },
     { target: '[data-menu="help"]', text: 'Help > Show Balloons explains anything on screen. Have fun.' },
   ]).then(() => {
-    settings().toured = true;
+    settings().learnToured = true;
     persist();
   });
 }
@@ -1398,4 +1477,4 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 // Exposed for automated browser checks.
-window.undertow = { player, engine, keyboard, get song() { return song; }, get data() { return data; } };
+window.undertow = { player, engine, keyboard, get play() { return playScreen; }, get song() { return song; }, get data() { return data; } };

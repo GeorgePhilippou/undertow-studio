@@ -25,7 +25,7 @@ async function pressPad(page, index) {
 
   // Songs.
   const ids = await page.$$eval('#song-list [data-song]', buttons => buttons.map(b => b.dataset.song));
-  check(ids.join() === 'everything,idioteque,karma,pyramid,codex,nosurprises,videotape,truelove,fifteenstep,motionpicture', 'ten songs are listed in order');
+  check(ids.join() === 'everything,idioteque,karma,pyramid,codex,videotape,truelove,motionpicture', 'eight checked songs are listed in order');
   for (const id of ids) {
     await page.click(`[data-song="${id}"]`);
     const title = await page.textContent('#song-title');
@@ -365,8 +365,8 @@ async function pressPad(page, index) {
   await fresh.reload();
   await fresh.click('#boot-start');
   await fresh.waitForSelector('.balloon.tour');
-  check((await fresh.textContent('.balloon')).includes('1 of 7'), 'a first visit starts the tour');
-  for (let i = 0; i < 7; i++) await fresh.click('.balloon [data-tour="next"]');
+  check((await fresh.textContent('.balloon')).includes('1 of 5'), 'a first visit opens on Play and starts its tour');
+  for (let i = 0; i < 5; i++) await fresh.click('.balloon [data-tour="next"]');
   check(await fresh.evaluate(() => undertow.data.settings.toured === true && !document.querySelector('.balloon')), 'finishing the tour remembers it');
   check(await fresh.evaluate(() => navigator.serviceWorker.getRegistration().then(r => Boolean(r))), 'the offline service worker registers');
   await fresh.close();

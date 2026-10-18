@@ -1,12 +1,27 @@
 # Undertow
 
-A classic Macintosh music desk for iPad: play, practise and record Radiohead songs.
+A classic Macintosh music instrument for iPad: touch anything to make sounds and pictures in the spirit of Radiohead's records, or learn the songs.
 
-Open https://GeorgePhilippou.github.io/undertow-studio/, tap **Start**, choose a song and press **Play**. Headphones recommended.
+Open https://GeorgePhilippou.github.io/undertow-studio/ and tap **Start**. Headphones recommended.
 
-## What it does
+## Play
 
-- **Songs:** Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, No Surprises, Videotape, True Love Waits, 15 Step and Motion Picture Soundtrack. Each is a short, looping passage with its own sound. Get Info explains what is checked against published analyses and what is a reconstruction.
+Undertow opens on **Play**: one window, one picture, touch anywhere.
+
+- **Three sound worlds**, each an original loop in the manner of an album, not a song from it:
+  - **Kid A** - glass chords, a crunchy machine beat and a singing ondes-style voice that glides under your finger.
+  - **OK Computer** - tape strings, electric piano and glockenspiel in a slow, glowing room.
+  - **In Rainbows** - clean guitars weaving around each other over a steady groove; you pluck along.
+- **Nothing sounds wrong:** the surface plays only notes from the world's scale. Left is low, right is high, higher up is brighter; Apple Pencil pressure sets loudness. Several fingers, computer keys (A W S E D...) and MIDI keyboards all play.
+- **Living one-bit art:** each world has its own dithered black-and-white picture - signal interference, a night road, rippling arcs - that pulses with the band and ripples where you touch. It is original artwork, not album art.
+- **Record a piece:** the sound and the moving picture together as a video (sound only where a browser cannot record video). Pieces are kept on the device in My Pieces, and Save opens the share sheet.
+- **Band** on or off (Space), **Full Screen** from the window's zoom box.
+
+## Learn
+
+**Learn** (top right of the menu bar) opens the song desk:
+
+- **Songs:** Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits and Motion Picture Soundtrack. Each is a short, looping passage with its own sound. Get Info explains what is checked against published analyses and what is a reconstruction. No Surprises and 15 Step are held back until their parts sound right.
 - **Five lesson steps** for every song, each ticked off as you go and shown in the Songs list:
   1. **Listen** while the note roll and the keyboard show your part.
   2. **Learn:** the song stops at every chord until you play it. Any octave counts, and on chord pads only the right chord counts.
@@ -51,12 +66,14 @@ Open http://localhost:8000. The page is plain HTML, CSS and ES modules with no d
 | `src/render.js` | Offline WAV export |
 | `src/ui/` | Menus and windows, keyboard and pads, note roll, Balloon Help, icons |
 | `sw.js`, `manifest.webmanifest` | Offline support and Home Screen install |
+| `src/play/` | Play screen: sound worlds, touch surface, generative art, recording pieces |
 | `src/main.js` | Wires the windows, menus and storage together |
 
 Browser checks need Node, the `playwright` package and Chromium (set `CHROMIUM_PATH` if it is not Playwright's own):
 
 ```sh
-node tests/app.cjs     # songs, practice modes, recording, editing, layouts
+node tests/play.cjs    # Play screen: worlds, touch, art, recording, layouts
+node tests/app.cjs     # Learn: songs, practice modes, recording, editing, layouts
 node tests/sound.cjs   # every song renders audibly without clipping
 node tests/balloons.cjs  # every tour step and help balloon points at its control
 ```

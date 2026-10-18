@@ -24,17 +24,26 @@ const tipInside = () => {
     await page.evaluate(() => localStorage.clear());
     await page.reload();
     await page.click('#boot-start');
-    await page.waitForSelector('.balloon.tour');
     const misses = [];
-    for (let step = 1; step <= 7; step++) {
-      const result = await page.evaluate(tipInside);
-      if (!result.ok) misses.push(`step ${step} ${JSON.stringify(result)}`);
-      await page.click('.balloon [data-tour="next"]');
+    // The Play tour runs on a first visit; the Learn tour the first time Learn opens.
+    for (const screen of ['play', 'learn']) {
+      if (screen === 'learn') await page.click('#screen-switch [data-screen="learn"]');
+      await page.waitForSelector('.balloon.tour');
+      const total = Number((await page.textContent('.balloon b')).split(' of ')[1]);
+      for (let step = 1; step <= total; step++) {
+        const result = await page.evaluate(tipInside);
+        if (!result.ok) misses.push(`${screen} step ${step} ${JSON.stringify(result)}`);
+        await page.click('.balloon [data-tour="next"]');
+      }
     }
     check(misses.length === 0, `every tour balloon points at its control at ${width}x${height} ${misses.join('; ')}`);
 
-    // Every Balloon Help target that is on screen.
-    const helpMisses = await page.evaluate(async () => {
+    // Every Balloon Help target that is on screen, on both screens.
+    const helpMisses = [];
+    for (const screen of ['learn', 'play']) {
+      await page.click(`#screen-switch [data-screen="${screen}"]`);
+      await page.waitForTimeout(150);
+      helpMisses.push(...await page.evaluate(async () => {
       const { showBalloon, hideBalloon } = await import('./src/ui/balloons.js');
       const wrong = [];
       for (const [i, element] of [...document.querySelectorAll('[data-help]')].entries()) {
@@ -52,7 +61,8 @@ const tipInside = () => {
         hideBalloon();
       }
       return wrong;
-    });
+    }));
+    }
     check(helpMisses.length === 0, `every help balloon points at its control at ${width}x${height} ${helpMisses.join(', ')}`);
     await page.close();
   }
