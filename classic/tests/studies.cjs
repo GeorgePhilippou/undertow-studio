@@ -4,7 +4,7 @@ const {chromium}=require('playwright');
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:834,height:1194}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
- await page.goto(process.env.STUDIO_URL||'http://localhost:8000');
+ await page.goto(process.env.STUDIO_URL||'http://localhost:8000/classic/');
  assert.equal(await page.locator('[data-preset]').count(),18);
  const choose=async preset=>{if(await page.locator('#learn-panel').evaluate(d=>d.open))await page.locator('[data-close=learn-panel]').click();await page.locator('#change-tape').click();await page.locator('[data-preset="'+preset+'"]').click();await page.locator('#learn-part').click();await page.locator('summary').filter({hasText:'Make your own pattern'}).click();await page.locator('summary').filter({hasText:'Save, export & more'}).click();};
  const results=[];

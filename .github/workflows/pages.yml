@@ -23,7 +23,7 @@ jobs:
           python-version: '3.x'
       - name: Check JavaScript syntax
         run: |
-          for module in audio.js studies.js passages.js lessons.js beats.js render.js app.js; do
+          for module in src/*.js src/*/*.js classic/*.js; do
             node --input-type=module --check < "$module"
           done
       - name: Build static site

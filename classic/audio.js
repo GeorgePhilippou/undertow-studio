@@ -6,7 +6,7 @@ export function loadPianoSamples(){
   if(!pianoLoading)pianoLoading=(async()=>{
     const decoder=new OfflineAudioContext(1,1,44100);
     await Promise.all([[45,'A2'],[48,'C3'],[54,'Fs3'],[60,'C4'],[66,'Fs4'],[72,'C5']].map(async([note,file])=>{
-      try{const response=await fetch(new URL('./assets/piano/'+file+'.mp3',import.meta.url));if(!response.ok)return;const buffer=await decoder.decodeAudioData(await response.arrayBuffer());pianoBuffers.set(note,buffer);}catch{}
+      try{const response=await fetch(new URL('../assets/piano/'+file+'.mp3',import.meta.url));if(!response.ok)return;const buffer=await decoder.decodeAudioData(await response.arrayBuffer());pianoBuffers.set(note,buffer);}catch{}
     }));return pianoBuffers.size;
   })();return pianoLoading;
 }

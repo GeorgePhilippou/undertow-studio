@@ -1,0 +1,13 @@
+Bitmap-style fonts used by the Undertow interface.
+
+chikarego2.woff2
+  ChiKareGo2 by Giles Booth (blogmywiki), a recreation of Susan Kare's
+  Chicago 12. Made with BitFontMaker2 and published under a Creative Commons
+  Attribution licence. Copy taken from system.css (MIT) by Sakun Acharige.
+
+geneva-9.ttf
+  Geneva 9 by Kelsey Higham, https://fontstruct.com/fontstructions/show/349277/geneva_9
+  Creative Commons Attribution 3.0, http://creativecommons.org/licenses/by/3.0/
+  (licence recorded in the font's own name table). Copy taken from system.css.
+
+The original Chicago and Geneva typefaces belong to Apple and are not included.
