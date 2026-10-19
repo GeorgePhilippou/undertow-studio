@@ -896,6 +896,7 @@ function showHelp() {
       <li><b>Riffs</b> - the song's famous part. Tap the big pad (or Space) in rhythm and each tap plays the next hit, cut from your own record or played on keys. The keyboard shows the notes, and playing them moves on too. Hear It plays the whole riff.</li>
       <li><b>Pads</b> - the record cut into sixteen pads. Cut Pads recuts them at attacks or into beats and bars; Edit Pad sets a pad's start and end, Once, Hold or Loop, pitch and Reverse. Filter and Echo colour the pads. Keys 1-4, Q-R, A-F and Z-V play them.</li>
       <li><b>Remix</b> - put the pads into a sixteen-step pattern and play it round and round.</li>
+      <li><b>Record</b> keeps what you play here in My Pieces as a sound file to save or share. <b>Snap</b> keeps pad edits and cuts on the beat.</li>
       <li><b>Play Along</b> - the chords scroll past in time with the record and light up on the keys. Touch the waveform to jump, drag across it to loop a part, and slow it down without changing the pitch. Set Start lines the chords up; Mark Chords lets you tap them in yourself.</li>
     </ul>
     <h3>Sound Worlds</h3>
@@ -1378,7 +1379,7 @@ keyboard.labels = Boolean(settings().labels);
 selectSong(settings().songId || SONGS[0].id);
 const playScreen = new PlayScreen({ engine, settings, persist, download, $ });
 playScreen.band.on('state', state => keepAwake(state !== 'stopped'));
-const recordScreen = new RecordScreen({ engine, $, onPlaying: keepAwake });
+const recordScreen = new RecordScreen({ engine, $, onPlaying: keepAwake, showPiece: (piece, fresh) => playScreen.showPiece(piece, fresh) });
 const desktop = new Desktop({ context, $, open: openFromDesk });
 desktop.render();
 // Undertow always starts on the desktop, whatever was open last time.

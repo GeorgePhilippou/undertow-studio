@@ -134,10 +134,12 @@
 
     <div class="control-strip record-strip">
       <button id="rec-play" class="btn default" aria-pressed="false" data-help="Play or stop the record."><span data-icon="play"></span><span>Play</span></button>
+      <button id="rec-take" class="btn record" aria-pressed="false" data-help="Record what you play here - pads, riff, remix or keys - and keep it in My Pieces as a sound file to save or share. The record playing underneath is not included."><span data-icon="record"></span><span>Record</span></button>
+      <output id="take-time" class="small"></output>
       <select id="rec-speed" class="popup along-only" aria-label="Speed" data-help="Slow the record down without changing its pitch."></select>
       <button id="rec-loop" class="btn" aria-pressed="false" disabled data-help="Drag across the waveform to loop a part. Touch here to stop looping."><span>Loop</span></button>
       <button id="rec-start" class="btn sync-only" data-help="Press this the moment you hear the first chord, and the riff and chords line up with the record.">Set Start</button>
-      <span id="rec-tempo" class="tempo sync-only" data-help="Nudge the tempo if the chords slowly drift from the record."><button id="tempo-down" class="btn square" aria-label="Slower">-</button><output id="rec-bpm" class="small"></output><button id="tempo-up" class="btn square" aria-label="Faster">+</button></span>
+      <span id="rec-tempo" class="tempo tempo-only" data-help="The record's tempo. Nudge it if the riff, the chords or the beat grid slowly drift from the record. A question mark means it was heard from the record."><button id="tempo-down" class="btn square" aria-label="Slower">-</button><output id="rec-bpm" class="small"></output><button id="tempo-up" class="btn square" aria-label="Faster">+</button></span>
       <button id="rec-mark" class="btn along-only" aria-pressed="false" data-help="Mark the chords yourself: tap each one as you hear it.">Mark Chords</button>
       <select id="rec-cut" class="popup pads-only" aria-label="Cut the pads" data-help="Cut all the pads again: at the strongest attacks, into beats or bars from the loop or playhead, or the loop into sixteen.">
         <option value="">Cut Pads...</option>
@@ -147,7 +149,9 @@
         <option value="bars2">2 bars each</option>
         <option value="bars4">4 bars each</option>
         <option value="loop">The loop into 16</option>
+        <option value="snap">Snap all pads to the beat</option>
       </select>
+      <label class="check pads-only" data-help="Snap: pad edits and cuts land on the beat grid, a sixteenth note at a time, so loops stay in time."><input id="pad-snap" type="checkbox" checked> Snap</label>
       <button id="rec-assign" class="btn pads-only" aria-pressed="false" disabled data-help="Put the looped part on a pad: touch this, then the pad.">Loop to Pad</button>
       <button id="pad-edit" class="btn pads-only" aria-pressed="false" data-help="Edit a pad: its start and end, how it plays, its pitch and direction.">Edit Pad</button>
       <span class="fx fx-only" data-help="Filter: turn up to close a low-pass filter over the pads. Echo: a delay in time with the tempo."><label class="small" for="fx-filter">Filter</label><input id="fx-filter" class="slider" type="range" min="0" max="100" value="0"><label class="small" for="fx-echo">Echo</label><input id="fx-echo" class="slider" type="range" min="0" max="100" value="0"></span>

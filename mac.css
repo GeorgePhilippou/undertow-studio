@@ -802,6 +802,7 @@ body[data-screen='play'] .toast { bottom: 84px; }
 #record-window:not([data-view='along']) .along-only, #record-window:not([data-view='pads']) .pads-only,
 #record-window:not([data-view='riffs']) .riffs-only, #record-window:not([data-view='remix']) .remix-only,
 #record-window[data-view='pads'] .sync-only, #record-window[data-view='remix'] .sync-only,
+#record-window[data-view='remix'] .tempo-only,
 #record-window[data-view='pads'] .keys-only, #record-window[data-view='remix'] .keys-only,
 #record-window[data-view='along'] .fx-only, #record-window[data-view='riffs'] .fx-only { display: none !important; }
 .record-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px 8px; }

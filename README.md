@@ -22,11 +22,14 @@ A record opens in a window with four views:
   - **Cut Pads...** recuts them: at the strongest attacks, **1 beat, 1 bar, 2 bars or 4 bars each** from the loop or the playhead, or the loop into sixteen. **Loop to Pad** puts the looped part on one pad.
   - **Edit Pad:** touch a pad, then drag across the waveform to set exactly where it starts and ends, or nudge its start and end a sixteenth note at a time. Choose **Once**, **Hold** (plays while held) or **Loop** (repeats until touched again), pitch it up or down in semitones, or **Reverse** it.
   - **Filter** and **Echo** colour everything the pads play.
+  - While a pad plays, its waveform fills in as it goes, and the record's waveform marks where it is in the song.
+  - **Snap** (on by default) lands pad edits and beat or bar cuts on the beat grid, a sixteenth note at a time, and **Snap all pads to the beat** lines up every pad at once, so loops stay in time. Bar marks run along the bottom of the waveform. For a record that is not in the song list, the tempo and the first beat are heard from the record itself (shown with a question mark) and can be nudged.
 - **Remix:** a sixteen-step pattern grid, one row per pad and one column per sixteenth note, played round and round at the song's tempo (or your own) through the same filter and echo.
 - **Play Along:** the whole record as a waveform with the chords scrolling past in time, lit on the keyboard or on one pad per chord.
   - If the record is one of the songs in Lessons (it is recognised from the file name, or choose it from the Song menu), its chord loop is lined up from where the music starts. **Set Start** lines it up by ear and the tempo can be nudged. The chart repeats the passage from Lessons, so other sections of the record may differ.
   - **Mark Chords:** tap each chord the moment you hear it change. Your marks replace the chart for that record.
   - **Speed** from 100% down to 50% without changing the pitch; drag across the waveform to loop a part.
+- **Record** (in every view) records what you play - pads, riff, remix or keys - and keeps it in My Pieces as a WAV to play back, save or share. The record playing underneath is not included.
 - Your song choice, sync, marks, pads and pattern are kept with the record.
 
 The record is one finished mix, so the app cannot pull out just the piano or the guitar; chords and riffs work whatever instruments play them. Official stems that Radiohead released (Nude and Reckoner) load as records like any other file.

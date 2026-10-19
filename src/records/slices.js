@@ -69,3 +69,62 @@ export function sliceEvenly(start, end, count = 16) {
   const step = (end - start) / count;
   return [...Array(count).keys()].map(i => ({ start: start + i * step, end: start + (i + 1) * step }));
 }
+
+// An estimate of the record's tempo and where its beats fall, for records
+// that are not in the song list: the onset strength is compared with itself
+// shifted by every beat length from 70 to 180 BPM, and the strongest one wins.
+export function estimateBeat(buffer) {
+  const levels = energies(buffer);
+  const rate = buffer.sampleRate / HOP;
+  const flux = new Float32Array(levels.length);
+  for (let i = 1; i < levels.length; i++) flux[i] = Math.max(0, Math.sqrt(levels[i]) - Math.sqrt(levels[i - 1]));
+  const score = lag => {
+    let sum = 0;
+    for (let i = 0; i + lag < flux.length; i++) sum += flux[i] * flux[i + lag];
+    return sum / (flux.length - lag || 1);
+  };
+  const shortest = Math.floor((60 / 180) * rate);
+  const longest = Math.ceil((60 / 70) * rate);
+  let bestLag = 0;
+  let bestScore = -1;
+  const scores = new Map();
+  for (let lag = shortest; lag <= longest; lag++) {
+    const value = score(lag);
+    scores.set(lag, value);
+    if (value > bestScore) {
+      bestScore = value;
+      bestLag = lag;
+    }
+  }
+  if (!bestLag || bestScore <= 0) return null;
+  // Refine between frames.
+  const before = scores.get(bestLag - 1) ?? score(bestLag - 1);
+  const after = scores.get(bestLag + 1) ?? score(bestLag + 1);
+  const bend = before - 2 * bestScore + after;
+  const lag = bend < 0 ? bestLag + (0.5 * (before - after)) / bend : bestLag;
+  let rough = (60 * rate) / lag;
+  while (rough < 70) rough *= 2;
+  while (rough >= 140) rough /= 2;
+  // Fine-tune the tempo and find beat one together: the beat grid that lands
+  // on the most onsets across the whole record wins.
+  const grid = (bpm, offset) => {
+    let sum = 0;
+    for (let at = offset; at < flux.length; at += (60 / bpm) * rate) sum += flux[Math.round(at)] || 0;
+    return sum;
+  };
+  let bpm = rough;
+  let bestOffset = 0;
+  let bestSum = -1;
+  for (let candidate = rough * 0.98; candidate <= rough * 1.02; candidate += 0.05) {
+    const step = (60 / candidate) * rate;
+    for (let offset = 0; offset < step; offset++) {
+      const sum = grid(candidate, offset);
+      if (sum > bestSum) {
+        bestSum = sum;
+        bestOffset = offset;
+        bpm = candidate;
+      }
+    }
+  }
+  return { bpm: Math.round(bpm * 10) / 10, start: bestOffset / rate };
+}

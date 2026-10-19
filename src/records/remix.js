@@ -24,7 +24,7 @@ export class Remix {
   }
 
   get bpm() {
-    return this.screen.track?.remix?.bpm || this.screen.track?.sync.bpm || this.screen.song?.bpm || 120;
+    return this.screen.track?.remix?.bpm || this.screen.bpm;
   }
 
   load(track) {
