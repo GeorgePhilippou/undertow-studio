@@ -738,7 +738,11 @@ export class RecordScreen {
       held.delete(event.pointerId);
     };
     sampler.addEventListener('pointerup', release);
-    sampler.addEventListener('lostpointercapture', release);
+    // Only the grid's own capture ending means the finger has gone; a pad
+    // handing its capture over to the grid does not.
+    sampler.addEventListener('lostpointercapture', event => {
+      if (event.target === sampler) release(event);
+    });
     sampler.addEventListener('pointercancel', release);
     sampler.addEventListener('contextmenu', event => event.preventDefault());
     this.bindWave();
