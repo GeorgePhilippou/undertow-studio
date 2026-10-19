@@ -6,8 +6,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#ffffff">
   <meta name="description" content="Play along with, practise and sample Radiohead records you own on a classic Macintosh music desk.">
-  <title>Undertow</title>
-  <meta name="apple-mobile-web-app-title" content="Undertow">
+  <title>OK Computer</title>
+  <meta name="apple-mobile-web-app-title" content="OK Computer">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./assets/icons/icon-180.png">
@@ -20,7 +20,7 @@
   <div class="boot-box dialog-frame">
     <div class="dialog-inner">
       <span data-icon="mac"></span>
-      <p>Welcome to Undertow.</p>
+      <p>Welcome to OK Computer.</p>
       <p class="small">Open a Radiohead record you own to play along with its chords or play it on pads, or explore the sound worlds and lessons. Headphones recommended.</p>
       <button id="boot-start" class="btn default">Start</button>
     </div>
@@ -28,7 +28,7 @@
 </div>
 
 <header class="menubar" role="menubar" aria-label="Menu bar">
-  <button class="menu-title logo" data-menu="undertow" aria-label="Undertow" aria-haspopup="true" aria-expanded="false"><span data-icon="logo"></span></button>
+  <button class="menu-title logo" data-menu="undertow" aria-label="OK Computer" aria-haspopup="true" aria-expanded="false"><span data-icon="logo"></span></button>
   <button class="menu-title" data-menu="file" aria-haspopup="true" aria-expanded="false">File</button>
   <button class="menu-title play-only" data-menu="world" aria-haspopup="true" aria-expanded="false">World</button>
   <button class="menu-title learn-only" data-menu="edit" aria-haspopup="true" aria-expanded="false">Edit</button>
@@ -51,7 +51,7 @@
       <p>Load a Radiohead song you own (MP3, M4A, AAC or WAV from Files) and it becomes a record here. Play along with its chords as it plays, slow it down without changing the pitch, loop the hard parts, or cut it into sampler pads.</p>
       <p>Songs from Apple Music are copy-protected and cannot be opened. Nothing you load leaves this device.</p>
     </div>
-    <input id="record-file" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.json,application/json" hidden>
+    <input id="record-file" type="file" multiple accept="audio/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.json,application/json" hidden>
   </section>
   <nav id="desk-icons" class="desk-icons" aria-label="Desktop">
     <button class="icon" data-open="play" data-help="Sound Worlds: touch anywhere to make sounds and pictures in the spirit of Kid A, OK Computer and In Rainbows."><span class="glyph" data-icon="globe"></span><span class="name">Sound Worlds</span></button>

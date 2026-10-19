@@ -100,7 +100,7 @@ function refreshSong() {
 function renderSong() {
   $('#song-title').textContent = song.title;
   $('#song-window-title').textContent = song.title;
-  document.title = `${song.title} - Undertow`;
+  document.title = `${song.title} - OK Computer`;
   const meter = song.barLengths.length > 1 ? `${song.barLengths.join(' + ')} beats` : `${song.barLengths[0]} beats to a bar`;
   $('#song-meta').textContent = [song.custom ? 'My song' : `${song.album}, ${song.year}`, song.key, `${song.bpm} BPM`, meter].filter(Boolean).join(', ');
   $('#song-about').textContent = song.about;
@@ -931,14 +931,15 @@ function showHelp() {
 function showAbout() {
   showDialog(`
     <div class="alert">${ICONS.mac}<div>
-      <h3>Undertow</h3>
+      <h3>OK Computer</h3>
       <p>A classic Macintosh music desk for playing along with, practising and sampling Radiohead records you own. Everything you load and make stays in this browser. No recordings or vocals are included; the lessons are played by the instruments in this app.</p>
       <p><b>Credits</b><br>
       Piano: Salamander Grand Piano by Alexander Holm, CC BY 3.0.<br>
       Chicago-style type: ChiKareGo2 by Giles Booth, CC BY.<br>
       Geneva-style type: Geneva 9 by Kelsey Higham, CC BY 3.0.<br>
       Song analyses are credited in each song\'s Get Info window.</p>
-      <p>Older projects open in <a href="classic/">Undertow Classic</a>.</p>
+      <p>A fan-made app, not connected with Radiohead or their record labels.</p>
+      <p>Older projects open in <a href="classic/">Undertow Classic</a>, the earlier version.</p>
     </div></div>
     <div class="button-row"><button class="btn default" data-value="ok">OK</button></div>`);
 }
@@ -993,7 +994,7 @@ function chooseSongDialog() {
 }
 
 function saveCopy() {
-  download(storage.exportFile(data), 'Undertow songs.undertow.json');
+  download(storage.exportFile(data), 'OK Computer lessons.okcomputer-lessons.json');
 }
 
 function openCopy() {
@@ -1023,7 +1024,7 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
   switch (name) {
     case 'undertow':
       return [
-        { label: 'About Undertow…', action: showAbout },
+        { label: 'About OK Computer…', action: showAbout },
         '-',
         { label: 'Open Undertow Classic…', action: openClassic },
       ];
@@ -1033,6 +1034,7 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
       if (screen() === 'desk' || screen() === 'record') {
         return [
           { label: 'Load a Record...', action: () => $('#record-file').click() },
+          { label: 'Save All Records to Files...', disabled: !desktop.records.length, action: () => desktop.saveAll() },
           { label: screen() === 'record' ? 'Save Record to Files...' : 'Save a Record to Files...', disabled: !desktop.records.length, action: () => (screen() === 'record' ? desktop.save(recordScreen.track.id) : desktop.chooseToSave()) },
           { label: 'Remove a Record...', action: () => desktop.remove() },
           '-',
@@ -1110,8 +1112,8 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
         { label: balloons.enabled ? 'Hide Balloons' : 'Show Balloons', action: () => toast(balloons.toggle() ? 'Point at or touch anything to see what it does.' : 'Balloons off.') },
         { label: 'Take the Tour', action: startTour },
         '-',
-        { label: 'How to Use Undertow…', shortcut: '?', action: showHelp },
-        { label: 'About Undertow…', action: showAbout },
+        { label: 'How to Use OK Computer…', shortcut: '?', action: showHelp },
+        { label: 'About OK Computer…', action: showAbout },
       ];
     default:
       return [];
@@ -1119,7 +1121,7 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
 });
 
 async function openClassic() {
-  if (await confirmBox('Open Undertow Classic?', 'The earlier version of Undertow opens with its own saved projects. Your songs and takes here are kept.', 'Open')) {
+  if (await confirmBox('Open Undertow Classic?', 'The earlier version, Undertow, opens with its own saved projects. Your songs and takes here are kept.', 'Open')) {
     location.href = 'classic/';
   }
 }
