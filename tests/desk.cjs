@@ -254,6 +254,44 @@ function balloonMisses(page) {
   await page.click('#remix-play');
   check(await page.evaluate(() => !undertow.record.remix.playing), 'the pattern stops');
 
+  // Snap to the beat.
+  await page.click('#record-view [data-view="pads"]');
+  check(await page.isChecked('#pad-snap'), 'Snap is on by default');
+  await page.evaluate(() => { undertow.record.slices[3] = { start: 2.03, end: 3.11 }; });
+  await page.selectOption('#rec-cut', 'snap');
+  const grid = await page.evaluate(() => {
+    const r = undertow.record;
+    const unit = r.beatLength / 4;
+    return r.slices.map(s => [((s.start - r.gridStart) / unit), ((s.end - s.start) / unit)]);
+  });
+  const whole = n => Math.abs(n - Math.round(n)) < 0.01;
+  check(grid.every(([start, length]) => whole(start) && (whole(length) || length < 1)), 'Snap all pads puts every pad on the sixteenth-note grid');
+
+  // Record a take.
+  await page.click('#rec-take');
+  check(await page.evaluate(() => undertow.record.recorder.recording), 'Record starts a take');
+  await page.waitForTimeout(200);
+  await page.click('#sampler [data-slice="4"]');
+  await page.waitForTimeout(700);
+  await page.click('#rec-take');
+  await page.waitForSelector('#dialog[open] audio');
+  const take = await page.evaluate(async () => {
+    const { listPieces } = await import('./src/play/pieces.js');
+    const piece = (await listPieces()).find(p => p.record === undertow.record.track.id);
+    return piece && { type: piece.blob.type, seconds: piece.seconds, title: piece.title };
+  });
+  check(take && take.type === 'audio/wav' && take.seconds > 0.3 && take.seconds < 3, `the take is kept in My Pieces as a WAV (${take && take.seconds.toFixed(2)} s, ${take && take.title})`);
+  await page.click('#dialog [data-value="ok"]');
+  await page.click('#rec-take');
+  await page.click('#rec-take');
+  check(await page.evaluate(() => !undertow.record.recorder.recording), 'a take with nothing played is not kept');
+
+  // A record that is not in the song list gets its tempo from the record.
+  await page.selectOption('#record-song', '');
+  const heard = await page.evaluate(() => ({ estimate: undertow.record.track.sync.estimate, label: document.getElementById('rec-bpm').textContent }));
+  await page.selectOption('#record-song', 'everything');
+  check(heard.estimate && heard.estimate.bpm >= 70 && heard.estimate.bpm < 140, `the tempo is heard from the record (${heard.estimate && heard.estimate.bpm} BPM, shown as ${heard.label})`);
+
   // It is all kept on the device.
   await page.waitForTimeout(500);
   await page.reload();

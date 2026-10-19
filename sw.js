@@ -8,7 +8,7 @@ const CORE = [
   'src/audio/engine.js', 'src/audio/piano.js', 'src/audio/synths.js', 'src/audio/drums.js',
   'src/play/index.js', 'src/play/worlds.js', 'src/play/art.js', 'src/play/pieces.js', 'src/play/grains.js', 'src/play/tracks.js',
   'src/records/desktop.js', 'src/records/record.js', 'src/records/chart.js', 'src/records/slices.js',
-  'src/records/sampler.js', 'src/records/riffs.js', 'src/records/remix.js',
+  'src/records/sampler.js', 'src/records/riffs.js', 'src/records/remix.js', 'src/records/take.js',
   'src/ui/mac.js', 'src/ui/icons.js', 'src/ui/keyboard.js', 'src/ui/roll.js', 'src/ui/balloons.js',
   'assets/fonts/chikarego2.woff2', 'assets/fonts/geneva-9.ttf',
 ];

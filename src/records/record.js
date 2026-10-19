@@ -7,7 +7,10 @@ import { Keyboard } from '../ui/keyboard.js';
 import { SONGS } from '../songs.js';
 import { getTrack, updateTrack, decode, overview } from '../play/tracks.js';
 import { songFor, timeline, chordAt, chordNotes, chordChoices } from './chart.js';
-import { sliceAtAttacks, sliceEvenly } from './slices.js';
+import { sliceAtAttacks, sliceEvenly, estimateBeat } from './slices.js';
+import { TakeRecorder } from './take.js';
+import { encodeWav } from '../render.js';
+import { savePiece } from '../play/pieces.js';
 import { toast, escape } from '../ui/mac.js';
 import { Sampler, MODES } from './sampler.js';
 import { RiffView } from './riffs.js';
@@ -28,7 +31,8 @@ export const clock = seconds => {
 };
 
 export class RecordScreen {
-  constructor({ engine, $, onPlaying }) {
+  constructor({ engine, $, onPlaying, showPiece }) {
+    this.showPiece = showPiece;
     this.engine = engine;
     this.context = engine.context;
     this.$ = $;
@@ -56,6 +60,7 @@ export class RecordScreen {
       drum: () => {},
     });
     this.sampler = new Sampler(this.context, this.output);
+    this.recorder = new TakeRecorder(this.context, [this.output, engine.master]);
     this.riffs = new RiffView(this);
     this.remix = new Remix(this);
     this.bind();
@@ -91,6 +96,8 @@ export class RecordScreen {
     this.audio.muted = false;
     this.audio.playbackRate = this.speed || 1;
     if (this.track.sync.start === null) this.track.sync.start = this.firstSound();
+    if (!this.track.sync.estimate) this.track.sync.estimate = estimateBeat(this.buffer);
+    this.$('#pad-snap').checked = this.track.snap !== false;
     this.slices = stored.slices || sliceAtAttacks(this.buffer);
     if (!stored.slices) this.save({ slices: this.slices, sync: this.track.sync });
     this.sampler.setBuffer(this.buffer);
@@ -146,7 +153,7 @@ export class RecordScreen {
     Object.assign(this.track, fields);
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => {
-      updateTrack(this.track.id, { songId: this.track.songId, sync: this.track.sync, slices: this.slices, remix: this.track.remix, fx: this.track.fx }).catch(() => {});
+      updateTrack(this.track.id, { songId: this.track.songId, sync: this.track.sync, slices: this.slices, remix: this.track.remix, fx: this.track.fx, snap: this.track.snap }).catch(() => {});
     }, 300);
   }
 
@@ -162,7 +169,43 @@ export class RecordScreen {
     this.stop();
     this.remix.stop();
     this.riffs.stopDemo();
+    if (this.recorder.recording) this.toggleTake();
     this.releaseAll();
+  }
+
+  // ------------------------------------------------------------ takes
+
+  // Record what you play here; Stop keeps it in My Pieces as a WAV file.
+  async toggleTake() {
+    const button = this.$('#rec-take');
+    if (!this.recorder.recording) {
+      await this.context.resume();
+      this.recorder.start();
+      button.setAttribute('aria-pressed', 'true');
+      button.classList.add('armed');
+      button.querySelector('span:last-child').textContent = 'Stop';
+      toast('Recording. Play the pads, the riff or the keys, then press Stop.');
+      return;
+    }
+    const buffer = this.recorder.stop();
+    button.setAttribute('aria-pressed', 'false');
+    button.classList.remove('armed');
+    button.querySelector('span:last-child').textContent = 'Record';
+    this.$('#take-time').textContent = '';
+    if (!buffer) {
+      toast('Nothing was recorded. Press Record, then play something.');
+      return;
+    }
+    const { blob, seconds } = encodeWav(buffer);
+    const names = { riffs: 'riff', pads: 'pads', remix: 'remix', along: 'play along' };
+    const piece = { id: `piece-${Date.now().toString(36)}`, record: this.track.id, title: `${this.track.name} (${names[this.view]})`, created: new Date().toISOString(), seconds, video: false, blob };
+    try {
+      await savePiece(piece);
+    } catch {
+      toast('The take could not be kept in this browser; save it now.');
+    }
+    this.lastTake = piece;
+    this.showPiece?.(piece, true);
   }
 
   // ------------------------------------------------------------ transport
@@ -229,11 +272,11 @@ export class RecordScreen {
   }
 
   nudgeTempo(amount) {
-    if (!this.song) return;
-    this.track.sync.bpm = Math.round(((this.track.sync.bpm || this.song.bpm) + amount) * 10) / 10;
+    this.track.sync.bpm = Math.round((this.bpm + amount) * 10) / 10;
     this.chords = null;
     this.save({});
     this.renderSync();
+    this.remix.renderTempo();
   }
 
   mark(name) {
@@ -277,16 +320,15 @@ export class RecordScreen {
   renderSync() {
     const $ = this.$;
     const marks = this.track.sync.marks.length;
-    const bpm = this.track.sync.bpm || this.song?.bpm;
-    $('#rec-bpm').textContent = bpm ? `${bpm.toFixed(1)} BPM` : '- BPM';
-    $('#rec-tempo').hidden = !this.song || marks > 0;
+    const heard = !this.track.sync.bpm && !this.song && this.track.sync.estimate;
+    $('#rec-bpm').textContent = `${this.bpm.toFixed(1)} BPM${heard ? '?' : ''}`;
     $('#rec-start').hidden = !this.song || marks > 0;
     $('#mark-undo').disabled = !marks;
     $('#mark-clear').disabled = !marks;
     let hint;
     if (marks) hint = `Showing the ${marks} chord${marks === 1 ? '' : 's'} you marked. Clear Marks to go back${this.song ? ' to the song\'s chart' : ''}.`;
     else if (this.song) hint = `Chords from ${this.song.title}, starting at ${clock(this.track.sync.start)}.${Math.floor((this.track.sync.start % 1) * 10)}. If they are early or late, press Set Start the moment you hear the first ${plain(this.chordList()[0]?.name || 'chord')}. They follow the loop from Learn, so other sections of the record may differ.`;
-    else hint = 'Choose the song above to see its chords, or press Mark Chords and tap each chord as you hear it.';
+    else hint = `Choose the song above to see its chords, or press Mark Chords and tap each chord as you hear it.${heard ? ` The tempo, about ${this.bpm.toFixed(0)} BPM, is heard from the record; nudge it if the pads drift.` : ''}`;
     $('#along-hint').textContent = hint;
   }
 
@@ -315,8 +357,41 @@ export class RecordScreen {
 
   // ------------------------------------------------------------ pads
 
+  // The tempo: as nudged, the song's, or the one heard in the record.
+  get bpm() {
+    return this.track?.sync.bpm || this.song?.bpm || this.track?.sync.estimate?.bpm || 120;
+  }
+
   get beatLength() {
-    return 60 / (this.track?.sync.bpm || this.song?.bpm || 120);
+    return 60 / this.bpm;
+  }
+
+  // Where beat one falls: the chart's start for known songs, otherwise the
+  // first beat heard in the record.
+  get gridStart() {
+    if (this.song) return this.track.sync.start || 0;
+    return this.track?.sync.estimate?.start ?? this.track?.sync.start ?? 0;
+  }
+
+  get snapping() {
+    return this.$('#pad-snap').checked;
+  }
+
+  // The nearest point on the beat grid, a sixteenth note by default.
+  snap(time, unit = this.beatLength / 4) {
+    const origin = this.gridStart;
+    return Math.max(0, origin + Math.round((time - origin) / unit) * unit);
+  }
+
+  // Lines every pad up with the beat: starts on the nearest sixteenth and
+  // lengths in whole sixteenths, so chopped bars loop without a stumble.
+  snapAll() {
+    const unit = this.beatLength / 4;
+    this.slices = this.slices.map(slice => {
+      const start = this.snap(slice.start);
+      const length = Math.max(unit, Math.round((slice.end - slice.start) / unit) * unit);
+      return { ...slice, start, end: Math.min(start + length, this.duration) };
+    });
   }
 
   renderPads() {
@@ -433,8 +508,15 @@ export class RecordScreen {
   cut(how) {
     const beat = this.beatLength;
     const bar = beat * (this.song?.barLengths?.[0] || 4);
-    const from = this.loop ? this.loop.start : this.time;
+    const from = this.loop ? this.loop.start : this.snapping ? this.snap(this.time, beat) : this.time;
     const lengths = { beat, bar, bars2: bar * 2, bars4: bar * 4 };
+    if (how === 'snap') {
+      this.snapAll();
+      this.save({});
+      this.renderPads();
+      toast(`Every pad now starts on the beat at ${this.bpm.toFixed(1)} BPM.`);
+      return;
+    }
     if (how === 'attacks') {
       this.slices = sliceAtAttacks(this.buffer);
     } else if (how === 'loop') {
@@ -502,6 +584,10 @@ export class RecordScreen {
 
   setPadRegion(index, region) {
     if (!region || region.end - region.start < 0.05) return;
+    if (this.snapping) {
+      const start = this.snap(region.start);
+      region = { start, end: Math.max(start + this.beatLength / 4, this.snap(region.end)) };
+    }
     this.changePad({ start: region.start, end: region.end });
     this.audition(index);
   }
@@ -517,7 +603,8 @@ export class RecordScreen {
     const slice = this.slices[this.editing];
     if (!slice) return;
     const step = this.beatLength / 4 * direction;
-    this.changePad({ [edge]: slice[edge] + step });
+    const moved = slice[edge] + step;
+    this.changePad({ [edge]: this.snapping ? this.snap(moved) : moved });
     this.audition(this.editing);
   }
 
@@ -599,6 +686,8 @@ export class RecordScreen {
       if (this.assigning) toast('Now touch the pad that should play the loop.');
     });
     $('#pad-edit').addEventListener('click', () => this.toggleEditing());
+    $('#rec-take').addEventListener('click', () => this.toggleTake());
+    $('#pad-snap').addEventListener('change', event => this.save({ snap: event.target.checked }));
     $('#edit-start-down').addEventListener('click', () => this.nudgePad('start', -1));
     $('#edit-start-up').addEventListener('click', () => this.nudgePad('start', 1));
     $('#edit-end-down').addEventListener('click', () => this.nudgePad('end', -1));
@@ -752,6 +841,7 @@ export class RecordScreen {
     else if (this.view === 'remix') this.remix.drawStep();
     if (this.view === 'pads') this.drawPadProgress();
     this.$('#rec-clock').textContent = `${clock(this.time)} / ${clock(this.duration)}`;
+    if (this.recorder.recording) this.$('#take-time').textContent = clock(this.recorder.seconds);
   }
 
   fit(canvas) {
@@ -790,6 +880,12 @@ export class RecordScreen {
         g.strokeStyle = '#000';
         g.strokeRect(left + 0.5, 0.5, right - left - 1, 4);
       });
+      // Bars along the bottom, so cuts can be lined up with the beat.
+      const bar = this.beatLength * (this.song?.barLengths?.[0] || 4);
+      if (bar * width / this.duration >= 4) {
+        g.fillStyle = '#000';
+        for (let at = this.gridStart % bar; at < this.duration; at += bar) g.fillRect(x(at), height - 4, 1, 4);
+      }
       const edited = this.editing !== null && !this.selecting ? this.slices[this.editing] : null;
       if (edited) {
         g.globalCompositeOperation = 'difference';

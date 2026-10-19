@@ -495,7 +495,7 @@ export class PlayScreen {
   }
 
   fileName(piece) {
-    const extension = piece.blob.type.includes('mp4') ? (piece.video ? 'mp4' : 'm4a') : 'webm';
+    const extension = piece.blob.type.includes('wav') ? 'wav' : piece.blob.type.includes('mp4') ? (piece.video ? 'mp4' : 'm4a') : 'webm';
     return `Undertow - ${piece.title} - ${piece.created.slice(0, 16).replace('T', ' ').replace(':', '.')}.${extension}`;
   }
 
@@ -508,7 +508,7 @@ export class PlayScreen {
     const { value } = await showDialog(`
       <h3>${fresh ? 'Your piece' : escape(piece.title)}</h3>
       ${media}
-      <p>${escape(piece.title)} sound world, ${length}. ${fresh ? 'It is kept in My Pieces on this device.' : ''}</p>
+      <p>${escape(piece.title)}${piece.world ? ' sound world' : ''}, ${length}. ${fresh ? 'It is kept in My Pieces on this device.' : ''}</p>
       <div class="button-row"><button class="btn" data-value="delete">Delete</button><button class="btn" data-value="save">Save...</button><button class="btn default" data-value="ok">Done</button></div>`);
     URL.revokeObjectURL(url);
     if (value === 'save') this.download(piece.blob, this.fileName(piece));
