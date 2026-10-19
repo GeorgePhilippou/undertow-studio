@@ -38,8 +38,9 @@ export class RecordScreen {
     this.audio.preservesPitch = true;
     this.audio.webkitPreservesPitch = true;
     this.audio.mozPreservesPitch = true;
-    // A finished record is already mastered, so it skips the instrument
-    // compressor and reverb.
+    // The record plays straight from the audio element: Safari can fall
+    // silent when a blob: file is routed into Web Audio, and a finished record
+    // needs no compressor or reverb anyway. Pads play through this gain.
     this.output = this.context.createGain();
     this.output.gain.value = 0.85;
     this.output.connect(this.context.destination);
@@ -79,10 +80,8 @@ export class RecordScreen {
     if (this.url) URL.revokeObjectURL(this.url);
     this.url = URL.createObjectURL(stored.blob);
     this.audio.src = this.url;
-    if (!this.source) {
-      this.source = this.context.createMediaElementSource(this.audio);
-      this.source.connect(this.output);
-    }
+    this.audio.volume = 1;
+    this.audio.muted = false;
     this.audio.playbackRate = this.speed || 1;
     if (this.track.sync.start === null) this.track.sync.start = this.firstSound();
     this.slices = stored.slices || sliceAtAttacks(this.buffer);
@@ -468,6 +467,9 @@ export class RecordScreen {
     this.bindWave();
     this.audio.addEventListener('ended', () => this.renderTransport());
     this.audio.addEventListener('pause', () => this.renderTransport());
+    this.audio.addEventListener('error', () => {
+      if (this.audio.src) toast('This browser cannot play this file. Try an MP3 or M4A, or another browser.');
+    });
   }
 
   // Touch the waveform to jump there; drag across it to loop that part.
