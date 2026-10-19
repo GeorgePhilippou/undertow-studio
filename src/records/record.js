@@ -722,6 +722,8 @@ export class RecordScreen {
       event.preventDefault();
       const index = Number(pad.dataset.slice);
       held.set(event.pointerId, index);
+      // Keep the finger's pad even if it slides off, so Hold always lets go.
+      try { sampler.setPointerCapture(event.pointerId); } catch { /* not capturable */ }
       const velocity = event.pointerType === 'pen' && event.pressure > 0 ? Math.min(1, 0.2 + event.pressure) : 0.85;
       this.padOn(index, velocity);
     });
@@ -731,6 +733,7 @@ export class RecordScreen {
       held.delete(event.pointerId);
     };
     sampler.addEventListener('pointerup', release);
+    sampler.addEventListener('lostpointercapture', release);
     sampler.addEventListener('pointercancel', release);
     sampler.addEventListener('contextmenu', event => event.preventDefault());
     this.bindWave();

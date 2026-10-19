@@ -234,6 +234,18 @@ function balloonMisses(page) {
   check(closed < 5000, `the Filter closes over the pads (${Math.round(closed)} Hz)`);
   await page.locator('#fx-filter').fill('0');
 
+  // Hold keeps a short pad going for as long as it is held.
+  await page.evaluate(() => { undertow.record.slices[8] = { start: 1, end: 1.3, mode: 'hold' }; undertow.record.renderPads(); });
+  const pad8 = await page.locator('#sampler [data-slice="8"]').boundingBox();
+  await page.mouse.move(pad8.x + pad8.width / 2, pad8.y + pad8.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(900);
+  check(await page.evaluate(() => undertow.record.sampler.playing('pad-8')), 'a Hold pad keeps playing while held, past the end of its clip');
+  await page.mouse.move(pad8.x - 40, pad8.y - 40);
+  await page.mouse.up();
+  await page.waitForTimeout(100);
+  check(await page.evaluate(() => !undertow.record.sampler.playing('pad-8')), 'letting go stops it, even off the pad');
+
   // Remix.
   await page.click('#record-view [data-view="remix"]');
   check(await page.$$eval('#remix-grid .cell', cells => cells.length) === 256, 'Remix shows sixteen pads by sixteen steps');
