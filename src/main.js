@@ -1379,7 +1379,9 @@ playScreen.band.on('state', state => keepAwake(state !== 'stopped'));
 const recordScreen = new RecordScreen({ engine, $, onPlaying: keepAwake });
 const desktop = new Desktop({ context, $, open: openFromDesk });
 desktop.render();
-document.body.dataset.screen = screen() === 'record' ? 'desk' : screen();
+// Undertow always starts on the desktop, whatever was open last time.
+settings().screen = 'desk';
+document.body.dataset.screen = 'desk';
 $('#to-desk').addEventListener('click', () => setScreen('desk'));
 $('#record-close').addEventListener('click', () => setScreen('desk'));
 requestAnimationFrame(frame);
@@ -1391,8 +1393,7 @@ $('#boot-start').addEventListener('click', async () => {
   $('#boot').classList.add('leaving');
   setTimeout(() => {
     $('#boot').remove();
-    if (screen() === 'record' && settings().record) openFromDesk({ record: settings().record });
-    else setScreen(screen() === 'record' ? 'desk' : screen());
+    setScreen('desk');
   }, 300);
 });
 
