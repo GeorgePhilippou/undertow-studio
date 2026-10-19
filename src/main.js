@@ -893,8 +893,10 @@ function showHelp() {
     <h3>Records</h3>
     <ul>
       <li><b>Load a Record</b> on the desktop: a Radiohead song you own as an MP3, M4A, AAC or WAV from Files. It stays on this device. (Apple Music downloads are copy-protected and cannot be opened.) Touch a record to open it.</li>
+      <li><b>Riffs</b> - the song's famous part. Tap the big pad (or Space) in rhythm and each tap plays the next hit, cut from your own record or played on keys. The keyboard shows the notes, and playing them moves on too. Hear It plays the whole riff.</li>
+      <li><b>Pads</b> - the record cut into sixteen pads. Cut Pads recuts them at attacks or into beats and bars; Edit Pad sets a pad's start and end, Once, Hold or Loop, pitch and Reverse. Filter and Echo colour the pads. Keys 1-4, Q-R, A-F and Z-V play them.</li>
+      <li><b>Remix</b> - put the pads into a sixteen-step pattern and play it round and round.</li>
       <li><b>Play Along</b> - the chords scroll past in time with the record and light up on the keys. Touch the waveform to jump, drag across it to loop a part, and slow it down without changing the pitch. Set Start lines the chords up; Mark Chords lets you tap them in yourself.</li>
-      <li><b>Pads</b> - the record cut into sixteen pads. Cut Pads recuts them; Loop to Pad puts the looped part on a pad. Keys 1-4, Q-R, A-F and Z-V play them.</li>
     </ul>
     <h3>Sound Worlds</h3>
     <ul>
