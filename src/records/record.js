@@ -1,6 +1,7 @@
-// A record you own, opened from the desktop. Play Along shows its chords in
-// time while it plays, slowed down without changing pitch or looped; Pads cuts
-// it into sixteen sampler pads to play. The record never leaves this device.
+// A record you own, opened from the desktop. Riffs lets you tap through the
+// song's recognisable part; Pads cuts it into sixteen sampler pads; Remix
+// sequences them; Play Along shows its chords in time while it plays, slowed
+// down without changing pitch or looped. The record never leaves this device.
 
 import { Keyboard } from '../ui/keyboard.js';
 import { SONGS } from '../songs.js';
@@ -8,6 +9,9 @@ import { getTrack, updateTrack, decode, overview } from '../play/tracks.js';
 import { songFor, timeline, chordAt, chordNotes, chordChoices } from './chart.js';
 import { sliceAtAttacks, sliceEvenly } from './slices.js';
 import { toast, escape } from '../ui/mac.js';
+import { Sampler, MODES } from './sampler.js';
+import { RiffView } from './riffs.js';
+import { Remix } from './remix.js';
 import { ICONS } from '../ui/icons.js';
 
 const PAD_KEYS = '1234qwerasdfzxcv';
@@ -29,10 +33,10 @@ export class RecordScreen {
     this.context = engine.context;
     this.$ = $;
     this.onPlaying = onPlaying || (() => {});
-    this.view = 'along';
+    this.view = 'riffs';
     this.loop = null;
+    this.editing = null;
     this.voices = new Map();
-    this.padVoices = new Map();
     this.audio = new Audio();
     this.audio.preload = 'auto';
     this.audio.preservesPitch = true;
@@ -51,6 +55,9 @@ export class RecordScreen {
       padOff: pad => pad.notes.forEach(midi => this.noteOff(midi)),
       drum: () => {},
     });
+    this.sampler = new Sampler(this.context, this.output);
+    this.riffs = new RiffView(this);
+    this.remix = new Remix(this);
     this.bind();
   }
 
@@ -86,12 +93,20 @@ export class RecordScreen {
     if (this.track.sync.start === null) this.track.sync.start = this.firstSound();
     this.slices = stored.slices || sliceAtAttacks(this.buffer);
     if (!stored.slices) this.save({ slices: this.slices, sync: this.track.sync });
+    this.sampler.setBuffer(this.buffer);
+    this.riffs.setRecord(this.buffer);
+    this.remix.load(this.track);
+    this.editing = null;
+    const fx = this.track.fx || {};
+    this.$('#fx-filter').value = Math.round((fx.filter || 0) * 100);
+    this.$('#fx-echo').value = Math.round((fx.echo || 0) * 100);
+    this.applyFx();
     this.wave = null;
     this.$('#record-title').textContent = this.track.name;
     this.$('#record-song').value = this.track.songId || '';
     this.setSong(this.track.songId, false);
     this.renderPads();
-    this.setView(this.view);
+    this.setView(this.view === 'riffs' && !this.riffs.riff ? 'pads' : this.view);
   }
 
   // Where the music begins, after any silence at the top of the file.
@@ -115,6 +130,8 @@ export class RecordScreen {
     else this.keyboard.layout(48);
     this.renderMarks();
     this.renderSync();
+    this.riffs.setSong(this.song);
+    this.remix.renderTempo();
     if (save) this.save({ songId: this.track.songId });
   }
 
@@ -129,7 +146,7 @@ export class RecordScreen {
     Object.assign(this.track, fields);
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => {
-      updateTrack(this.track.id, { songId: this.track.songId, sync: this.track.sync, slices: this.slices }).catch(() => {});
+      updateTrack(this.track.id, { songId: this.track.songId, sync: this.track.sync, slices: this.slices, remix: this.track.remix, fx: this.track.fx }).catch(() => {});
     }, 300);
   }
 
@@ -143,6 +160,8 @@ export class RecordScreen {
     this.active = false;
     cancelAnimationFrame(this.frame);
     this.stop();
+    this.remix.stop();
+    this.riffs.stopDemo();
     this.releaseAll();
   }
 
@@ -151,6 +170,7 @@ export class RecordScreen {
   play() {
     if (!this.track) return;
     if (this.loop && (this.time < this.loop.start || this.time >= this.loop.end)) this.audio.currentTime = this.loop.start;
+    this.remix.stop();
     this.audio.play().catch(() => toast('Touch Play again to start the record.'));
     this.renderTransport();
   }
@@ -189,7 +209,7 @@ export class RecordScreen {
     $('#rec-loop').setAttribute('aria-pressed', String(Boolean(this.loop)));
     $('#rec-loop span:last-child').textContent = this.loop ? `Loop ${clock(this.loop.start)}-${clock(this.loop.end)}` : 'Loop';
     $('#rec-assign').disabled = !this.loop;
-    this.onPlaying(this.playing);
+    this.onPlaying(this.playing || this.remix?.playing);
   }
 
   // ------------------------------------------------------------ chords
@@ -272,10 +292,13 @@ export class RecordScreen {
 
   // ------------------------------------------------------------ keyboard
 
+  // In Riffs the keys sound like the song's own part; elsewhere a piano.
   noteOn(midi, velocity) {
     this.noteOff(midi);
-    const output = this.engine.channel('along', { instrument: 'piano', volume: 0.9 });
-    this.voices.set(midi, this.engine.noteOn('piano', midi, velocity, this.context.currentTime, output));
+    const instrument = this.view === 'riffs' && this.riffs.riff ? this.riffs.riff.instrument : 'piano';
+    const output = this.engine.channel(`along-${instrument}`, { instrument, volume: 0.9 });
+    this.voices.set(midi, this.engine.noteOn(instrument, midi, velocity, this.context.currentTime, output));
+    if (this.view === 'riffs') this.riffs.notePlayed(midi);
   }
 
   noteOff(midi) {
@@ -286,20 +309,29 @@ export class RecordScreen {
   releaseAll() {
     this.keyboard.releaseAll();
     for (const midi of [...this.voices.keys()]) this.noteOff(midi);
-    for (const index of [...this.padVoices.keys()]) this.padOff(index, true);
+    this.sampler.stopAll();
+    this.$$('#sampler .pad.down').forEach(pad => pad.classList.remove('down'));
   }
 
   // ------------------------------------------------------------ pads
 
+  get beatLength() {
+    return 60 / (this.track?.sync.bpm || this.song?.bpm || 120);
+  }
+
   renderPads() {
     const $ = this.$;
-    $('#sampler').innerHTML = this.slices.map((slice, i) => `
-      <button class="pad sample" data-slice="${i}" aria-label="Pad ${i + 1}">
+    $('#sampler').innerHTML = this.slices.map((slice, i) => {
+      const tags = [slice.mode && slice.mode !== 'once' ? MODES[slice.mode] : '', slice.pitch ? `${slice.pitch > 0 ? '+' : ''}${slice.pitch}` : '', slice.reverse ? 'Rev' : ''].filter(Boolean).join(' ');
+      return `
+      <button class="pad sample${i === this.editing ? ' editing' : ''}" data-slice="${i}" aria-label="Pad ${i + 1}">
         <span class="number">${i + 1}<span class="key">${PAD_KEYS[i].toUpperCase()}</span></span>
         <canvas width="96" height="28"></canvas>
-        <small>${clock(slice.start)}</small>
-      </button>`).join('');
+        <small>${clock(slice.start)} - ${(slice.end - slice.start).toFixed(1)} s${tags ? ` - ${tags}` : ''}</small>
+      </button>`;
+    }).join('');
     this.$$('#sampler canvas').forEach((canvas, i) => this.drawSlice(canvas, this.slices[i]));
+    this.renderEditor();
   }
 
   drawSlice(canvas, slice) {
@@ -315,15 +347,20 @@ export class RecordScreen {
       let peak = 0;
       for (let i = from + x * step; i < from + (x + 1) * step && i < data.length; i += 8) peak = Math.max(peak, Math.abs(data[i]));
       const h = Math.max(1, Math.round(peak * canvas.height));
-      g.fillRect(x, Math.round((canvas.height - h) / 2), 1, h);
+      const column = slice.reverse ? canvas.width - 1 - x : x;
+      g.fillRect(column, Math.round((canvas.height - h) / 2), 1, h);
     }
+  }
+
+  padElement(index) {
+    return this.$(`#sampler [data-slice="${index}"]`);
   }
 
   padOn(index, velocity = 0.85) {
     const slice = this.slices[index];
     if (!slice) return;
     if (this.assigning) {
-      this.slices[index] = { ...this.loop };
+      this.slices[index] = { ...slice, start: this.loop.start, end: this.loop.end };
       this.assigning = false;
       this.$('#rec-assign').setAttribute('aria-pressed', 'false');
       this.save({});
@@ -331,51 +368,52 @@ export class RecordScreen {
       toast(`Pad ${index + 1} now plays ${clock(this.loop.start)}-${clock(this.loop.end)}.`);
       return;
     }
-    this.padOff(index, true);
-    const now = this.context.currentTime;
-    const gain = this.context.createGain();
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.4 + velocity * 0.6, now + 0.005);
-    gain.connect(this.output);
-    const source = this.context.createBufferSource();
-    source.buffer = this.buffer;
-    source.playbackRate.value = 1;
-    source.connect(gain);
-    const length = slice.end - slice.start;
-    source.start(now, slice.start, length + 0.02);
-    gain.gain.setValueAtTime(0.4 + velocity * 0.6, now + Math.max(0.006, length - 0.02));
-    gain.gain.linearRampToValueAtTime(0, now + length + 0.02);
-    const pad = this.$(`#sampler [data-slice="${index}"]`);
+    if (this.$('#pad-edit').getAttribute('aria-pressed') === 'true' && this.view === 'pads') this.selectPad(index);
+    const key = `pad-${index}`;
+    const pad = this.padElement(index);
+    if (slice.mode === 'loop' && this.sampler.playing(key)) {
+      this.sampler.stop(key);
+      pad?.classList.remove('down');
+      return;
+    }
     pad?.classList.add('down');
     this.lastPad = index;
-    const voice = { source, gain, pad };
-    this.padVoices.set(index, voice);
-    source.onended = () => {
-      if (this.padVoices.get(index) === voice) this.padVoices.delete(index);
-      pad?.classList.remove('down');
-    };
+    this.sampler.play(key, slice, {
+      velocity,
+      onEnd: () => {
+        if (!this.sampler.playing(key)) this.padElement(index)?.classList.remove('down');
+      },
+    });
   }
 
-  padOff(index, now = false) {
-    const voice = this.padVoices.get(index);
-    if (!voice) return;
-    if (!now && !this.$('#pad-hold').checked) return;
-    const t = this.context.currentTime;
-    voice.gain.gain.cancelScheduledValues(t);
-    voice.gain.gain.setValueAtTime(voice.gain.gain.value, t);
-    voice.gain.gain.linearRampToValueAtTime(0, t + 0.03);
-    try { voice.source.stop(t + 0.04); } catch { /* already stopped */ }
-    voice.pad?.classList.remove('down');
-    this.padVoices.delete(index);
+  padOff(index) {
+    if (this.slices[index]?.mode !== 'hold') return;
+    this.sampler.stop(`pad-${index}`);
+    this.padElement(index)?.classList.remove('down');
   }
 
+  // Cuts all sixteen pads again: at the record's attacks, the loop into
+  // sixteen, or sixteen pads of a beat, a bar, two bars or four bars each,
+  // from the loop or the playhead.
   cut(how) {
-    if (how === 'attacks') this.slices = sliceAtAttacks(this.buffer);
-    else if (how === 'loop' && this.loop) this.slices = sliceEvenly(this.loop.start, this.loop.end);
-    else if (how === 'beats') {
-      const beat = 60 / (this.track.sync.bpm || this.song?.bpm || 120);
-      const from = this.loop ? this.loop.start : this.time;
-      this.slices = sliceEvenly(from, Math.min(from + beat * 16, this.duration));
+    const beat = this.beatLength;
+    const bar = beat * (this.song?.barLengths?.[0] || 4);
+    const from = this.loop ? this.loop.start : this.time;
+    const lengths = { beat, bar, bars2: bar * 2, bars4: bar * 4 };
+    if (how === 'attacks') {
+      this.slices = sliceAtAttacks(this.buffer);
+    } else if (how === 'loop') {
+      if (!this.loop) {
+        toast('Drag across the waveform to make a loop first.');
+        return;
+      }
+      this.slices = sliceEvenly(this.loop.start, this.loop.end);
+    } else if (lengths[how]) {
+      const size = lengths[how];
+      this.slices = [...Array(16).keys()].map(i => {
+        const start = Math.min(from + i * size, Math.max(0, this.duration - size));
+        return { start, end: Math.min(start + size, this.duration) };
+      });
     } else {
       return;
     }
@@ -384,16 +422,96 @@ export class RecordScreen {
     toast('The pads are cut.');
   }
 
+  // ------------------------------------------------------------ pad editor
+
+  selectPad(index) {
+    this.editing = index;
+    this.$$('#sampler .pad.editing').forEach(pad => pad.classList.remove('editing'));
+    this.padElement(index)?.classList.add('editing');
+    this.renderEditor();
+  }
+
+  toggleEditing() {
+    const on = this.$('#pad-edit').getAttribute('aria-pressed') !== 'true';
+    this.$('#pad-edit').setAttribute('aria-pressed', String(on));
+    this.$('#pad-editor').hidden = !on;
+    if (on) {
+      this.selectPad(this.lastPad ?? 0);
+      toast('Touch a pad to edit it. Drag across the waveform to set where it starts and ends.');
+    } else {
+      this.editing = null;
+      this.$$('#sampler .pad.editing').forEach(pad => pad.classList.remove('editing'));
+    }
+  }
+
+  renderEditor() {
+    const slice = this.slices?.[this.editing];
+    if (!slice) return;
+    const $ = this.$;
+    $('#edit-label').textContent = `Pad ${this.editing + 1}: ${clock(slice.start)}.${Math.floor((slice.start % 1) * 10)} for ${(slice.end - slice.start).toFixed(2)} s`;
+    this.$$('#edit-mode [data-mode]').forEach(b => b.setAttribute('aria-pressed', String((slice.mode || 'once') === b.dataset.mode)));
+    $('#edit-pitch').textContent = `${slice.pitch > 0 ? '+' : ''}${slice.pitch || 0}`;
+    $('#edit-reverse').checked = Boolean(slice.reverse);
+  }
+
+  changePad(change) {
+    const index = this.editing;
+    if (index === null) return;
+    const slice = { ...this.slices[index], ...change };
+    slice.start = Math.max(0, Math.min(slice.start, this.duration - 0.05));
+    slice.end = Math.max(slice.start + 0.05, Math.min(slice.end, this.duration));
+    this.slices[index] = slice;
+    this.save({});
+    this.renderPads();
+  }
+
+  setPadRegion(index, region) {
+    if (!region || region.end - region.start < 0.05) return;
+    this.changePad({ start: region.start, end: region.end });
+    this.audition(index);
+  }
+
+  // Plays a pad from the start after a change, even a looping one.
+  audition(index) {
+    this.sampler.stop(`pad-${index}`);
+    this.padOn(index);
+  }
+
+  // Nudges by a sixteenth note when the tempo is known.
+  nudgePad(edge, direction) {
+    const slice = this.slices[this.editing];
+    if (!slice) return;
+    const step = this.beatLength / 4 * direction;
+    this.changePad({ [edge]: slice[edge] + step });
+    this.audition(this.editing);
+  }
+
+  // ------------------------------------------------------------ effects
+
+  applyFx() {
+    const filter = Number(this.$('#fx-filter').value) / 100;
+    const echo = Number(this.$('#fx-echo').value) / 100;
+    this.sampler.setFilter(filter);
+    this.sampler.setEcho(echo, this.remix.bpm);
+    if (this.track) this.track.fx = { filter, echo };
+  }
+
   // ------------------------------------------------------------ view
 
   setView(view) {
+    if (this.view !== view) {
+      this.remix.stop();
+      this.riffs.stopDemo();
+    }
     this.view = view;
     this.$('#record-window').dataset.view = view;
     this.$$('#record-view [data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
     this.releaseAll();
     this.wave = null;
+    this.litChord = undefined;
+    this.riffs.lit = null;
     this.renderTransport();
-    if (view === 'along') {
+    if (view === 'along' || view === 'riffs') {
       requestAnimationFrame(() => this.setSong(this.track?.songId ?? null, false));
     }
   }
@@ -445,6 +563,33 @@ export class RecordScreen {
       $('#rec-assign').setAttribute('aria-pressed', String(this.assigning));
       if (this.assigning) toast('Now touch the pad that should play the loop.');
     });
+    $('#pad-edit').addEventListener('click', () => this.toggleEditing());
+    $('#edit-start-down').addEventListener('click', () => this.nudgePad('start', -1));
+    $('#edit-start-up').addEventListener('click', () => this.nudgePad('start', 1));
+    $('#edit-end-down').addEventListener('click', () => this.nudgePad('end', -1));
+    $('#edit-end-up').addEventListener('click', () => this.nudgePad('end', 1));
+    $('#edit-mode').addEventListener('click', event => {
+      const button = event.target.closest('[data-mode]');
+      if (!button) return;
+      this.sampler.stop(`pad-${this.editing}`);
+      this.changePad({ mode: button.dataset.mode });
+    });
+    $('#edit-pitch-down').addEventListener('click', () => {
+      this.changePad({ pitch: Math.max(-12, (this.slices[this.editing].pitch || 0) - 1) });
+      this.audition(this.editing);
+    });
+    $('#edit-pitch-up').addEventListener('click', () => {
+      this.changePad({ pitch: Math.min(12, (this.slices[this.editing].pitch || 0) + 1) });
+      this.audition(this.editing);
+    });
+    $('#edit-reverse').addEventListener('change', event => {
+      this.changePad({ reverse: event.target.checked });
+      this.audition(this.editing);
+    });
+    for (const id of ['#fx-filter', '#fx-echo']) {
+      $(id).addEventListener('input', () => this.applyFx());
+      $(id).addEventListener('change', () => this.save({}));
+    }
     const sampler = $('#sampler');
     const held = new Map();
     sampler.addEventListener('pointerdown', event => {
@@ -495,7 +640,9 @@ export class RecordScreen {
     });
     const end = event => {
       if (!drag) return;
-      if (drag.moved) {
+      if (drag.moved && this.editing !== null && this.view === 'pads') {
+        this.setPadRegion(this.editing, this.selecting);
+      } else if (drag.moved) {
         this.setLoop(this.selecting);
         if (this.loop) toast(`Looping ${clock(this.loop.start)}-${clock(this.loop.end)}. Touch Loop to stop looping.`);
       } else {
@@ -514,18 +661,22 @@ export class RecordScreen {
 
   keyDown(event) {
     const key = event.key.toLowerCase();
-    if (key === ' ') {
+    const padKeys = this.view === 'pads' || this.view === 'remix';
+    if (key === ' ' || (key === 'enter' && this.view === 'riffs')) {
       event.preventDefault();
-      this.toggle();
+      if (this.view === 'riffs') this.riffs.tap();
+      else if (this.view === 'remix') this.remix.togglePlay();
+      else this.toggle();
       return;
     }
-    if (this.view === 'pads' && PAD_KEYS.includes(key)) {
+    if (padKeys && PAD_KEYS.includes(key)) {
       this.padOn(PAD_KEYS.indexOf(key));
       return;
     }
-    if (this.view === 'along' && PIANO_KEYS.includes(key) && this.keyboard.tab === 'keys') {
+    const keys = this.view === 'along' || this.view === 'riffs';
+    if (keys && PIANO_KEYS.includes(key) && this.keyboard.tab === 'keys') {
       this.keyboard.press(this.keyboard.low + PIANO_KEYS.indexOf(key), 0.75);
-    } else if (this.view === 'along' && /^[1-9]$/.test(key)) {
+    } else if (keys && /^[1-9]$/.test(key)) {
       const pad = this.keyboard.pads[Number(key) - 1];
       if (pad) this.keyboard.handlers.padOn(pad, 0.8);
     }
@@ -533,11 +684,12 @@ export class RecordScreen {
 
   keyUp(event) {
     const key = event.key.toLowerCase();
-    if (this.view === 'pads' && PAD_KEYS.includes(key)) {
+    const keys = this.view === 'along' || this.view === 'riffs';
+    if ((this.view === 'pads' || this.view === 'remix') && PAD_KEYS.includes(key)) {
       this.padOff(PAD_KEYS.indexOf(key));
-    } else if (this.view === 'along' && PIANO_KEYS.includes(key) && this.keyboard.tab === 'keys') {
+    } else if (keys && PIANO_KEYS.includes(key) && this.keyboard.tab === 'keys') {
       this.keyboard.release(this.keyboard.low + PIANO_KEYS.indexOf(key));
-    } else if (this.view === 'along' && /^[1-9]$/.test(key)) {
+    } else if (keys && /^[1-9]$/.test(key)) {
       const pad = this.keyboard.pads[Number(key) - 1];
       if (pad) this.keyboard.handlers.padOff(pad);
     }
@@ -561,6 +713,8 @@ export class RecordScreen {
     if (!this.buffer) return;
     this.drawWave();
     if (this.view === 'along') this.drawLane();
+    else if (this.view === 'riffs') this.riffs.draw();
+    else if (this.view === 'remix') this.remix.drawStep();
     this.$('#rec-clock').textContent = `${clock(this.time)} / ${clock(this.duration)}`;
   }
 
@@ -591,8 +745,7 @@ export class RecordScreen {
       const h = Math.max(1, Math.round(this.wave[i] * (height - 8)));
       g.fillRect(i, Math.round(middle - h / 2), 1, h);
     }
-    if (this.view === 'pads') {
-      g.font = '16px Geneva, sans-serif';
+    if (this.view === 'pads' || this.view === 'remix') {
       this.slices.forEach((slice, i) => {
         const left = x(slice.start);
         const right = Math.max(left + 2, x(slice.end));
@@ -601,13 +754,27 @@ export class RecordScreen {
         g.strokeStyle = '#000';
         g.strokeRect(left + 0.5, 0.5, right - left - 1, 4);
       });
+      const edited = this.editing !== null && !this.selecting ? this.slices[this.editing] : null;
+      if (edited) {
+        g.globalCompositeOperation = 'difference';
+        g.fillStyle = '#fff';
+        g.fillRect(x(edited.start), 6, Math.max(1, x(edited.end) - x(edited.start)), height - 6);
+        g.globalCompositeOperation = 'source-over';
+      }
+    }
+    if (this.view === 'riffs' && this.riffs.riff) {
+      const region = this.riffs.region();
+      g.fillStyle = '#000';
+      for (const hit of this.riffs.riff.hits) g.fillRect(x(region.start + hit.beat * this.riffs.beat), 0, 1, 8);
+      g.strokeStyle = '#000';
+      g.strokeRect(x(region.start) + 0.5, 0.5, Math.max(2, x(region.end) - x(region.start)), height - 1);
     }
     if (this.view === 'along') {
       const marks = this.track.sync.marks;
       g.fillStyle = '#000';
       for (const mark of marks) g.fillRect(x(mark.time), height - 6, 1, 6);
     }
-    const shade = this.selecting || this.loop;
+    const shade = this.selecting || (this.view === 'pads' && this.editing !== null ? null : this.loop);
     if (shade) {
       g.globalCompositeOperation = 'difference';
       g.fillStyle = '#fff';

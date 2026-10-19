@@ -1,6 +1,6 @@
 # Undertow
 
-A classic Macintosh music desk for iPad, built around Radiohead records you own: play along with a song's chords as it plays, slow down and loop the hard parts, cut it into sampler pads, or explore sound worlds and lessons.
+A classic Macintosh music desk for iPad, built around Radiohead records you own: tap through a song's famous riff with its real sound, cut it into sampler pads and remix them, play along with its chords, or explore sound worlds and lessons.
 
 Open https://GeorgePhilippou.github.io/undertow-studio/ and tap **Start**. Headphones recommended.
 
@@ -12,12 +12,24 @@ Only the records themselves sound exactly like Radiohead, so they are at the hea
 
 ## A record
 
-- **Play Along:** the whole record as a waveform: touch to jump, drag across a part to loop it. Underneath, the chords scroll past in time, with the chord playing now in black and lit on the keyboard (or on one pad per chord) so you can play along.
+A record opens in a window with four views:
+
+- **Riffs:** the song's recognisable part, ready to perform - the Everything In Its Right Place keyboard figure, the Idioteque chords, the Karma Police piano and the rest of the songs in Lessons.
+  - Tap the big **Tap** pad (or Space) in rhythm: every tap plays the next hit. **Your Record** cuts each hit straight from your own record, so it is Radiohead's real sound; **Keys** plays it with the app's instrument.
+  - The keyboard shows the notes of the next hit, and playing them moves on too, so you can learn it properly. **Hear It** plays the whole riff in time; touch any box in the strip to start from there.
+  - **Set Start** (the moment the riff begins on the record) and the tempo line the hits up with the record.
+- **Pads:** the record cut into sixteen sampler pads, each with its own little waveform. Touch them, or press 1-4, Q-R, A-F and Z-V.
+  - **Cut Pads...** recuts them: at the strongest attacks, **1 beat, 1 bar, 2 bars or 4 bars each** from the loop or the playhead, or the loop into sixteen. **Loop to Pad** puts the looped part on one pad.
+  - **Edit Pad:** touch a pad, then drag across the waveform to set exactly where it starts and ends, or nudge its start and end a sixteenth note at a time. Choose **Once**, **Hold** (plays while held) or **Loop** (repeats until touched again), pitch it up or down in semitones, or **Reverse** it.
+  - **Filter** and **Echo** colour everything the pads play.
+- **Remix:** a sixteen-step pattern grid, one row per pad and one column per sixteenth note, played round and round at the song's tempo (or your own) through the same filter and echo.
+- **Play Along:** the whole record as a waveform with the chords scrolling past in time, lit on the keyboard or on one pad per chord.
   - If the record is one of the songs in Lessons (it is recognised from the file name, or choose it from the Song menu), its chord loop is lined up from where the music starts. **Set Start** lines it up by ear and the tempo can be nudged. The chart repeats the passage from Lessons, so other sections of the record may differ.
-  - **Mark Chords:** tap each chord the moment you hear it change. Your marks replace the chart for that record, so any song can have its chords, exactly where you hear them.
-  - **Speed** from 100% down to 50% without changing the pitch.
-- **Pads:** the record cut into sixteen sampler pads at its strongest attacks, each with its own little waveform. Touch them, or press 1-4, Q-R, A-F and Z-V. **Cut Pads...** recuts them (at attacks, the loop into sixteen, or sixteen beats from the playhead), **Loop to Pad** puts the looped part on any pad, and **Hold** makes pads play only while held.
-- Your song choice, chord sync, marks and pads are kept with the record.
+  - **Mark Chords:** tap each chord the moment you hear it change. Your marks replace the chart for that record.
+  - **Speed** from 100% down to 50% without changing the pitch; drag across the waveform to loop a part.
+- Your song choice, sync, marks, pads and pattern are kept with the record.
+
+The record is one finished mix, so the app cannot pull out just the piano or the guitar; chords and riffs work whatever instruments play them. Official stems that Radiohead released (Nude and Reckoner) load as records like any other file.
 
 ## Sound Worlds
 
@@ -82,14 +94,14 @@ Open http://localhost:8000. The page is plain HTML, CSS and ES modules with no d
 | `src/render.js` | Offline WAV export |
 | `src/ui/` | Menus and windows, keyboard and pads, note roll, Balloon Help, icons |
 | `sw.js`, `manifest.webmanifest` | Offline support and Home Screen install |
-| `src/records/` | The desktop and records: Finder window, chord chart and sync, play along, sampler pads |
+| `src/records/` | The desktop and records: Finder window, riffs, sampler pads and pad editing, remix grid, chord chart and play along |
 | `src/play/` | Sound Worlds: worlds, Your Song (grains, stored tracks), touch surface, generative art, recording pieces |
 | `src/main.js` | Wires the windows, menus and storage together |
 
 Browser checks need Node, the `playwright` package and Chromium (set `CHROMIUM_PATH` if it is not Playwright's own):
 
 ```sh
-node tests/desk.cjs    # desktop and records: loading, chords, looping, speed, pads
+node tests/desk.cjs    # desktop and records: riffs, pads, remix, chords, looping, speed
 node tests/play.cjs    # Sound Worlds: worlds, touch, art, recording, layouts
 node tests/app.cjs     # Lessons: songs, practice modes, recording, editing, layouts
 node tests/sound.cjs   # every song renders audibly without clipping
