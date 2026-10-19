@@ -30,7 +30,7 @@ These are synthesised arrangements of short passages. They are not transcription
 
 | Song | Checked against sources | Reconstructed |
 | --- | --- | --- |
-| Everything In Its Right Place | C, D♭maj7, E♭6 with a high C on top; ten-beat (4 + 6) cycle; about 124 BPM | Stab rhythm and voicing spacing |
+| Everything In Its Right Place | C, D♭maj7, E♭6 with a high C on top; ten-beat (4 + 6) cycle; 124 BPM. Sound after published Prophet-5 recreations: pulse waves, closed resonant filter swept per key, long decay, two takes panned hard left and right, about 19 cents flat | Stab rhythm (no source gives it note for note) and voicing spacing |
 | Idioteque | Four E♭maj7 voicings, five-bar cycle (Ali Jamieson) | Six-beat drum pattern, pad sound |
 | Karma Police | Am, D/F♯, Em, G, Am, F, Em, G | Voicings, repeated-chord rhythm, light drums |
 | Pyramid Song | 3 + 3 + 4 + 3 + 3 rhythm; F♯, Gmaj7, A6 with a high F♯ | Which chord falls on each hit; tempo |

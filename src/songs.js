@@ -25,9 +25,13 @@ export const SONGS = [
     key: 'C, D♭, E♭',
     youtube: 'd9zk2j3JPK4',
     about: 'The opening keyboard figure. A bar of four and a bar of six make a ten-beat cycle, and the high C stays on top of every chord.',
-    accuracy: 'Chords and the ten-beat cycle follow published analyses (C, D♭maj7, E♭6 with a high C pedal; 124 BPM). The stab rhythm is a reconstruction.',
+    accuracy: 'Chords and the ten-beat cycle follow published analyses (C, D♭maj7, E♭6 with a high C on top of every chord; 124 BPM). The sound follows published recreations of the Prophet-5 part: pulse waves, a fairly closed resonant filter that sweeps down on each key, a long decay, two takes panned hard left and right, and tuning about 19 cents flat like the record. The stab rhythm is a reconstruction: no published source gives it note for note, so correct it by ear with Record and Use as Part. Synthesis cannot match the record exactly; load your own copy in Your Song on the Play screen for that.',
     sources: [
-      ['Ali Jamieson — chord analysis', 'https://alijamieson.co.uk/2015/04/09/chord-of-the-day-everything-in-its-right-place/'],
+      ['Ali Jamieson - chord analysis', 'https://alijamieson.co.uk/2015/04/09/chord-of-the-day-everything-in-its-right-place/'],
+      ['Reverb Machine - Radiohead chord theory', 'https://reverbmachine.com/blog/radiohead-chord-theory/'],
+      ['Attack Magazine - synth recreation (124 BPM, -19 cents)', 'https://www.attackmagazine.com/technique/recreate-radiohead-everything-in-its-right-place/'],
+      ['Soundfly - the Prophet-5 keyboard sound', 'https://flypaper.soundfly.com/discovery/how-to-recreate-that-unmistakable-keyboard-sound-in-radioheads-everything-in-its-right-place/'],
+      ['Syntorial - preset recipe (envelope)', 'https://www.syntorial.com/preset-recipe/radiohead-everything-in-its-right-place-keys/'],
     ],
     chords: {
       'C': 'C2 | E3 G3 C4',
