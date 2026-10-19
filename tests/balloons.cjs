@@ -25,9 +25,12 @@ const tipInside = () => {
     await page.reload();
     await page.click('#boot-start');
     const misses = [];
-    // The Play tour runs on a first visit; the Learn tour the first time Learn opens.
-    for (const screen of ['play', 'learn']) {
-      if (screen === 'learn') await page.click('#screen-switch [data-screen="learn"]');
+    // The desktop tour runs on a first visit; the others the first time each opens.
+    for (const screen of ['desk', 'play', 'learn']) {
+      if (screen !== 'desk') {
+        if (screen === 'learn') await page.click('#to-desk');
+        await page.click(`#desk-icons [data-open="${screen}"]`);
+      }
       await page.waitForSelector('.balloon.tour');
       const total = Number((await page.textContent('.balloon b')).split(' of ')[1]);
       for (let step = 1; step <= total; step++) {
@@ -40,8 +43,8 @@ const tipInside = () => {
 
     // Every Balloon Help target that is on screen, on both screens.
     const helpMisses = [];
-    for (const screen of ['learn', 'play']) {
-      await page.click(`#screen-switch [data-screen="${screen}"]`);
+    for (const screen of ['learn', 'play', 'desk']) {
+      await page.evaluate(name => undertow.setScreen(name), screen);
       await page.waitForTimeout(150);
       helpMisses.push(...await page.evaluate(async () => {
       const { showBalloon, hideBalloon } = await import('./src/ui/balloons.js');

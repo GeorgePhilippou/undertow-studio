@@ -41,6 +41,10 @@ These are synthesised arrangements of short passages. They are not transcription
 
 **Held back:** No Surprises and 15 Step did not sound like the records when checked by ear. Their data is kept in `UNCHECKED_SONGS` in `src/songs.js`; correct the recognisable riffs (the No Surprises guitar and glockenspiel line, the 15 Step beat and guitar figure) and move them back into `SONGS`.
 
+## Records
+
+When a loaded record matches a song here (by file name, or chosen in the record's Song menu), Play Along repeats that song's chord loop along the record from where the music starts, at the song's `bpm`. The chord changes come from the part marked `learn: true`. The player can line it up with Set Start, nudge the tempo, or mark the chords themselves; the chart only covers the passage written here, so other sections of the record may differ.
+
 ## Sound worlds
 
 The Play screen's worlds live in `src/play/worlds.js`. **Your Song** is the exception: it plays a recording the player loads from their own files, so it sounds exactly like the record; nothing from it is stored outside their device. They are original loops in the manner of Kid A, OK Computer and In Rainbows - instruments, tempo and harmonic colour - and are never presented as songs. Each lists a `scale` that fits every chord in its loop, so anything played on the surface fits.

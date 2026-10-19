@@ -1,26 +1,41 @@
 # Undertow
 
-A classic Macintosh music instrument for iPad: touch anything to make sounds and pictures in the spirit of Radiohead's records, or learn the songs.
+A classic Macintosh music desk for iPad, built around Radiohead records you own: play along with a song's chords as it plays, slow down and loop the hard parts, cut it into sampler pads, or explore sound worlds and lessons.
 
 Open https://GeorgePhilippou.github.io/undertow-studio/ and tap **Start**. Headphones recommended.
 
-## Play
+## The desktop
 
-Undertow opens on **Play**: one window, one picture, touch anywhere.
+Undertow opens on a Finder-style desktop. The **Records** window holds the songs you have loaded; touch one to open it. Icons on the right open **Sound Worlds**, **Lessons** and **My Pieces**. The **Desktop** button in the menu bar always brings you back.
 
-- **Your Song** - the real thing: load a Radiohead track you own (MP3, M4A or WAV from Files) and the screen becomes the song. Left to right is the track; touch to hear any moment, slide to scrub through it, and higher up slows it into a frozen, shimmering cloud of grains. The Song button plays it straight through to play over. The file stays on the device; nothing is uploaded or bundled. Apple Music downloads are copy-protected and cannot be opened.
+Only the records themselves sound exactly like Radiohead, so they are at the heart of the app. Load an MP3, M4A, AAC or WAV you own from Files (**Load a Record...** or File > Load a Record). It stays in this browser on this device; nothing is uploaded or bundled. Apple Music downloads are copy-protected and cannot be opened.
+
+## A record
+
+- **Play Along:** the whole record as a waveform: touch to jump, drag across a part to loop it. Underneath, the chords scroll past in time, with the chord playing now in black and lit on the keyboard (or on one pad per chord) so you can play along.
+  - If the record is one of the songs in Lessons (it is recognised from the file name, or choose it from the Song menu), its chord loop is lined up from where the music starts. **Set Start** lines it up by ear and the tempo can be nudged. The chart repeats the passage from Lessons, so other sections of the record may differ.
+  - **Mark Chords:** tap each chord the moment you hear it change. Your marks replace the chart for that record, so any song can have its chords, exactly where you hear them.
+  - **Speed** from 100% down to 50% without changing the pitch.
+- **Pads:** the record cut into sixteen sampler pads at its strongest attacks, each with its own little waveform. Touch them, or press 1-4, Q-R, A-F and Z-V. **Cut Pads...** recuts them (at attacks, the loop into sixteen, or sixteen beats from the playhead), **Loop to Pad** puts the looped part on any pad, and **Hold** makes pads play only while held.
+- Your song choice, chord sync, marks and pads are kept with the record.
+
+## Sound Worlds
+
+Touch anywhere to play: one window, one picture.
+
+- **Your Song** plays a track you load: left to right is the track, touch to hear any moment, slide to scrub, higher up slows it into a frozen cloud of grains.
 - **Three sound worlds**, each an original loop in the manner of an album, not a song from it:
   - **Kid A** - glass chords, a crunchy machine beat and a singing ondes-style voice that glides under your finger.
   - **OK Computer** - tape strings, electric piano and glockenspiel in a slow, glowing room.
   - **In Rainbows** - clean guitars weaving around each other over a steady groove; you pluck along.
 - **Nothing sounds wrong:** the surface plays only notes from the world's scale. Left is low, right is high, higher up is brighter; Apple Pencil pressure sets loudness. Several fingers, computer keys (A W S E D...) and MIDI keyboards all play.
-- **Living one-bit art:** each world has its own dithered black-and-white picture - your song's own waveform, signal interference, a night road, rippling arcs - that pulses with the music and ripples where you touch. It is original artwork, not album art.
-- **Record a piece:** the sound and the moving picture together as a video (sound only where a browser cannot record video). Pieces are kept on the device in My Pieces, and Save opens the share sheet.
+- **Living one-bit art:** each world has its own dithered black-and-white picture that pulses with the music and ripples where you touch. It is original artwork, not album art.
+- **Record a piece:** the sound and the moving picture together as a video (sound only where a browser cannot record video), kept in My Pieces; Save opens the share sheet.
 - **Band** on or off (Space), **Full Screen** from the window's zoom box.
 
-## Learn
+## Lessons
 
-**Learn** (top right of the menu bar) opens the song desk:
+**Lessons** on the desktop opens the song desk, where the app's own instruments play short passages to learn step by step:
 
 - **Songs:** Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits and Motion Picture Soundtrack. Each is a short, looping passage with its own sound. Get Info explains what is checked against published analyses and what is a reconstruction. No Surprises and 15 Step are held back until their parts sound right.
 - **Five lesson steps** for every song, each ticked off as you go and shown in the Songs list:
@@ -67,14 +82,16 @@ Open http://localhost:8000. The page is plain HTML, CSS and ES modules with no d
 | `src/render.js` | Offline WAV export |
 | `src/ui/` | Menus and windows, keyboard and pads, note roll, Balloon Help, icons |
 | `sw.js`, `manifest.webmanifest` | Offline support and Home Screen install |
-| `src/play/` | Play screen: sound worlds, Your Song (grains, stored tracks), touch surface, generative art, recording pieces |
+| `src/records/` | The desktop and records: Finder window, chord chart and sync, play along, sampler pads |
+| `src/play/` | Sound Worlds: worlds, Your Song (grains, stored tracks), touch surface, generative art, recording pieces |
 | `src/main.js` | Wires the windows, menus and storage together |
 
 Browser checks need Node, the `playwright` package and Chromium (set `CHROMIUM_PATH` if it is not Playwright's own):
 
 ```sh
-node tests/play.cjs    # Play screen: worlds, touch, art, recording, layouts
-node tests/app.cjs     # Learn: songs, practice modes, recording, editing, layouts
+node tests/desk.cjs    # desktop and records: loading, chords, looping, speed, pads
+node tests/play.cjs    # Sound Worlds: worlds, touch, art, recording, layouts
+node tests/app.cjs     # Lessons: songs, practice modes, recording, editing, layouts
 node tests/sound.cjs   # every song renders audibly without clipping
 node tests/balloons.cjs  # every tour step and help balloon points at its control
 ```

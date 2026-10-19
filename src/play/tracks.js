@@ -29,8 +29,14 @@ export const saveTrack = track => run('readwrite', store => store.put(track));
 export const deleteTrack = id => run('readwrite', store => store.delete(id));
 export const getTrack = id => run('readonly', store => store.get(id));
 export const listTracks = async () => ((await run('readonly', store => store.getAll())) || [])
-  .map(({ id, name, added, seconds }) => ({ id, name, added, seconds }))
+  .map(({ id, name, added, seconds, songId }) => ({ id, name, added, seconds, songId }))
   .sort((a, b) => b.added.localeCompare(a.added));
+
+// Keeps what the player set up for a record (song, chord sync, pads) with it.
+export async function updateTrack(id, fields) {
+  const track = await getTrack(id);
+  if (track) await saveTrack({ ...track, ...fields });
+}
 
 // A readable title from a file name: "02 Idioteque.m4a" becomes "Idioteque".
 export function titleFrom(fileName) {

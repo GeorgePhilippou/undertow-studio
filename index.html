@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#ffffff">
-  <meta name="description" content="Play, practise and record Radiohead songs on a classic Macintosh music desk.">
+  <meta name="description" content="Play along with, practise and sample Radiohead records you own on a classic Macintosh music desk.">
   <title>Undertow</title>
   <meta name="apple-mobile-web-app-title" content="Undertow">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -14,14 +14,14 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./mac.css">
 </head>
-<body data-screen="play">
+<body data-screen="desk">
 
 <div id="boot" class="boot">
   <div class="boot-box dialog-frame">
     <div class="dialog-inner">
       <span data-icon="mac"></span>
       <p>Welcome to Undertow.</p>
-      <p class="small">Touch anything to play in the sound worlds of Radiohead's records, or learn the songs. Headphones recommended.</p>
+      <p class="small">Open a Radiohead record you own to play along with its chords or play it on pads, or explore the sound worlds and lessons. Headphones recommended.</p>
       <button id="boot-start" class="btn default">Start</button>
     </div>
   </div>
@@ -37,10 +37,79 @@
   <button class="menu-title learn-only hide-phone" data-menu="window" aria-haspopup="true" aria-expanded="false">Window</button>
   <button class="menu-title" data-menu="help" aria-haspopup="true" aria-expanded="false">Help</button>
   <span class="menubar-right"><span id="status" class="status" aria-live="polite"></span>
-    <span id="screen-switch" class="screen-switch" role="group" aria-label="Screen" data-help="Play: touch anything to make Radiohead-style sounds and pictures. Learn: practise the songs step by step."><button data-screen="play" aria-pressed="true">Play</button><button data-screen="learn" aria-pressed="false">Learn</button></span><span id="clock" class="clock"></span></span>
+    <button id="to-desk" class="desk-button" data-help="Back to the desktop: your records, the sound worlds and the lessons.">Desktop</button><span id="clock" class="clock"></span></span>
 </header>
 
 <div id="menus"></div>
+
+<main id="finder" class="finder" aria-label="Desktop">
+  <section id="records-window" class="window active" aria-label="Records">
+    <header class="titlebar"><h2>Records</h2></header>
+    <div class="finder-info"><span id="records-info" class="small"></span><span class="small">Touch a record to open it</span></div>
+    <div id="records" class="icon-view" data-help="Your records: Radiohead songs you own, kept on this device. Touch one to play along with its chords or play it on pads."></div>
+    <div id="records-empty" class="records-empty small" hidden>
+      <p>Load a Radiohead song you own (MP3, M4A, AAC or WAV from Files) and it becomes a record here. Play along with its chords as it plays, slow it down without changing the pitch, loop the hard parts, or cut it into sampler pads.</p>
+      <p>Songs from Apple Music are copy-protected and cannot be opened. Nothing you load leaves this device.</p>
+    </div>
+    <input id="record-file" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac" hidden>
+  </section>
+  <nav id="desk-icons" class="desk-icons" aria-label="Desktop">
+    <button class="icon" data-open="play" data-help="Sound Worlds: touch anywhere to make sounds and pictures in the spirit of Kid A, OK Computer and In Rainbows."><span class="glyph" data-icon="globe"></span><span class="name">Sound Worlds</span></button>
+    <button class="icon" data-open="learn" data-help="Lessons: learn short passages of Radiohead songs step by step, played by the app's own instruments."><span class="glyph" data-icon="piano"></span><span class="name">Lessons</span></button>
+    <button class="icon" data-open="pieces" data-help="My Pieces: the pieces you recorded in the sound worlds."><span class="glyph" data-icon="folder"></span><span class="name">My Pieces</span></button>
+  </nav>
+</main>
+
+<main id="record-screen" class="record-screen" aria-label="Record">
+  <section id="record-window" class="window active" data-view="along">
+    <header class="titlebar"><button id="record-close" class="box close" aria-label="Close" data-help="Close the record and go back to the desktop."></button><h2 id="record-title">Record</h2></header>
+    <div class="record-top">
+      <span id="record-view" class="segmented" role="group" aria-label="View" data-help="Play Along shows the chords in time with the record. Pads cuts the record into sixteen pads to play."><button data-view="along" aria-pressed="true">Play Along</button><button data-view="pads" aria-pressed="false">Pads</button></span>
+      <label class="label along-only" for="record-song">Song</label>
+      <select id="record-song" class="popup along-only" data-help="Which Radiohead song this record is, so its chords can follow along. Choose Not in the list to mark the chords yourself."></select>
+      <span class="spacer"></span>
+      <output id="rec-clock" class="small">0:00</output>
+    </div>
+    <canvas id="record-wave" class="record-wave" aria-label="Waveform" data-help="The whole record. Touch to jump there; drag across a part to loop it."></canvas>
+    <div class="along-view along-only">
+      <div class="chord-sheet">
+        <div class="chord-now"><span class="small">Now</span><strong id="chord-now">-</strong></div>
+        <canvas id="chord-lane" class="chord-lane" aria-label="Chords" data-help="The chords scroll past in time with the record. The black box is the chord playing now; the dotted line is now."></canvas>
+      </div>
+      <p id="along-hint" class="small along-hint"></p>
+      <div id="mark-row" class="mark-row" hidden>
+        <span id="mark-chords" class="mark-chords" data-help="Tap a chord the moment you hear it start. Your marks replace the song's chart for this record."></span>
+        <button id="mark-undo" class="btn square" data-help="Remove the last chord you marked.">Undo</button>
+        <button id="mark-clear" class="btn square" data-help="Remove all your marks for this record.">Clear Marks</button>
+      </div>
+      <div class="along-keys">
+        <span id="along-tabs" class="segmented" role="group" aria-label="Keyboard" data-help="Play along on piano keys or one pad per chord. The dotted keys are the chord playing now."><button data-along="keys" aria-pressed="true">Keys</button><button data-along="chords" aria-pressed="false">Chords</button></span>
+        <div id="along-piano" class="piano" aria-label="Piano keyboard" data-help="Play along. The dotted keys show the chord playing now."></div>
+        <div id="along-pads" class="pads" aria-label="Chord pads" hidden data-help="One pad per chord. The dotted pad is the chord playing now."></div>
+        <div id="along-drums" class="pads" hidden></div>
+      </div>
+    </div>
+    <div class="pads-view pads-only">
+      <div id="sampler" class="sampler" aria-label="Sampler pads" data-help="Sixteen pads cut from the record. Touch to play; keys 1-4, Q-R, A-F and Z-V play them too."></div>
+    </div>
+    <div class="control-strip record-strip">
+      <button id="rec-play" class="btn default" aria-pressed="false" data-help="Play or stop the record (Space)."><span data-icon="play"></span><span>Play</span></button>
+      <select id="rec-speed" class="popup" aria-label="Speed" data-help="Slow the record down without changing its pitch."></select>
+      <button id="rec-loop" class="btn" aria-pressed="false" disabled data-help="Drag across the waveform to loop a part. Touch here to stop looping."><span>Loop</span></button>
+      <button id="rec-start" class="btn along-only" data-help="Press this the moment you hear the first chord, and the chart lines up with the record.">Set Start</button>
+      <span id="rec-tempo" class="tempo along-only" data-help="Nudge the tempo if the chords slowly drift from the record."><button id="tempo-down" class="btn square" aria-label="Slower">-</button><output id="rec-bpm" class="small"></output><button id="tempo-up" class="btn square" aria-label="Faster">+</button></span>
+      <button id="rec-mark" class="btn along-only" aria-pressed="false" data-help="Mark the chords yourself: tap each one as you hear it.">Mark Chords</button>
+      <select id="rec-cut" class="popup pads-only" aria-label="Cut the pads" data-help="Cut the record into pads again: at its strongest attacks, the loop into sixteen, or sixteen beats from here.">
+        <option value="">Cut Pads...</option>
+        <option value="attacks">At the strongest attacks</option>
+        <option value="loop">The loop into 16</option>
+        <option value="beats">16 beats from here</option>
+      </select>
+      <button id="rec-assign" class="btn pads-only" aria-pressed="false" disabled data-help="Put the looped part on a pad: touch this, then the pad.">Loop to Pad</button>
+      <label class="check pads-only" data-help="When on, a pad plays only while you hold it."><input id="pad-hold" type="checkbox"> Hold</label>
+    </div>
+  </section>
+</main>
 
 <main id="play-screen" class="play-screen" aria-label="Play">
   <section id="world-window" class="window active">

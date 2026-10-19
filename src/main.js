@@ -14,6 +14,8 @@ import { ICONS, renderIcons } from './ui/icons.js';
 import { BalloonHelp, runTour, hideBalloon } from './ui/balloons.js';
 import { pianoReady } from './audio/piano.js';
 import { PlayScreen } from './play/index.js';
+import { Desktop } from './records/desktop.js';
+import { RecordScreen } from './records/record.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -888,7 +890,13 @@ function showInfo() {
 
 function showHelp() {
   showDialog(`
-    <h3>Play</h3>
+    <h3>Records</h3>
+    <ul>
+      <li><b>Load a Record</b> on the desktop: a Radiohead song you own as an MP3, M4A, AAC or WAV from Files. It stays on this device. (Apple Music downloads are copy-protected and cannot be opened.) Touch a record to open it.</li>
+      <li><b>Play Along</b> - the chords scroll past in time with the record and light up on the keys. Touch the waveform to jump, drag across it to loop a part, and slow it down without changing the pitch. Set Start lines the chords up; Mark Chords lets you tap them in yourself.</li>
+      <li><b>Pads</b> - the record cut into sixteen pads. Cut Pads recuts them; Loop to Pad puts the looped part on a pad. Keys 1-4, Q-R, A-F and Z-V play them.</li>
+    </ul>
+    <h3>Sound Worlds</h3>
     <ul>
       <li><b>Touch anywhere</b> on the picture to play. Left is low, right is high, higher up is brighter. Slide to play more notes; use several fingers. Every note fits the music, so nothing sounds wrong.</li>
       <li><b>Your Song</b> plays a Radiohead track you own: load an MP3, M4A or WAV from Files. Left to right is the song; touch to hear any moment, slide to scrub, and higher up melts it into a cloud. The file stays on this device. (Apple Music downloads are copy-protected and cannot be opened.)</li>
@@ -896,7 +904,7 @@ function showHelp() {
       <li><b>Band</b> starts or stops the loop underneath you (Space). <b>Record</b> keeps the sound and the moving picture as a piece in My Pieces (R).</li>
       <li>The worlds are original music in the spirit of each album, not the songs themselves.</li>
     </ul>
-    <h3>Learn</h3>
+    <h3>Lessons</h3>
     <ul>
       <li><b>Choose a song</b> from the Songs window or the Song menu.</li>
       <li><b>Follow the five steps</b> along the top. Each gets a tick when you've done it, and your progress shows in the Songs list.</li>
@@ -921,7 +929,7 @@ function showAbout() {
   showDialog(`
     <div class="alert">${ICONS.mac}<div>
       <h3>Undertow</h3>
-      <p>A classic Macintosh music desk for playing, practising and recording Radiohead songs. Everything you make stays in this browser. No recordings or vocals are included; the songs are played by the instruments in this app.</p>
+      <p>A classic Macintosh music desk for playing along with, practising and sampling Radiohead records you own. Everything you load and make stays in this browser. No recordings or vocals are included; the lessons are played by the instruments in this app.</p>
       <p><b>Credits</b><br>
       Piano: Salamander Grand Piano by Alexander Holm, CC BY 3.0.<br>
       Chicago-style type: ChiKareGo2 by Giles Booth, CC BY.<br>
@@ -1019,6 +1027,17 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
     case 'world':
       return playScreen.menu();
     case 'file':
+      if (screen() === 'desk' || screen() === 'record') {
+        return [
+          { label: 'Load a Record...', action: () => $('#record-file').click() },
+          { label: 'Remove a Record...', action: () => desktop.remove() },
+          '-',
+          { label: 'Close Record', disabled: screen() !== 'record', action: () => setScreen('desk') },
+          '-',
+          { label: 'My Pieces...', action: () => playScreen.showPieces() },
+          { label: 'Open Undertow Classic...', action: openClassic },
+        ];
+      }
       if (screen() === 'play') {
         return [
           { label: 'My Pieces...', action: () => playScreen.showPieces() },
@@ -1230,8 +1249,13 @@ document.addEventListener('keydown', event => {
     return;
   }
   if (event.repeat) return;
+  if (document.getElementById('boot') || screen() === 'desk') return;
   if (screen() === 'play') {
-    if (!document.getElementById('boot')) playScreen.keyDown(event);
+    playScreen.keyDown(event);
+    return;
+  }
+  if (screen() === 'record') {
+    recordScreen.keyDown(event);
     return;
   }
   if (event.key === 'Shift') {
@@ -1267,6 +1291,10 @@ document.addEventListener('keyup', event => {
     playScreen.keyUp(event);
     return;
   }
+  if (screen() === 'record') {
+    recordScreen.keyUp(event);
+    return;
+  }
   if (event.key === 'Shift') setPedal(false);
   const key = event.key.toLowerCase();
   heldKeys.get(key)?.();
@@ -1280,6 +1308,7 @@ function connectMidi() {
       input.onmidimessage = ({ data: [status, note, velocity] }) => {
         const type = status & 0xf0;
         if (screen() === 'play' && (type === 0x90 || type === 0x80)) playScreen.midiNote(note, type === 0x90 ? velocity / 127 : 0);
+        else if (screen() === 'record' && (type === 0x90 || type === 0x80)) recordScreen.midiNote(note, type === 0x90 ? velocity / 127 : 0);
         else if (type === 0x90 && velocity > 0) keyboard.press(note, velocity / 127);
         else if (type === 0x80 || (type === 0x90 && velocity === 0)) keyboard.release(note);
         else if (type === 0xb0 && note === 64) setPedal(velocity >= 64);
@@ -1347,12 +1376,12 @@ keyboard.labels = Boolean(settings().labels);
 selectSong(settings().songId || SONGS[0].id);
 const playScreen = new PlayScreen({ engine, settings, persist, download, $ });
 playScreen.band.on('state', state => keepAwake(state !== 'stopped'));
-document.body.dataset.screen = screen();
-$$('#screen-switch [data-screen]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.screen === screen())));
-$('#screen-switch').addEventListener('click', event => {
-  const button = event.target.closest('[data-screen]');
-  if (button && button.dataset.screen !== screen()) setScreen(button.dataset.screen);
-});
+const recordScreen = new RecordScreen({ engine, $, onPlaying: keepAwake });
+const desktop = new Desktop({ context, $, open: openFromDesk });
+desktop.render();
+document.body.dataset.screen = screen() === 'record' ? 'desk' : screen();
+$('#to-desk').addEventListener('click', () => setScreen('desk'));
+$('#record-close').addEventListener('click', () => setScreen('desk'));
 requestAnimationFrame(frame);
 
 $('#boot-start').addEventListener('click', async () => {
@@ -1362,30 +1391,59 @@ $('#boot-start').addEventListener('click', async () => {
   $('#boot').classList.add('leaving');
   setTimeout(() => {
     $('#boot').remove();
-    setScreen(screen());
+    if (screen() === 'record' && settings().record) openFromDesk({ record: settings().record });
+    else setScreen(screen() === 'record' ? 'desk' : screen());
   }, 300);
 });
 
 // ---------------------------------------------------------------- screens
 
 function screen() {
-  return settings().screen === 'learn' ? 'learn' : 'play';
+  return ['desk', 'record', 'play', 'learn'].includes(settings().screen) ? settings().screen : 'desk';
 }
 
-// Play is the touch-anywhere instrument; Learn is the song desk.
+// The desktop opens records, the sound worlds (play) and the lessons (learn).
+async function openFromDesk(target) {
+  if (target.screen === 'pieces') {
+    playScreen.showPieces();
+    return;
+  }
+  if (target.screen) {
+    setScreen(target.screen);
+    return;
+  }
+  try {
+    await recordScreen.open(target);
+  } catch {
+    alertBox('This record cannot be opened.', 'It may have been removed. Load it again from Files.');
+    setScreen('desk');
+    return;
+  }
+  settings().record = target.record;
+  setScreen('record');
+}
+
 function setScreen(name) {
+  const previous = document.body.dataset.screen;
   settings().screen = name;
   persist();
   document.body.dataset.screen = name;
-  $$('#screen-switch [data-screen]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.screen === name)));
   menus.close();
-  if (name === 'play') {
+  if (previous === 'play' && name !== 'play') playScreen.leave();
+  if (previous === 'record' && name !== 'record') recordScreen.leave();
+  if (previous === 'learn' && name !== 'learn') {
     player.stop();
     keyboard.releaseAll();
+  }
+  if (name === 'desk') {
+    desktop.render();
+    if (!settings().deskToured) startTour();
+  } else if (name === 'record') {
+    recordScreen.enter();
+  } else if (name === 'play') {
     if (!document.getElementById('boot')) playScreen.enter();
     if (!settings().toured) startTour();
   } else {
-    playScreen.leave();
     renderKeyboard();
     lastRoll = '';
     if (!settings().learnToured) startTour();
@@ -1400,13 +1458,24 @@ function startChord() {
 }
 
 function startTour() {
+  if (screen() === 'desk' || screen() === 'record') {
+    runTour([
+      { target: '#records', text: 'Your records live here. Load a Radiohead song you own from Files, then touch it to open it. It stays on this device.' },
+      { target: '#desk-icons', text: 'Sound Worlds lets you touch anywhere to make Radiohead-style sounds and pictures. Lessons teaches short passages step by step.' },
+      { target: '[data-menu="help"]', text: 'Help > Show Balloons explains anything you point at or touch.' },
+    ]).then(() => {
+      settings().deskToured = true;
+      persist();
+    });
+    return;
+  }
   if (screen() === 'play') {
     runTour([
       { target: '#art', text: 'Touch anywhere to play. Left is low, right is high, higher up is brighter. Every note fits, so nothing sounds wrong.' },
       { target: '#world-select', text: 'Choose a world. Your Song plays a real Radiohead track you own; the others are Kid A machines, OK Computer\'s glowing room and In Rainbows guitars.' },
       { target: '#band', text: 'The band plays underneath you. Tap to start or stop it.' },
       { target: '#play-record', text: 'Record a piece: the sound and the moving picture together, kept in My Pieces.' },
-      { target: '#screen-switch', text: 'Switch to Learn to practise Radiohead songs step by step.' },
+      { target: '#to-desk', text: 'Desktop takes you back to your records and the lessons.' },
     ]).then(() => {
       settings().toured = true;
       persist();
@@ -1478,4 +1547,4 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 // Exposed for automated browser checks.
-window.undertow = { player, engine, keyboard, get play() { return playScreen; }, get song() { return song; }, get data() { return data; } };
+window.undertow = { player, engine, keyboard, setScreen, get desktop() { return desktop; }, get record() { return recordScreen; }, get play() { return playScreen; }, get song() { return song; }, get data() { return data; } };
