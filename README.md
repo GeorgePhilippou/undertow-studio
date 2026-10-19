@@ -20,7 +20,7 @@ A record opens in a window with four views:
   - **Set Start** (the moment the riff begins on the record) and the tempo line the hits up with the record.
 - **Pads:** the record cut into sixteen sampler pads, each with its own little waveform. Touch them, or press 1-4, Q-R, A-F and Z-V.
   - **Cut Pads...** recuts them: at the strongest attacks, **1 beat, 1 bar, 2 bars or 4 bars each** from the loop or the playhead, or the loop into sixteen. **Loop to Pad** puts the looped part on one pad.
-  - **Edit Pad:** touch a pad, then drag across the waveform to set exactly where it starts and ends, or nudge its start and end a sixteenth note at a time. Choose **Once**, **Hold** (plays while held) or **Loop** (repeats until touched again), pitch it up or down in semitones, or **Reverse** it.
+  - **Edit Pad:** touch a pad, then drag across the waveform to set exactly where it starts and ends, or nudge its start and end a sixteenth note at a time. Choose **Once** (plays the whole pad), **Hold** (plays round and round while held, stops when you let go) or **Loop** (repeats until touched again), pitch it up or down in semitones, or **Reverse** it.
   - **Filter** and **Echo** colour everything the pads play.
   - While a pad plays, its waveform fills in as it goes, and the record's waveform marks where it is in the song.
   - **Snap** (on by default) lands pad edits and beat or bar cuts on the beat grid, a sixteenth note at a time, and **Snap all pads to the beat** lines up every pad at once, so loops stay in time. Bar marks run along the bottom of the waveform. For a record that is not in the song list, the tempo and the first beat are heard from the record itself (shown with a question mark) and can be nudged.

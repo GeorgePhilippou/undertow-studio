@@ -65,7 +65,9 @@ export class Sampler {
 
   // Starts a slice. Anything already playing under the same key is cut, as
   // one pad chokes itself on a sampler.
-  play(key, slice, { time = this.context.currentTime, velocity = 0.85, onEnd } = {}) {
+  // Loop repeats until stopped; Hold repeats for as long as the pad is held,
+  // so it is stopped by letting go. A sequencer can play any mode as Once.
+  play(key, slice, { time = this.context.currentTime, velocity = 0.85, onEnd, mode = slice?.mode } = {}) {
     if (!this.buffer || !slice) return null;
     this.stop(key, time);
     const length = Math.max(0.02, slice.end - slice.start);
@@ -84,7 +86,8 @@ export class Sampler {
     }
     const offset = slice.reverse ? 0 : slice.start;
     source.connect(gain);
-    if (slice.mode === 'loop') {
+    const repeats = mode === 'loop' || mode === 'hold';
+    if (repeats) {
       source.loop = true;
       source.loopStart = offset;
       source.loopEnd = offset + length;
@@ -95,7 +98,7 @@ export class Sampler {
       gain.gain.setValueAtTime(level, time + Math.max(0.005, heard - 0.012));
       gain.gain.linearRampToValueAtTime(0, time + heard);
     }
-    const voice = { source, gain, key, slice, started: time, rate, length, loop: slice.mode === 'loop' };
+    const voice = { source, gain, key, slice, started: time, rate, length, loop: repeats };
     this.voices.set(key, voice);
     source.onended = () => {
       if (this.voices.get(key) === voice) this.voices.delete(key);

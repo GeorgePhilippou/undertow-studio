@@ -116,7 +116,8 @@ export class Remix {
     const sixteenth = 60 / this.bpm / 4;
     while (this.next < this.context.currentTime + 0.12) {
       this.pattern.forEach((row, r) => {
-        if (row[this.position]) this.sampler.play(`pad-${r}`, this.screen.slices[r], { time: this.next, velocity: this.position % 4 === 0 ? 0.9 : 0.75 });
+        const slice = this.screen.slices[r];
+        if (row[this.position]) this.sampler.play(`pad-${r}`, slice, { time: this.next, velocity: this.position % 4 === 0 ? 0.9 : 0.75, mode: slice.mode === 'hold' ? 'once' : slice.mode });
       });
       this.queue.push({ step: this.position, time: this.next });
       this.next += sixteenth;
