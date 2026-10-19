@@ -1,18 +1,21 @@
-# Undertow
+# OK Computer
 
 A classic Macintosh music desk for iPad, built around Radiohead records you own: tap through a song's famous riff with its real sound, cut it into sampler pads and remix them, play along with its chords, or explore sound worlds and lessons.
 
-Open https://GeorgePhilippou.github.io/undertow-studio/ and tap **Start**. Headphones recommended.
+Open https://GeorgePhilippou.github.io/undertow-studio/ and tap **Start**. (The app was called Undertow; the earlier version still opens as Undertow Classic. OK Computer is a fan-made app, not connected with Radiohead or their record labels.) Headphones recommended.
 
 ## The desktop
 
-Undertow opens on a Finder-style desktop. The **Records** window holds the songs you have loaded; touch one to open it. Icons on the right open **Sound Worlds**, **Lessons** and **My Pieces**. The **Desktop** button in the menu bar always brings you back.
+OK Computer opens on a Finder-style desktop. The **Records** window holds the songs you have loaded; touch one to open it. Icons on the right open **Sound Worlds**, **Lessons** and **My Pieces**. The **Desktop** button in the menu bar always brings you back.
 
 Only the records themselves sound exactly like Radiohead, so they are at the heart of the app. Load an MP3, M4A, AAC or WAV you own from Files (**Load a Record...** or File > Load a Record). It stays in this browser on this device; nothing is uploaded or bundled. Apple Music downloads are copy-protected and cannot be opened.
 
 ### Moving between Mac and iPad
 
-Records are kept in the browser on each device; nothing syncs or uploads by itself. To carry a record over, choose **File > Save Record to Files**. It saves the song and everything set up for it (riff timing, pads, pattern, chord marks, effects) as one `.undertow.json` file. Put it in iCloud Drive, then choose **Load a Record...** on the other device and it opens just as it was. Undertow also asks the browser to keep its records rather than clear them; on iPad, adding it to the Home Screen helps too.
+Records are kept in the browser on each device; nothing syncs or uploads by itself, and a web page cannot open an iCloud Drive folder on its own. To carry records over:
+
+1. On the Mac, choose **File > Save All Records to Files** (or **Save Record to Files** for one). It saves the songs and everything set up for them (riff timing, pads, pattern, chord marks, effects) as one `.okcomputer.json` file. Put it in a folder in iCloud Drive, such as *OK Computer*. Chrome lets you choose that folder straight away; Safari saves to Downloads unless you set it to ask where to save.
+2. On the iPad, tap **Load a Record...**, open that iCloud Drive folder in the file picker and choose the file. Every record arrives on the desktop just as it was. You can also select several song files or saved records at once. Undertow also asks the browser to keep its records rather than clear them; on iPad, adding it to the Home Screen helps too.
 
 ## A record
 

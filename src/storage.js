@@ -31,7 +31,7 @@ export function exportFile(data) {
 
 export function importFile(text) {
   const parsed = JSON.parse(text);
-  if (parsed.format !== 'undertow-desk') throw new Error('This is not an Undertow file.');
+  if (parsed.format !== 'undertow-desk') throw new Error('This is not an OK Computer lessons file.');
   return {
     settings: parsed.settings || {},
     takes: parsed.takes || {},

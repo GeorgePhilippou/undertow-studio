@@ -11,6 +11,7 @@ import { alertBox, confirmBox, showDialog, toast, escape } from '../ui/mac.js';
 // everything set up for it. Moved through Files or iCloud Drive, it opens on
 // another device exactly as it was left. Nothing is sent anywhere else.
 const FORMAT = 'undertow-record';
+const BUNDLE = 'undertow-records';
 const KEPT = ['name', 'seconds', 'songId', 'sync', 'slices', 'remix', 'fx', 'snap'];
 
 const dataUrl = blob => new Promise((resolve, reject) => {
@@ -19,6 +20,12 @@ const dataUrl = blob => new Promise((resolve, reject) => {
   reader.onerror = () => reject(reader.error);
   reader.readAsDataURL(blob);
 });
+
+// A copy of the file's bytes, so the record keeps working if the original
+// file is later moved, changed or deleted.
+export async function copyOf(file) {
+  return new Blob([await file.arrayBuffer()], { type: file.type || 'audio/mpeg' });
+}
 
 export function isSavedRecord(file) {
   return /\.json$/i.test(file.name) || file.type === 'application/json';
@@ -87,9 +94,10 @@ export class Desktop {
       if (icon) this.openIcon(icon, { screen: icon.dataset.open });
     });
     $('#record-file').addEventListener('change', event => {
-      const file = event.target.files[0];
+      const files = [...event.target.files];
       event.target.value = '';
-      if (file) this.load(file);
+      if (files.length === 1) this.load(files[0]);
+      else if (files.length > 1) this.loadMany(files);
     });
   }
 
@@ -117,49 +125,100 @@ export class Desktop {
     this.$('#records-window').classList.add('active');
   }
 
-  async load(file) {
-    if (isSavedRecord(file)) {
-      await this.loadSaved(file);
-      return;
-    }
+  // Several files at once - song files, saved records or a saved set - are
+  // all added to the desktop without opening any of them.
+  async loadMany(files) {
+    let added = 0;
+    for (const file of files) added += await this.load(file, { open: false });
+    await this.render();
+    toast(added ? `${added} record${added === 1 ? '' : 's'} added to the desktop.` : 'Nothing could be added.');
+  }
+
+  async load(file, { open = true } = {}) {
+    if (isSavedRecord(file)) return this.loadSaved(file, { open });
     if (file.size > MAX_BYTES) {
-      alertBox('That file is too large.', 'Choose a song file under 80 MB.');
-      return;
+      if (open) alertBox('That file is too large.', 'Choose a song file under 80 MB.');
+      return 0;
     }
-    toast('Opening...');
+    toast(`Opening ${file.name}...`);
     let buffer;
     try {
       buffer = await decode(this.context, file);
     } catch {
-      alertBox('This file cannot be played.', 'Songs from Apple Music are copy-protected. Use an MP3, M4A, AAC or WAV file you own, saved in Files.');
-      return;
+      if (open) alertBox('This file cannot be played.', 'Songs from Apple Music are copy-protected. Use an MP3, M4A, AAC or WAV file you own, saved in Files.');
+      return 0;
     }
     if (buffer.duration > MAX_SECONDS) {
-      alertBox('That recording is too long.', 'Choose a song under 15 minutes.');
-      return;
+      if (open) alertBox('That recording is too long.', 'Choose a song under 15 minutes.');
+      return 0;
     }
     const name = titleFrom(file.name);
-    const track = { id: `track-${Date.now().toString(36)}`, name, added: new Date().toISOString(), seconds: buffer.duration, blob: file, songId: matchSong(name) };
+    const track = { id: `track-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, name, added: new Date().toISOString(), seconds: buffer.duration, blob: await copyOf(file), songId: matchSong(name) };
     try {
       await saveTrack(track);
     } catch {
       toast('This record could not be kept for next time, but you can play it now.');
     }
-    await this.render();
     keepData();
+    if (!open) return 1;
+    await this.render();
     this.open({ record: track.id, buffer, track });
+    return 1;
+  }
+
+  // One record as saved data, with its song as a data URL.
+  async pack(id) {
+    const track = await getTrack(id);
+    if (!track) return null;
+    const saved = { format: FORMAT, version: 1, saved: new Date().toISOString(), audio: await dataUrl(track.blob) };
+    for (const key of KEPT) if (track[key] !== undefined) saved[key] = track[key];
+    return saved;
+  }
+
+  // Lets the person choose the folder, such as one in iCloud Drive, where the
+  // browser can (Chrome and Edge on a Mac); otherwise the share sheet or the
+  // Downloads folder.
+  async deliver(blob, name) {
+    if (window.showSaveFilePicker && !window.matchMedia('(pointer: coarse)').matches) {
+      try {
+        const handle = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: 'OK Computer records', accept: { 'application/json': ['.json'] } }] });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        toast(`Saved ${name}.`);
+        return;
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+      }
+    }
+    this.download(blob, name);
   }
 
   // Saves a record and all its settings as one file, for Files or iCloud Drive.
   async save(id) {
     await this.flush();
-    const track = await getTrack(id);
-    if (!track) return;
     toast('Saving...');
-    const saved = { format: FORMAT, version: 1, saved: new Date().toISOString(), audio: await dataUrl(track.blob) };
-    for (const key of KEPT) if (track[key] !== undefined) saved[key] = track[key];
-    const blob = new Blob([JSON.stringify(saved)], { type: 'application/json' });
-    this.download(blob, `${track.name}.undertow.json`);
+    const saved = await this.pack(id);
+    if (!saved) return;
+    await this.deliver(new Blob([JSON.stringify(saved)], { type: 'application/json' }), `${saved.name}.okcomputer.json`);
+  }
+
+  // File > Save All Records to Files: every record in one file, to move a
+  // whole desktop to another device in one go.
+  async saveAll() {
+    if (!this.records.length) {
+      alertBox('There are no records to save.', 'Load a song first.');
+      return;
+    }
+    await this.flush();
+    toast(`Saving ${this.records.length} record${this.records.length === 1 ? '' : 's'}...`);
+    const records = [];
+    for (const record of this.records) {
+      const saved = await this.pack(record.id);
+      if (saved) records.push(saved);
+    }
+    const bundle = { format: BUNDLE, version: 1, saved: new Date().toISOString(), records };
+    await this.deliver(new Blob([JSON.stringify(bundle)], { type: 'application/json' }), 'OK Computer records.okcomputer.json');
   }
 
   // File > Save Record to Files: a list to choose from.
@@ -176,38 +235,51 @@ export class Desktop {
     if (this.records.some(r => r.id === value)) this.save(value);
   }
 
-  async loadSaved(file) {
+  async loadSaved(file, { open = true } = {}) {
     toast('Opening...');
     let saved;
-    let blob;
     try {
       saved = JSON.parse(await file.text());
+      if (saved.format === BUNDLE && Array.isArray(saved.records)) {
+        let added = 0;
+        for (const record of saved.records) added += await this.unpack(record, file, { open: false });
+        await this.render();
+        toast(`${added} record${added === 1 ? '' : 's'} added to the desktop.`);
+        return added;
+      }
       if (saved.format !== FORMAT || !saved.audio) throw new Error('not a record');
-      blob = await (await fetch(saved.audio)).blob();
     } catch {
-      alertBox('This file is not an Undertow record.', 'Choose a song file, or a record saved with File > Save Record to Files.');
-      return;
+      if (open) alertBox('This file is not an OK Computer record.', 'Choose a song file, or records saved with File > Save Record to Files.');
+      return 0;
     }
+    return this.unpack(saved, file, { open });
+  }
+
+  async unpack(saved, file, { open }) {
+    let blob;
     let buffer;
     try {
+      blob = await (await fetch(saved.audio)).blob();
       buffer = await decode(this.context, blob);
     } catch {
-      alertBox('The song in this record cannot be played on this device.');
-      return;
+      if (open) alertBox('The song in this record cannot be played on this device.');
+      return 0;
     }
-    const track = { id: `track-${Date.now().toString(36)}`, added: new Date().toISOString(), blob };
+    const track = { id: `track-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, added: new Date().toISOString(), blob };
     for (const key of KEPT) if (saved[key] !== undefined) track[key] = saved[key];
-    track.name ||= titleFrom(file.name.replace(/\.undertow\.json$/i, ''));
+    track.name ||= titleFrom(file.name.replace(/\.(undertow|okcomputer)\.json$/i, ''));
     track.seconds = buffer.duration;
     try {
       await saveTrack(track);
     } catch {
       toast('This record could not be kept for next time, but you can play it now.');
     }
-    await this.render();
     keepData();
+    if (!open) return 1;
+    await this.render();
     toast(`${track.name} is here, just as it was saved.`);
     this.open({ record: track.id, buffer, track });
+    return 1;
   }
 
   // File > Remove a Record: a list to choose from.

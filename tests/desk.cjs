@@ -309,7 +309,7 @@ function balloonMisses(page) {
   await page.reload();
   await page.click('#boot-start');
   await page.waitForFunction(() => window.undertow && !document.getElementById('boot'));
-  check(await page.evaluate(() => document.body.dataset.screen) === 'desk', 'Undertow always starts on the desktop');
+  check(await page.evaluate(() => document.body.dataset.screen) === 'desk', 'OK Computer always starts on the desktop');
   await page.click('#records [data-record]');
   await page.waitForFunction(() => document.body.dataset.screen === 'record' && undertow.record.track, null, { timeout: 15000 });
   const kept = await page.evaluate(() => ({ bpm: undertow.record.track.sync.bpm, slice: undertow.record.slices[0], pattern: undertow.record.remix.pattern.flat().filter(Boolean).length }));
@@ -321,14 +321,16 @@ function balloonMisses(page) {
   // Save a record to Files and open it again, as on another device.
   await page.click('#records [data-record]');
   await page.waitForFunction(() => document.body.dataset.screen === 'record');
-  const original = await page.evaluate(() => ({ slices: undertow.record.slices, pattern: undertow.record.remix.pattern, bpm: undertow.record.track.sync.bpm, songId: undertow.record.track.songId }));
+  const original = await page.evaluate(() => ({ id: undertow.record.track.id, slices: undertow.record.slices, pattern: undertow.record.remix.pattern, bpm: undertow.record.track.sync.bpm, songId: undertow.record.track.songId }));
+  // Chrome would offer its own folder picker; the test takes the download.
+  await page.evaluate(() => { window.showSaveFilePicker = undefined; });
   const downloading = page.waitForEvent('download');
   await page.click('[data-menu="file"]');
   await page.click('.menu button:has-text("Save Record to Files")');
   const download = await downloading;
   const savedPath = path.join(os.tmpdir(), download.suggestedFilename());
   await download.saveAs(savedPath);
-  check(download.suggestedFilename() === 'Everything In Its Right Place.undertow.json', `Save Record to Files makes one file (${download.suggestedFilename()})`);
+  check(download.suggestedFilename() === 'Everything In Its Right Place.okcomputer.json', `Save Record to Files makes one file (${download.suggestedFilename()})`);
   await page.click('#record-close');
   await page.setInputFiles('#record-file', savedPath);
   await page.waitForFunction(() => document.body.dataset.screen === 'record' && undertow.record.track && undertow.desktop.records.length === 2, null, { timeout: 15000 });
@@ -340,9 +342,29 @@ function balloonMisses(page) {
     await deleteTrack(id);
     await undertow.desktop.render();
   }, copy.id);
+  // Save every record in one file, then bring them all back at once.
+  const bundling = page.waitForEvent('download');
+  await page.click('[data-menu="file"]');
+  await page.click('.menu button:has-text("Save All Records to Files")');
+  const bundle = await bundling;
+  const bundlePath = path.join(os.tmpdir(), bundle.suggestedFilename());
+  await bundle.saveAs(bundlePath);
+  check(bundle.suggestedFilename() === 'OK Computer records.okcomputer.json', 'Save All Records to Files makes one file of every record');
+  await page.setInputFiles('#record-file', bundlePath);
+  await page.waitForFunction(() => undertow.desktop.records.length === 2, null, { timeout: 15000 });
+  check(true, 'loading the saved set adds its records to the desktop');
+  await page.setInputFiles('#record-file', [testRecord(), savedPath]);
+  await page.waitForFunction(() => undertow.desktop.records.length === 4, null, { timeout: 20000 });
+  check(await page.$$eval('#records [data-record]', icons => icons.length) === 4, 'several files can be loaded at once');
+  check(await page.evaluate(() => document.body.dataset.screen) === 'desk', 'loading several files stays on the desktop');
+  await page.evaluate(async keep => {
+    const { deleteTrack, listTracks } = await import('./src/play/tracks.js');
+    for (const t of await listTracks()) if (t.id !== keep) await deleteTrack(t.id);
+    await undertow.desktop.render();
+  }, original.id);
   await page.setInputFiles('#record-file', { name: 'notes.json', mimeType: 'application/json', buffer: Buffer.from('{"hello":1}') });
   await page.waitForSelector('#dialog[open]');
-  check((await page.textContent('#dialog')).includes('not an Undertow record'), 'a JSON file that is not a record is turned away');
+  check((await page.textContent('#dialog')).includes('not an OK Computer record'), 'a JSON file that is not a record is turned away');
   await page.click('#dialog [data-value="ok"]');
 
   // Phone and iPad portrait layouts fit.

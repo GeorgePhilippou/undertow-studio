@@ -344,7 +344,7 @@ export class PlayScreen {
       alertBox('That recording is too long.', 'Choose a song under 15 minutes.');
       return;
     }
-    const track = { id: `track-${Date.now().toString(36)}`, name: titleFrom(file.name), added: new Date().toISOString(), seconds: buffer.duration, blob: file };
+    const track = { id: `track-${Date.now().toString(36)}`, name: titleFrom(file.name), added: new Date().toISOString(), seconds: buffer.duration, blob: new Blob([await file.arrayBuffer()], { type: file.type || 'audio/mpeg' }) };
     try {
       await saveTrack(track);
     } catch {
@@ -496,7 +496,7 @@ export class PlayScreen {
 
   fileName(piece) {
     const extension = piece.blob.type.includes('wav') ? 'wav' : piece.blob.type.includes('mp4') ? (piece.video ? 'mp4' : 'm4a') : 'webm';
-    return `Undertow - ${piece.title} - ${piece.created.slice(0, 16).replace('T', ' ').replace(':', '.')}.${extension}`;
+    return `OK Computer - ${piece.title} - ${piece.created.slice(0, 16).replace('T', ' ').replace(':', '.')}.${extension}`;
   }
 
   async showPiece(piece, fresh = false) {
