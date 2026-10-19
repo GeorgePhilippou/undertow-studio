@@ -868,7 +868,7 @@ body[data-screen='play'] .toast { bottom: 84px; }
 .pad.sample .number { display: flex; justify-content: space-between; width: 100%; }
 .pad.sample .key { border: 1px solid currentColor; padding: 0 4px; font: 16px var(--geneva); }
 .pad.sample canvas { display: block; width: 100%; height: 28px; image-rendering: pixelated; }
-.pad.sample.down canvas { filter: invert(1); }
+.pad.sample canvas { border: 1px solid var(--ink); }
 .record-strip { margin: 0; border-width: 1px 0 0; box-shadow: none; }
 .tempo { display: inline-flex; align-items: center; gap: 6px; }
 .tempo output { min-width: 74px; text-align: center; }

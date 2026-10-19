@@ -95,7 +95,7 @@ export class Sampler {
       gain.gain.setValueAtTime(level, time + Math.max(0.005, heard - 0.012));
       gain.gain.linearRampToValueAtTime(0, time + heard);
     }
-    const voice = { source, gain, key, slice };
+    const voice = { source, gain, key, slice, started: time, rate, length, loop: slice.mode === 'loop' };
     this.voices.set(key, voice);
     source.onended = () => {
       if (this.voices.get(key) === voice) this.voices.delete(key);
@@ -112,6 +112,15 @@ export class Sampler {
     voice.gain.gain.setValueAtTime(voice.gain.gain.value, time);
     voice.gain.gain.linearRampToValueAtTime(0, time + 0.015);
     try { voice.source.stop(time + 0.02); } catch { /* already stopped */ }
+  }
+
+  // How far through its slice a voice is, from 0 to 1, or null when silent.
+  progress(key) {
+    const voice = this.voices.get(key);
+    if (!voice) return null;
+    const through = ((this.context.currentTime - voice.started) * voice.rate) / voice.length;
+    if (through < 0) return 0;
+    return voice.loop ? through % 1 : Math.min(1, through);
   }
 
   playing(key) {
