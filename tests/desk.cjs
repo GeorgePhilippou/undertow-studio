@@ -246,6 +246,24 @@ function balloonMisses(page) {
   await page.waitForTimeout(100);
   check(await page.evaluate(() => !undertow.record.sampler.playing('pad-8')), 'letting go stops it, even off the pad');
 
+  // Two fingers play two pads at once, and a held Hold pad keeps going.
+  await page.evaluate(() => { undertow.record.slices[9] = { start: 1, end: 3 }; undertow.record.slices[10] = { start: 4, end: 4.3, mode: 'hold' }; undertow.record.renderPads(); });
+  const cdp = await page.context().newCDPSession(page);
+  const centre = async (index, id) => {
+    const box = await page.locator(`#sampler [data-slice="${index}"]`).boundingBox();
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2, id };
+  };
+  const first = await centre(9, 1);
+  const second = await centre(10, 2);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [first] });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [first, second] });
+  await page.waitForTimeout(600);
+  check(await page.evaluate(() => undertow.record.sampler.playing('pad-9') && undertow.record.sampler.playing('pad-10')), 'two fingers play two pads at once');
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await page.waitForTimeout(100);
+  check(await page.evaluate(() => !undertow.record.sampler.playing('pad-10')), 'lifting the fingers stops the Hold pad');
+  await page.evaluate(() => undertow.record.sampler.stopAll());
+
   // Remix.
   await page.click('#record-view [data-view="remix"]');
   check(await page.$$eval('#remix-grid .cell', cells => cells.length) === 256, 'Remix shows sixteen pads by sixteen steps');
