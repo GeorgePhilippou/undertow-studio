@@ -10,6 +10,10 @@ Undertow opens on a Finder-style desktop. The **Records** window holds the songs
 
 Only the records themselves sound exactly like Radiohead, so they are at the heart of the app. Load an MP3, M4A, AAC or WAV you own from Files (**Load a Record...** or File > Load a Record). It stays in this browser on this device; nothing is uploaded or bundled. Apple Music downloads are copy-protected and cannot be opened.
 
+### Moving between Mac and iPad
+
+Records are kept in the browser on each device; nothing syncs or uploads by itself. To carry a record over, choose **File > Save Record to Files**. It saves the song and everything set up for it (riff timing, pads, pattern, chord marks, effects) as one `.undertow.json` file. Put it in iCloud Drive, then choose **Load a Record...** on the other device and it opens just as it was. Undertow also asks the browser to keep its records rather than clear them; on iPad, adding it to the Home Screen helps too.
+
 ## A record
 
 A record opens in a window with four views:

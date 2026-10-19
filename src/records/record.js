@@ -152,9 +152,14 @@ export class RecordScreen {
   save(fields) {
     Object.assign(this.track, fields);
     clearTimeout(this.saveTimer);
-    this.saveTimer = setTimeout(() => {
-      updateTrack(this.track.id, { songId: this.track.songId, sync: this.track.sync, slices: this.slices, remix: this.track.remix, fx: this.track.fx, snap: this.track.snap }).catch(() => {});
-    }, 300);
+    this.saveTimer = setTimeout(() => this.flush(), 300);
+  }
+
+  // Writes any changes waiting to be saved straight away.
+  async flush() {
+    clearTimeout(this.saveTimer);
+    if (!this.track) return;
+    await updateTrack(this.track.id, { songId: this.track.songId, sync: this.track.sync, slices: this.slices, remix: this.track.remix, fx: this.track.fx, snap: this.track.snap }).catch(() => {});
   }
 
   enter() {
