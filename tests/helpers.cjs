@@ -21,6 +21,7 @@ async function openApp(browser, viewport = { width: 1180, height: 820 }) {
   await page.reload();
   await page.click('#boot-start');
   await page.waitForFunction(() => window.undertow && !document.getElementById('boot'));
+  await page.evaluate(() => undertow.setScreen('learn'));
   return { page, errors };
 }
 

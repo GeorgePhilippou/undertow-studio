@@ -106,6 +106,7 @@ async function pressPad(page, index) {
   await page.reload();
   await page.click('#boot-start');
   await page.waitForFunction(() => window.undertow && !document.getElementById('boot'));
+  await page.evaluate(() => undertow.setScreen('learn'));
   check(await page.evaluate(() => undertow.song.id === 'karma' && undertow.song.parts[1].events.length) === before + 1, 'drum edits survive a reload');
 
   // Menus and dialogs.
@@ -263,6 +264,7 @@ async function pressPad(page, index) {
   await page.reload();
   await page.click('#boot-start');
   await page.waitForFunction(() => window.undertow && !document.getElementById('boot'));
+  await page.evaluate(() => undertow.setScreen('learn'));
   check(await page.evaluate(() => undertow.song.id === 'codex' && undertow.song.parts.find(p => p.id === 'drums')?.events.length === 48), 'added drums survive a reload');
   await page.click('[data-song="idioteque"]');
   await page.click('#open-drums');

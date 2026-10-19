@@ -165,6 +165,8 @@ function balloonMisses(page) {
   await page.reload();
   await page.click('#boot-start');
   await page.waitForFunction(() => window.undertow && !document.getElementById('boot'));
+  check(await page.evaluate(() => document.body.dataset.screen) === 'desk', 'Undertow always starts on the desktop');
+  await page.click('#records [data-record]');
   await page.waitForFunction(() => document.body.dataset.screen === 'record' && undertow.record.track, null, { timeout: 15000 });
   const kept = await page.evaluate(() => ({ bpm: undertow.record.track.sync.bpm, slice: undertow.record.slices[0] }));
   check(kept.bpm === 124.5 && Math.abs(kept.slice.end - kept.slice.start - 0.125) < 0.001, 'the record reopens with its tempo and pads');
