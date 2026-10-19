@@ -326,7 +326,7 @@ export class RecordScreen {
       return `
       <button class="pad sample${i === this.editing ? ' editing' : ''}" data-slice="${i}" aria-label="Pad ${i + 1}">
         <span class="number">${i + 1}<span class="key">${PAD_KEYS[i].toUpperCase()}</span></span>
-        <canvas width="96" height="28"></canvas>
+        <canvas width="192" height="32"></canvas>
         <small>${clock(slice.start)} - ${(slice.end - slice.start).toFixed(1)} s${tags ? ` - ${tags}` : ''}</small>
       </button>`;
     }).join('');
@@ -341,7 +341,8 @@ export class RecordScreen {
     const from = Math.floor(slice.start * rate);
     const to = Math.floor(slice.end * rate);
     const step = Math.max(1, Math.floor((to - from) / canvas.width));
-    g.clearRect(0, 0, canvas.width, canvas.height);
+    g.fillStyle = '#fff';
+    g.fillRect(0, 0, canvas.width, canvas.height);
     g.fillStyle = '#000';
     for (let x = 0; x < canvas.width; x++) {
       let peak = 0;
@@ -350,6 +351,40 @@ export class RecordScreen {
       const column = slice.reverse ? canvas.width - 1 - x : x;
       g.fillRect(column, Math.round((canvas.height - h) / 2), 1, h);
     }
+    canvas.base = g.getImageData(0, 0, canvas.width, canvas.height);
+    canvas.through = null;
+  }
+
+  // While a pad plays, the part already heard is inverted and a line moves
+  // across its waveform, here and on the record's waveform above.
+  drawPadProgress() {
+    this.$$('#sampler canvas').forEach((canvas, i) => {
+      const through = this.sampler.progress(`pad-${i}`);
+      if (through === canvas.through || !canvas.base) return;
+      canvas.through = through;
+      const g = canvas.getContext('2d');
+      g.putImageData(canvas.base, 0, 0);
+      if (through === null) return;
+      const x = Math.round(through * canvas.width);
+      g.globalCompositeOperation = 'difference';
+      g.fillStyle = '#fff';
+      g.fillRect(0, 0, x, canvas.height);
+      g.globalCompositeOperation = 'source-over';
+      g.fillStyle = '#000';
+      g.fillRect(Math.min(x, canvas.width - 2), 0, 2, canvas.height);
+    });
+  }
+
+  // Where each sounding pad is in the record, for the big waveform.
+  padPlayheads() {
+    const heads = [];
+    this.slices.forEach((slice, i) => {
+      const through = this.sampler.progress(`pad-${i}`);
+      if (through === null) return;
+      const length = slice.end - slice.start;
+      heads.push(slice.reverse ? slice.end - through * length : slice.start + through * length);
+    });
+    return heads;
   }
 
   padElement(index) {
@@ -715,6 +750,7 @@ export class RecordScreen {
     if (this.view === 'along') this.drawLane();
     else if (this.view === 'riffs') this.riffs.draw();
     else if (this.view === 'remix') this.remix.drawStep();
+    if (this.view === 'pads') this.drawPadProgress();
     this.$('#rec-clock').textContent = `${clock(this.time)} / ${clock(this.duration)}`;
   }
 
@@ -784,6 +820,9 @@ export class RecordScreen {
     g.globalCompositeOperation = 'difference';
     g.fillStyle = '#fff';
     g.fillRect(x(this.time) - 1, 0, 2, height);
+    if (this.view === 'pads' || this.view === 'remix') {
+      for (const head of this.padPlayheads()) g.fillRect(x(head), 6, 1, height - 6);
+    }
     g.globalCompositeOperation = 'source-over';
   }
 

@@ -177,6 +177,9 @@ function balloonMisses(page) {
   const before = await page.evaluate(() => { undertow.record.stop(); return undertow.engine.context.currentTime; });
   await page.click('#sampler [data-slice="0"]');
   check(await page.evaluate(() => undertow.record.sampler.playing('pad-0')), 'touching a pad plays it');
+  await page.waitForTimeout(120);
+  const through = await page.evaluate(() => document.querySelector('#sampler [data-slice="0"] canvas').through);
+  check(through > 0 && through < 1, `the pad's waveform shows how far it has played (${through && through.toFixed(2)})`);
   await page.keyboard.press('w');
   check(await page.evaluate(() => undertow.record.sampler.playing('pad-5')), 'computer keys play the pads');
   await page.evaluate(() => undertow.record.setLoop({ start: 1, end: 3 }));
@@ -226,7 +229,7 @@ function balloonMisses(page) {
   await page.evaluate(() => undertow.record.sampler.stopAll());
   await page.locator('#fx-filter').fill('80');
   const cutoff = await page.evaluate(() => undertow.record.sampler.filter.frequency.value);
-  await page.waitForTimeout(150);
+  await page.waitForFunction(() => undertow.record.sampler.filter.frequency.value < 5000, null, { timeout: 5000 }).catch(() => {});
   const closed = await page.evaluate(() => undertow.record.sampler.filter.frequency.value);
   check(closed < 5000, `the Filter closes over the pads (${Math.round(closed)} Hz)`);
   await page.locator('#fx-filter').fill('0');
