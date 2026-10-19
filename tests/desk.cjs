@@ -318,6 +318,33 @@ function balloonMisses(page) {
   check(await page.$$eval('#records [data-record]', icons => icons.length) === 1, 'the record is on the desktop');
   check(!(await page.isVisible('#records-empty')), 'the empty note goes once there is a record');
 
+  // Save a record to Files and open it again, as on another device.
+  await page.click('#records [data-record]');
+  await page.waitForFunction(() => document.body.dataset.screen === 'record');
+  const original = await page.evaluate(() => ({ slices: undertow.record.slices, pattern: undertow.record.remix.pattern, bpm: undertow.record.track.sync.bpm, songId: undertow.record.track.songId }));
+  const downloading = page.waitForEvent('download');
+  await page.click('[data-menu="file"]');
+  await page.click('.menu button:has-text("Save Record to Files")');
+  const download = await downloading;
+  const savedPath = path.join(os.tmpdir(), download.suggestedFilename());
+  await download.saveAs(savedPath);
+  check(download.suggestedFilename() === 'Everything In Its Right Place.undertow.json', `Save Record to Files makes one file (${download.suggestedFilename()})`);
+  await page.click('#record-close');
+  await page.setInputFiles('#record-file', savedPath);
+  await page.waitForFunction(() => document.body.dataset.screen === 'record' && undertow.record.track && undertow.desktop.records.length === 2, null, { timeout: 15000 });
+  const copy = await page.evaluate(() => ({ id: undertow.record.track.id, slices: undertow.record.slices, pattern: undertow.record.remix.pattern, bpm: undertow.record.track.sync.bpm, songId: undertow.record.track.songId, name: undertow.record.track.name }));
+  check(copy.name === 'Everything In Its Right Place' && copy.songId === original.songId && copy.bpm === original.bpm && JSON.stringify(copy.slices) === JSON.stringify(original.slices) && JSON.stringify(copy.pattern) === JSON.stringify(original.pattern), 'loading the saved file brings back the song, its pads, pattern and tempo');
+  await page.click('#record-close');
+  await page.evaluate(async id => {
+    const { deleteTrack } = await import('./src/play/tracks.js');
+    await deleteTrack(id);
+    await undertow.desktop.render();
+  }, copy.id);
+  await page.setInputFiles('#record-file', { name: 'notes.json', mimeType: 'application/json', buffer: Buffer.from('{"hello":1}') });
+  await page.waitForSelector('#dialog[open]');
+  check((await page.textContent('#dialog')).includes('not an Undertow record'), 'a JSON file that is not a record is turned away');
+  await page.click('#dialog [data-value="ok"]');
+
   // Phone and iPad portrait layouts fit.
   for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 }]) {
     await page.setViewportSize(viewport);

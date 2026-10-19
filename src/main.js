@@ -14,7 +14,7 @@ import { ICONS, renderIcons } from './ui/icons.js';
 import { BalloonHelp, runTour, hideBalloon } from './ui/balloons.js';
 import { pianoReady } from './audio/piano.js';
 import { PlayScreen } from './play/index.js';
-import { Desktop } from './records/desktop.js';
+import { Desktop, keepData } from './records/desktop.js';
 import { RecordScreen } from './records/record.js';
 
 const $ = selector => document.querySelector(selector);
@@ -1033,6 +1033,7 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
       if (screen() === 'desk' || screen() === 'record') {
         return [
           { label: 'Load a Record...', action: () => $('#record-file').click() },
+          { label: screen() === 'record' ? 'Save Record to Files...' : 'Save a Record to Files...', disabled: !desktop.records.length, action: () => (screen() === 'record' ? desktop.save(recordScreen.track.id) : desktop.chooseToSave()) },
           { label: 'Remove a Record...', action: () => desktop.remove() },
           '-',
           { label: 'Close Record', disabled: screen() !== 'record', action: () => setScreen('desk') },
@@ -1380,7 +1381,7 @@ selectSong(settings().songId || SONGS[0].id);
 const playScreen = new PlayScreen({ engine, settings, persist, download, $ });
 playScreen.band.on('state', state => keepAwake(state !== 'stopped'));
 const recordScreen = new RecordScreen({ engine, $, onPlaying: keepAwake, showPiece: (piece, fresh) => playScreen.showPiece(piece, fresh) });
-const desktop = new Desktop({ context, $, open: openFromDesk });
+const desktop = new Desktop({ context, $, open: openFromDesk, download, flush: () => recordScreen.flush() });
 desktop.render();
 // Undertow always starts on the desktop, whatever was open last time.
 settings().screen = 'desk';
@@ -1391,6 +1392,7 @@ requestAnimationFrame(frame);
 
 $('#boot-start').addEventListener('click', async () => {
   await context.resume();
+  if (desktop.records.length) keepData();
   connectMidi();
   startChord();
   $('#boot').classList.add('leaving');
