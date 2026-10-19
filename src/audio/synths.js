@@ -33,21 +33,64 @@ function oscillator(context, type, hz, detune, time, destination) {
   return osc;
 }
 
-// Warm analogue keyboard for Everything In Its Right Place: two detuned
-// oscillators through a resonant low-pass filter that closes after each attack.
+// Pulse waves, which Web Audio lacks: a Fourier series with the given duty cycle.
+const pulses = new WeakMap();
+function pulseWave(context, duty) {
+  if (!pulses.has(context)) pulses.set(context, new Map());
+  const cache = pulses.get(context);
+  if (!cache.has(duty)) {
+    const real = new Float32Array(64);
+    const imag = new Float32Array(64);
+    for (let n = 1; n < 64; n++) {
+      real[n] = (2 / (n * Math.PI)) * Math.sin(n * Math.PI * duty);
+    }
+    cache.set(duty, context.createPeriodicWave(real, imag));
+  }
+  return cache.get(duty);
+}
+
+// The Prophet-5 keyboard of Everything In Its Right Place, after published
+// recreations: two pulse oscillators through a fairly closed, resonant
+// low-pass filter that sweeps down after each key, a long amp decay, about
+// 19 cents flat like the record, and two takes panned hard left and right.
+// On the record the filter was turned by hand while a MIDI take replayed, so
+// each side's brightness drifts slowly over time.
 function prophet(context, output, midi, velocity, time) {
   const hz = frequency(midi);
-  const voice = envelope(context, output, time, { attack: 0.006, decay: 0.9, sustain: 0.42, release: 0.35, peak: 0.09 + velocity * 0.07 });
-  const filter = context.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.Q.value = 3.2;
-  const base = Math.min(hz * 1.4 + 180, 2400);
-  filter.frequency.setValueAtTime(base + 1600 * velocity, time);
-  filter.frequency.setTargetAtTime(base, time + 0.01, 0.16);
-  filter.connect(voice.gain);
-  voice.add(oscillator(context, 'sawtooth', hz, -6, time, filter));
-  voice.add(oscillator(context, 'square', hz, 7, time, filter));
-  voice.add(oscillator(context, 'triangle', hz / 2, 0, time, filter));
+  const voice = envelope(context, output, time, { attack: 0.004, decay: 2.1, sustain: 0.7, release: 0.35, peak: 0.075 + velocity * 0.06 });
+  const sides = [
+    { pan: -0.9, delay: 0, detune: -21, drift: Math.sin(time * 2 * Math.PI / 23) },
+    { pan: 0.9, delay: 0.011, detune: -16, drift: Math.cos(time * 2 * Math.PI / 31) },
+  ];
+  for (const side of sides) {
+    const start = time + side.delay;
+    const level = context.createGain();
+    level.gain.value = 0.5;
+    if (context.createStereoPanner) {
+      const panner = context.createStereoPanner();
+      panner.pan.value = side.pan;
+      level.connect(panner).connect(voice.gain);
+    } else {
+      level.connect(voice.gain);
+    }
+    const filter = context.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.Q.value = 4.5;
+    const base = 140 + hz * 0.9;
+    const open = (700 + 2100 * velocity) * (1 + 0.35 * side.drift);
+    filter.frequency.setValueAtTime(base + open, start);
+    filter.frequency.setTargetAtTime(base * 1.5, start + 0.005, 0.28);
+    filter.connect(level);
+    for (const [duty, cents] of [[0.32, 0], [0.45, 5]]) {
+      const osc = context.createOscillator();
+      osc.setPeriodicWave(pulseWave(context, duty));
+      osc.frequency.value = hz;
+      osc.detune.value = side.detune + cents;
+      osc.connect(filter);
+      osc.start(start);
+      voice.add(osc);
+    }
+  }
   return voice;
 }
 

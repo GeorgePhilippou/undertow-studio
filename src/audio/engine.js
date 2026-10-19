@@ -116,7 +116,7 @@ export class Engine {
   // Starts one note and returns a voice that must be released.
   noteOn(instrument, midi, velocity, time, output) {
     const at = Math.max(time, this.context.currentTime);
-    const destination = this.place(output, instrument === 'bass' ? 0 : midi);
+    const destination = this.place(output, instrument === 'bass' || instrument === 'prophet' ? 0 : midi);
     if (instrument === 'piano') {
       const voice = piano(this.context, destination, midi, velocity, at);
       if (voice) return voice;
