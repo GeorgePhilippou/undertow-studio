@@ -365,9 +365,9 @@ async function pressPad(page, index) {
   await fresh.reload();
   await fresh.click('#boot-start');
   await fresh.waitForSelector('.balloon.tour');
-  check((await fresh.textContent('.balloon')).includes('1 of 5'), 'a first visit opens on Play and starts its tour');
-  for (let i = 0; i < 5; i++) await fresh.click('.balloon [data-tour="next"]');
-  check(await fresh.evaluate(() => undertow.data.settings.toured === true && !document.querySelector('.balloon')), 'finishing the tour remembers it');
+  check((await fresh.textContent('.balloon')).includes('1 of 3') && await fresh.evaluate(() => document.body.dataset.screen === 'desk'), 'a first visit opens on the desktop and starts its tour');
+  for (let i = 0; i < 3; i++) await fresh.click('.balloon [data-tour="next"]');
+  check(await fresh.evaluate(() => undertow.data.settings.deskToured === true && !document.querySelector('.balloon')), 'finishing the tour remembers it');
   check(await fresh.evaluate(() => navigator.serviceWorker.getRegistration().then(r => Boolean(r))), 'the offline service worker registers');
   await fresh.close();
 

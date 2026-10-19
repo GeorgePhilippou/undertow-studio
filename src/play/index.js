@@ -1,4 +1,4 @@
-// The Play screen: a whole-window instrument. Touch anywhere to play the
+// Sound Worlds (the Play screen): a whole-window instrument. Touch anywhere to play the
 // world's lead sound in its scale; left is low, right is high, higher up is
 // brighter. The band loops underneath and the picture answers both.
 // In Your Song the screen is a recording you own instead: left to right is

@@ -44,7 +44,7 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   page.on('console', message => message.type() === 'error' && errors.push(message.text()));
   await page.goto(BASE);
   await page.evaluate(() => {
-    localStorage.setItem('undertow-desk-v1', JSON.stringify({ settings: { toured: true } }));
+    localStorage.setItem('undertow-desk-v1', JSON.stringify({ settings: { toured: true, deskToured: true } }));
     indexedDB.deleteDatabase('undertow-pieces');
   });
   await page.reload();
@@ -57,7 +57,11 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
     return ids.filter((id, i) => ids.indexOf(id) !== i);
   });
   check(duplicates.length === 0, `every element id is unique ${duplicates.join(', ')}`);
-  check(await page.evaluate(() => document.body.dataset.screen) === 'play', 'Undertow opens on the Play screen');
+  check(await page.evaluate(() => document.body.dataset.screen) === 'desk', 'Undertow opens on the desktop');
+  await page.click('#desk-icons [data-open="play"]');
+  await page.waitForFunction(() => document.body.dataset.screen === 'play');
+  await wait(300);
+  check(true, 'Sound Worlds opens from the desktop');
   check(await page.isVisible('#touch-hint'), 'a first visit says to touch anywhere');
   check(await page.evaluate(() => undertow.play.band.state) === 'playing', 'the band starts playing');
 
@@ -208,13 +212,16 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   await page.selectOption('#world-select', 'kida');
 
   // Learn and back.
-  await page.click('#screen-switch [data-screen="learn"]');
+  await page.click('#to-desk');
+  await page.click('#desk-icons [data-open="learn"]');
   await page.waitForSelector('.balloon.tour');
   await page.click('.balloon [data-tour="skip"]');
-  check(await page.evaluate(() => document.body.dataset.screen === 'learn' && undertow.play.band.state === 'stopped'), 'Learn opens the song desk and quiets the band');
+  check(await page.evaluate(() => document.body.dataset.screen === 'learn' && undertow.play.band.state === 'stopped'), 'Lessons opens the song desk and quiets the band');
   check(await page.isVisible('#song-list'), 'the songs are there in Learn');
-  await page.click('#screen-switch [data-screen="play"]');
-  check(await page.evaluate(() => document.body.dataset.screen === 'play' && undertow.play.band.state === 'playing'), 'Play brings the band back');
+  await page.click('#to-desk');
+  await page.click('#desk-icons [data-open="play"]');
+  await page.waitForFunction(() => document.body.dataset.screen === 'play');
+  check(await page.evaluate(() => document.body.dataset.screen === 'play' && undertow.play.band.state === 'playing'), 'Sound Worlds brings the band back');
 
   // Layouts.
   for (const [width, height] of [[390, 844], [820, 1180], [1024, 768], [1440, 900]]) {
