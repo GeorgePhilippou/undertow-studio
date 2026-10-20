@@ -1,14 +1,14 @@
 # OK Computer
 
-A classic Macintosh music desk for iPad, built around Radiohead records you own: tap through a song's famous riff with its real sound, cut it into sampler pads and remix them, play along with its chords, or learn short passages in Lessons.
+A classic Macintosh music desk for iPad, built around Radiohead records you own: tap through a song's famous riff with its real sound, cut it into sampler pads and remix them and play along with its chords.
 
 Open https://GeorgePhilippou.github.io/undertow-studio/ and tap **Start**. (The app was called Undertow; the earlier version still opens as Undertow Classic. OK Computer is a fan-made app, not connected with Radiohead or their record labels.) Headphones recommended.
 
 ## The desktop
 
-OK Computer opens on a Finder-style desktop. The **Records** window holds the songs you have loaded; touch one to open it. Icons on the right open **Lessons** and **My Pieces** (the takes you record). The **Desktop** button in the menu bar always brings you back.
+OK Computer opens on a Finder-style desktop. The **Records** window holds the songs you have loaded; touch one to open it. **My Pieces** keeps the takes you record. The **Desktop** button in the menu bar always brings you back.
 
-Only the records themselves sound exactly like Radiohead, so they are at the heart of the app. Load an MP3, M4A, AAC or WAV you own from Files (**Load a Record...** or File > Load a Record). It stays in this browser on this device; nothing is uploaded or bundled. Apple Music downloads are copy-protected and cannot be opened.
+Only the records themselves sound exactly like Radiohead, so everything is built from them. Load an MP3, M4A, AAC or WAV you own from Files (**Load a Record...** or File > Load a Record; several at once is fine). It stays in this browser on this device; nothing is uploaded or bundled. Apple Music downloads are copy-protected and cannot be opened.
 
 ### Moving between Mac and iPad
 
@@ -19,31 +19,27 @@ Records are kept in the browser on each device; nothing syncs or uploads by itse
 
 ## A record
 
-A record opens in a window with four views:
+A record opens in one window with three tabs:
 
-- **Riffs:** the song's recognisable part, ready to perform - the Everything In Its Right Place keyboard figure, the Idioteque chords, the Karma Police piano and the rest of the songs in Lessons.
-  - Tap the big **Tap** pad (or Space) in rhythm: every tap plays the next hit. **Your Record** cuts each hit straight from your own record, so it is Radiohead's real sound; **Keys** plays it with the app's instrument.
-  - The keyboard shows the notes of the next hit, and playing them moves on too, so you can learn it properly. **Hear It** plays the whole riff in time; touch any box in the strip to start from there.
-  - **Set Start** (the moment the riff begins on the record) and the tempo line the hits up with the record.
-- **Pads:** the record cut into sixteen sampler pads, each with its own little waveform. Touch them, or press 1-4, Q-R, A-F and Z-V.
-  - **Cut Pads...** recuts them: at the strongest attacks, **1 beat, 1 bar, 2 bars or 4 bars each** from the loop or the playhead, or the loop into sixteen. **Loop to Pad** puts the looped part on one pad.
-  - **Edit Pad:** touch a pad, then drag across the waveform to set exactly where it starts and ends, or nudge its start and end a sixteenth note at a time. Choose **Once** (plays the whole pad), **Hold** (plays round and round while held, stops when you let go) or **Loop** (repeats until touched again), pitch it up or down in semitones, or **Reverse** it.
-  - **Filter** and **Echo** colour everything the pads play.
-  - While a pad plays, its waveform fills in as it goes, and the record's waveform marks where it is in the song.
-  - **Snap** (on by default) lands pad edits and beat or bar cuts on the beat grid, a sixteenth note at a time, and **Snap all pads to the beat** lines up every pad at once, so loops stay in time. Bar marks run along the bottom of the waveform. For a record that is not in the song list, the tempo and the first beat are heard from the record itself (shown with a question mark) and can be nudged.
-- **Remix:** a sixteen-step pattern grid, one row per pad and one column per sixteenth note, played round and round at the song's tempo (or your own) through the same filter and echo.
-- **Play Along:** the whole record as a waveform with the chords scrolling past in time, lit on the keyboard or on one pad per chord.
-  - If the record is one of the songs in Lessons (it is recognised from the file name, or choose it from the Song menu), its chord loop is lined up from where the music starts. **Set Start** lines it up by ear and the tempo can be nudged. The chart repeats the passage from Lessons, so other sections of the record may differ.
+- **Play:** the whole record as a waveform: touch to jump, drag across a part to loop it, and slow it down to 50% without changing the pitch. Underneath, the chords scroll past in time, and the song's **riff** is ready to perform.
+  - If the record is one of the known songs (Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits, Motion Picture Soundtrack - recognised from the file name, or chosen in the Song menu), its chord loop and riff are lined up from where the music starts. **Set Start** and the tempo line them up by ear. The chart repeats one passage, so other sections of the record may differ.
+  - **Tap** (or Return) plays the riff's next hit. **Song** cuts each hit straight from your record, so it is Radiohead's real sound; **Keys** plays it with the app's instrument. **Hear It** plays it in time.
+  - The keyboard shows the riff's next hit when stopped and the chord playing now when the record plays. **Chords** turns it into one pad per chord.
   - **Mark Chords:** tap each chord the moment you hear it change. Your marks replace the chart for that record.
-  - **Speed** from 100% down to 50% without changing the pitch; drag across the waveform to loop a part.
-- **Record** (in every view) records what you play - pads, riff, remix or keys - and keeps it in My Pieces as a WAV to play back, save or share. The record playing underneath is not included.
-- Your song choice, sync, marks, pads and pattern are kept with the record.
+- **Pads:** three banks, **A, B and C**, of sixteen sampler pads cut from the record (bank B starts as a bar per pad, bank C as two bars per pad). Touch them, or press 1-4, Q-R, A-F and Z-V; several fingers or keys at once is fine. While a pad plays, its waveform fills in.
+  - **Cut Pads...** recuts a bank: at the strongest attacks, **1 beat, 1 bar, 2 bars or 4 bars each** from the loop or the playhead, or the loop into sixteen. **Loop to Pad** puts the looped part on one pad.
+  - **Edit Pad:** the waveform zooms in on the pad; drag across it to set where the pad starts and ends, or nudge its start and end a sixteenth note at a time. Choose **Once** (plays the whole pad), **Hold** (plays round and round while held) or **Loop** (repeats until touched again), set its **volume** and **fade**, pitch it, **Reverse** it, or play a pad **from another record** to mix songs together.
+  - **Sync loops** starts a Loop pad on the next beat of any loop already playing, so loops stack in time. **Snap** keeps cuts and edits on the beat grid. **Undo** (or Command-Z) takes back any change to the pads.
+  - **Filter** and **Echo** colour everything the pads play.
+- **Remix:** four sixteen-step patterns, **A to D**, one row per pad and one column per sixteenth note. Each pattern plays one bank. **Chain** plays the patterns one after another, and **Swing** loosens the groove.
+- **Record** (in every tab) records what you play - pads, riff, remix or keys - and keeps it in My Pieces as a WAV to play back, save or share. The record playing underneath is not included.
+- Your song choice, sync, marks, pads, patterns and effects are kept with the record. For a record that is not a known song, the tempo and first beat are heard from the record itself (shown with a question mark) and can be nudged.
 
-The record is one finished mix, so the app cannot pull out just the piano or the guitar; chords and riffs work whatever instruments play them. Official stems that Radiohead released (Nude and Reckoner) load as records like any other file.
+The record is one finished mix, so the app cannot pull out just the piano or the guitar; chords, riffs, pads and remixes work whatever instruments play them. Official stems that Radiohead released (Nude and Reckoner) load as records like any other file.
 
-## Lessons
+## Lessons (old)
 
-**Lessons** on the desktop opens the song desk, where the app's own instruments play short passages to learn step by step:
+The earlier song desk, where the app's own instruments play short passages to learn step by step, still opens from the apple menu: **Lessons (old)...**
 
 - **Songs:** Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits and Motion Picture Soundtrack. Each is a short, looping passage with its own sound. Get Info explains what is checked against published analyses and what is a reconstruction. No Surprises and 15 Step are held back until their parts sound right.
 - **Five lesson steps** for every song, each ticked off as you go and shown in the Songs list:

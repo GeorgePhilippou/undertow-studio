@@ -71,13 +71,14 @@ function balloonMisses(page) {
   check(duplicates.length === 0, `every element id is unique ${duplicates.join(', ')}`);
   check(await page.isVisible('#records-window'), 'the desktop shows the Records window');
   const icons = await page.$$eval('#desk-icons [data-open]', els => els.map(e => e.dataset.open));
-  check(icons.join() === 'learn,pieces', `the desktop has Lessons and My Pieces and nothing else (${icons.join(', ')})`);
+  check(icons.join() === 'pieces', `the desktop has My Pieces beside the records and nothing else (${icons.join(', ')})`);
   check(await page.isVisible('#records-empty'), 'an empty desktop explains how to load a record');
   check(!(await page.isVisible('#to-desk')), 'the Desktop button is hidden on the desktop');
 
-  await page.click('#desk-icons [data-open="learn"]');
+  await page.click('[data-menu="undertow"]');
+  await page.click('.menu button:has-text("Lessons (old)")');
   await page.waitForFunction(() => document.body.dataset.screen === 'learn');
-  check(await page.isVisible('#songs-window') && await page.isVisible('#to-desk'), 'Lessons opens the song desk with a way back');
+  check(await page.isVisible('#songs-window') && await page.isVisible('#to-desk'), 'the old Lessons still open from the apple menu, with a way back');
   await page.click('#to-desk');
   await page.click('#desk-icons [data-open="pieces"]');
   await page.waitForSelector('#dialog[open] .list-box');
@@ -93,8 +94,8 @@ function balloonMisses(page) {
   check(Math.abs(start - 0.48) < 0.06, `the chords start where the music starts (${start.toFixed(2)} s)`);
 
   // Riffs: tap through the opening keyboard figure.
-  check(await page.evaluate(() => document.getElementById('record-window').dataset.view) === 'riffs' && await page.isVisible('#riff-tap'), 'a known song opens on its riff');
-  check(await page.textContent('#riff-title') === 'The opening keyboard figure', 'the riff is named');
+  check(await page.evaluate(() => document.getElementById('record-window').dataset.view) === 'play' && await page.isVisible('#riff-tap') && await page.isVisible('#chord-lane'), 'a known song opens on Play, with its chords and riff together');
+  check((await page.textContent('#riff-next')).startsWith('The opening keyboard figure: 1 of 15'), 'the riff is named on the Tap pad');
   const riff = await page.evaluate(() => ({ hits: undertow.record.riffs.riff.hits.length, first: undertow.record.riffs.sliceOf(0), second: undertow.record.riffs.sliceOf(1) }));
   const beat = 60 / 124;
   check(riff.hits === 15 && Math.abs(riff.first.start - start) < 0.001 && Math.abs(riff.second.start - (start + 0.75 * beat)) < 0.001, `each hit is cut from the record in time (${riff.hits} hits)`);
@@ -102,8 +103,8 @@ function balloonMisses(page) {
   check(targets.join() === '36,52,55,60', `the keys show the first hit (${targets.join(' ')})`);
   await page.click('#riff-tap');
   check(await page.evaluate(() => undertow.record.riffs.index === 1 && undertow.record.riffs.sampler.playing('riff')), 'tapping plays the first hit from the record and moves on');
-  await page.keyboard.press(' ');
-  check(await page.evaluate(() => undertow.record.riffs.index) === 2, 'Space taps too');
+  await page.keyboard.press('Enter');
+  check(await page.evaluate(() => undertow.record.riffs.index) === 2, 'Return taps too');
   await page.evaluate(() => [36, 52, 55, 60].forEach(n => undertow.record.keyboard.press(n, 0.7)));
   await page.evaluate(() => [36, 52, 55, 60].forEach(n => undertow.record.keyboard.release(n)));
   check(await page.evaluate(() => undertow.record.riffs.index) === 3, 'playing the right keys moves on as well');
@@ -120,7 +121,6 @@ function balloonMisses(page) {
   check(await page.evaluate(() => undertow.record.riffs.index) === 0, 'Start Over goes back to the first hit');
   const chords = await page.evaluate(() => undertow.record.chordList().slice(0, 4).map(c => `${c.name}@${c.time.toFixed(2)}`));
   check(chords[0].startsWith('C@') && chords[1].startsWith('D♭maj7@') && chords[2].startsWith('E♭6@'), `the chart follows the song (${chords.join(', ')})`);
-  await page.click('#record-view [data-view="along"]');
   await page.waitForTimeout(300);
   check(await page.textContent('#chord-now') !== '', 'the current chord is shown');
 
@@ -270,6 +270,54 @@ function balloonMisses(page) {
   check(await page.evaluate(() => !undertow.record.sampler.playing('pad-10')), 'lifting the fingers stops the Hold pad');
   await page.evaluate(() => undertow.record.sampler.stopAll());
 
+  // Banks and Undo.
+  await page.click('#pad-banks [data-bank="1"]');
+  const bankB = await page.evaluate(() => ({ bank: undertow.record.bank, count: undertow.record.slices.length, length: undertow.record.slices[0].end - undertow.record.slices[0].start, bar: undertow.record.beatLength * 4 }));
+  check(bankB.bank === 1 && bankB.count === 16 && Math.abs(bankB.length - bankB.bar) < 0.01, 'bank B has sixteen more pads, a bar each');
+  check((await page.textContent('#sampler [data-slice="0"] .number')).startsWith('B1'), 'bank B pads are named B1 to B16');
+  await page.click('#sampler [data-slice="0"]');
+  check(await page.evaluate(() => undertow.record.sampler.playing('pad-B0')), 'a bank B pad plays');
+  const beforeCut = await page.evaluate(() => JSON.stringify(undertow.record.slices));
+  await page.selectOption('#rec-cut', 'beat');
+  check(await page.evaluate(before => JSON.stringify(undertow.record.slices) !== before, beforeCut), 'Cut Pads recuts the bank');
+  await page.click('#pad-undo');
+  check(await page.evaluate(before => JSON.stringify(undertow.record.slices) === before, beforeCut), 'Undo brings the pads back');
+  await page.click('#pad-banks [data-bank="0"]');
+  check(await page.evaluate(() => undertow.record.bank === 0 && undertow.record.slices[0].mode === 'loop'), 'bank A is just as it was');
+
+  // Zoom, volume and fade while editing.
+  await page.evaluate(() => undertow.record.sampler.stopAll());
+  await page.click('#pad-edit');
+  await page.click('#sampler [data-slice="1"]');
+  const zoom = await page.evaluate(() => ({ range: undertow.record.range, slice: undertow.record.slices[1], duration: undertow.record.duration }));
+  check(zoom.range.to - zoom.range.from < zoom.duration && zoom.range.from <= zoom.slice.start && zoom.range.to >= zoom.slice.end, `the waveform zooms in on the pad being edited (${zoom.range.from.toFixed(1)}-${zoom.range.to.toFixed(1)} s)`);
+  await page.click('#edit-vol-down');
+  await page.click('#edit-vol-down');
+  check(await page.evaluate(() => undertow.record.slices[1].volume) === 0.8 && (await page.textContent('#edit-vol')) === '80%', 'a pad can be made quieter');
+  await page.selectOption('#edit-fade', '40');
+  check(await page.evaluate(() => undertow.record.slices[1].fade) === 40, 'a pad can fade in and out');
+  await page.keyboard.press('Meta+z');
+  check(!(await page.evaluate(() => undertow.record.slices[1].fade)), 'Command-Z undoes the fade');
+  await page.click('#pad-edit');
+
+  // Loops started while another loop plays join on its beat.
+  await page.evaluate(() => {
+    const r = undertow.record;
+    r.slices[11] = { start: 1, end: 1 + r.beatLength * 2, mode: 'loop' };
+    r.slices[12] = { start: 5, end: 5 + r.beatLength, mode: 'loop' };
+    r.renderPads();
+  });
+  await page.click('#sampler [data-slice="11"]');
+  await page.waitForTimeout(370);
+  await page.click('#sampler [data-slice="12"]');
+  const synced = await page.evaluate(() => {
+    const v = undertow.record.sampler.voices;
+    return { gap: v.get('pad-12').started - v.get('pad-11').started, beat: undertow.record.beatLength };
+  });
+  const beats = synced.gap / synced.beat;
+  check(synced.gap > 0.3 && Math.abs(beats - Math.round(beats)) < 0.01, `a second loop starts on the beat of the first (${beats.toFixed(3)} beats later)`);
+  await page.evaluate(() => undertow.record.sampler.stopAll());
+
   // Remix.
   await page.click('#record-view [data-view="remix"]');
   check(await page.$$eval('#remix-grid .cell', cells => cells.length) === 256, 'Remix shows sixteen pads by sixteen steps');
@@ -289,6 +337,21 @@ function balloonMisses(page) {
   check(await page.textContent('#remix-bpm') === '125.5 BPM', 'the pattern starts at the song tempo and can be changed');
   await page.click('#remix-play');
   check(await page.evaluate(() => !undertow.record.remix.playing), 'the pattern stops');
+  await page.click('#remix-patterns [data-pattern="1"]');
+  check(await page.$$eval('#remix-grid .cell[aria-pressed="true"]', cells => cells.length) === 0, 'pattern B starts empty');
+  await page.click('#remix-bank [data-bank="1"]');
+  await page.click('#remix-grid [data-row="3"][data-step="0"]');
+  check(await page.$$eval('#remix-patterns button.used', b => b.length) === 2, 'patterns with something in them are marked');
+  await page.check('#remix-chain');
+  await page.locator('#remix-swing').fill('50');
+  await page.click('#remix-patterns [data-pattern="0"]');
+  await page.evaluate(() => { window.remixHits = []; });
+  await page.click('#remix-play');
+  await page.waitForTimeout(2600);
+  const chained = await page.evaluate(() => window.remixHits);
+  await page.click('#remix-play');
+  check(chained.includes('pad-0') && chained.includes('pad-B3'), `Chain plays pattern A, then pattern B with bank B's pads (${[...new Set(chained)].join(', ')})`);
+  check(await page.evaluate(() => undertow.record.remix.swing) === 0.5, 'Swing can be set');
 
   // Snap to the beat.
   await page.click('#record-view [data-view="pads"]');
@@ -336,8 +399,9 @@ function balloonMisses(page) {
   check(await page.evaluate(() => document.body.dataset.screen) === 'desk', 'OK Computer always starts on the desktop');
   await page.click('#records [data-record]');
   await page.waitForFunction(() => document.body.dataset.screen === 'record' && undertow.record.track, null, { timeout: 15000 });
-  const kept = await page.evaluate(() => ({ bpm: undertow.record.track.sync.bpm, slice: undertow.record.slices[0], pattern: undertow.record.remix.pattern.flat().filter(Boolean).length }));
+  const kept = await page.evaluate(() => ({ bpm: undertow.record.track.sync.bpm, slice: undertow.record.slices[0], pattern: undertow.record.remix.patterns[0].steps.flat().filter(Boolean).length, second: undertow.record.remix.patterns[1], chain: undertow.record.remix.chain, banks: undertow.record.banks.filter(Boolean).length }));
   check(kept.bpm === 124.5 && kept.slice.mode === 'loop' && kept.slice.pitch === 1 && kept.pattern === 4, 'the record reopens with its tempo, pads and pattern');
+  check(kept.second.bank === 1 && kept.second.steps[3][0] && kept.chain && kept.banks === 2, 'its banks, second pattern and chain are kept too');
   await page.click('#record-close');
   check(await page.$$eval('#records [data-record]', icons => icons.length) === 1, 'the record is on the desktop');
   check(!(await page.isVisible('#records-empty')), 'the empty note goes once there is a record');
@@ -360,6 +424,19 @@ function balloonMisses(page) {
   await page.waitForFunction(() => document.body.dataset.screen === 'record' && undertow.record.track && undertow.desktop.records.length === 2, null, { timeout: 15000 });
   const copy = await page.evaluate(() => ({ id: undertow.record.track.id, slices: undertow.record.slices, pattern: undertow.record.remix.pattern, bpm: undertow.record.track.sync.bpm, songId: undertow.record.track.songId, name: undertow.record.track.name }));
   check(copy.name === 'Everything In Its Right Place' && copy.songId === original.songId && copy.bpm === original.bpm && JSON.stringify(copy.slices) === JSON.stringify(original.slices) && JSON.stringify(copy.pattern) === JSON.stringify(original.pattern), 'loading the saved file brings back the song, its pads, pattern and tempo');
+
+  // Borrow a pad from another record.
+  await page.click('#record-view [data-view="pads"]');
+  await page.click('#pad-edit');
+  await page.click('#sampler [data-slice="7"]');
+  await page.click('#edit-borrow');
+  await page.waitForSelector('#dialog[open] .list-box button');
+  await page.click(`#dialog .list-box button[data-value="${original.id}"]`);
+  await page.waitForSelector('#dialog[open] h3:has-text("Pads of")');
+  await page.click('#dialog .list-box button[data-value="0"]');
+  await page.waitForFunction(id => undertow.record.slices[7].source === id, original.id);
+  check(await page.evaluate(() => undertow.record.sampler.playing('pad-7')) && (await page.textContent('#sampler [data-slice="7"] small')).includes('from Everything'), 'a pad can be borrowed from another record and plays its sound');
+  await page.click('#pad-edit');
   await page.click('#record-close');
   await page.evaluate(async id => {
     const { deleteTrack } = await import('./src/records/tracks.js');
@@ -402,7 +479,7 @@ function balloonMisses(page) {
     });
     check(fits, `the record window fits at ${viewport.width}x${viewport.height}`);
     const misses = [];
-    for (const view of ['riffs', 'pads', 'remix', 'along']) {
+    for (const view of ['play', 'pads', 'remix']) {
       await page.click(`#record-view [data-view="${view}"]`);
       misses.push(...await balloonMisses(page));
     }

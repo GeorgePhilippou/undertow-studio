@@ -27,7 +27,7 @@ const tipInside = () => {
     const misses = [];
     // The desktop tour runs on a first visit; the others the first time each opens.
     for (const screen of ['desk', 'learn']) {
-      if (screen !== 'desk') await page.click(`#desk-icons [data-open="${screen}"]`);
+      if (screen !== 'desk') await page.evaluate(name => undertow.setScreen(name), screen);
       await page.waitForSelector('.balloon.tour');
       const total = Number((await page.textContent('.balloon b')).split(' of ')[1]);
       for (let step = 1; step <= total; step++) {

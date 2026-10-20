@@ -733,28 +733,25 @@ body[data-screen='desk'] .desk-button { display: none; }
   background: var(--paper) var(--desktop);
 }
 #record-window { flex: 1; min-height: 0; }
-#record-window:not([data-view='along']) .along-only, #record-window:not([data-view='pads']) .pads-only,
-#record-window:not([data-view='riffs']) .riffs-only, #record-window:not([data-view='remix']) .remix-only,
-#record-window[data-view='pads'] .sync-only, #record-window[data-view='remix'] .sync-only,
-#record-window[data-view='remix'] .tempo-only,
-#record-window[data-view='pads'] .keys-only, #record-window[data-view='remix'] .keys-only,
-#record-window[data-view='along'] .fx-only, #record-window[data-view='riffs'] .fx-only { display: none !important; }
+#record-window:not([data-view='play']) .play-only, #record-window:not([data-view='pads']) .pads-only,
+#record-window:not([data-view='remix']) .remix-only,
+#record-window:not([data-view='play']) .sync-only, #record-window:not([data-view='play']) .keys-only,
+#record-window[data-view='remix'] .tempo-only, #record-window[data-view='play'] .fx-only { display: none !important; }
 .record-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px 8px; }
 .record-top .spacer { flex: 1; }
 .record-wave { display: block; height: 76px; margin: 0 12px; border: 1px solid var(--ink); touch-action: none; cursor: text; flex: none; width: calc(100% - 24px); }
-.along-view, .pads-view, .riffs-view, .remix-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
-.along-view { flex: none; padding-bottom: 0; }
-.riffs-view { flex: none; padding-bottom: 0; }
+.play-view, .pads-view, .remix-view { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
+.play-view { flex: none; padding-bottom: 0; }
 .riff-none { margin: 0; }
 .riff-body { display: flex; flex-direction: column; gap: 8px; }
 .riff-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
 .riff-words { display: grid; gap: 2px; min-width: 0; flex: 1 1 320px; }
 .riff-words strong { font: 22px var(--chicago); }
-.riff-strip { display: block; width: 100%; height: 54px; border: 1px solid var(--ink); touch-action: none; }
+.riff-strip { display: block; width: 100%; height: 40px; border: 1px solid var(--ink); touch-action: none; }
 .riff-play { display: flex; gap: 12px; align-items: stretch; }
 .riff-tap {
   flex: 1;
-  min-height: 92px;
+  min-height: 70px;
   border: 1px solid var(--ink);
   border-radius: 14px;
   box-shadow: 3px 3px 0 var(--ink);
@@ -815,4 +812,22 @@ body[data-screen='desk'] .desk-button { display: none; }
   .chord-now { width: 84px; }
   .chord-now strong { font-size: 24px; }
   .sampler { gap: 6px; }
+}
+
+.riff-side .segmented { align-self: flex-start; }
+.riff-buttons { display: flex; gap: 8px; }
+.riff-tap strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 26px; }
+.pad-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.pad.sample.borrowed { border-style: dashed; }
+#remix-patterns button.used::after { content: ''; display: inline-block; width: 5px; height: 5px; margin-left: 5px; background: currentColor; vertical-align: middle; }
+#record-window { overflow: hidden; }
+#record-window > .play-view, #record-window > .along-keys { min-height: 0; }
+/* On a phone the window scrolls: nothing shrinks under the controls. */
+@media (max-width: 700px) {
+  #record-window { overflow: auto; }
+  #record-window > * { flex-shrink: 0; }
+  #record-window > .along-keys, #record-window > .pads-view, #record-window > .remix-view { flex: none; }
+  .along-keys .piano { height: 150px; flex: none; }
+  .sampler { grid-auto-rows: 92px; }
+  .riff-play { flex-direction: column; }
 }

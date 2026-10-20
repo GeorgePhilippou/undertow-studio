@@ -8,6 +8,8 @@ export class Sampler {
     this.context = context;
     this.voices = new Map();
     this.reversed = new Map();
+    // Other records' songs, for pads borrowed from them, by record id.
+    this.buffers = new Map();
     this.input = context.createGain();
     this.filter = context.createBiquadFilter();
     this.filter.type = 'lowpass';
@@ -29,6 +31,21 @@ export class Sampler {
     this.stopAll();
     this.buffer = buffer;
     this.reversed.clear();
+    this.grid = null;
+  }
+
+  // Loops start on the beat of whatever loop is already going, so several
+  // loops stack in time. With nothing looping, the beat starts now.
+  syncedStart(beat) {
+    const now = this.context.currentTime;
+    const looping = [...this.voices.values()].some(voice => voice.loop);
+    if (!this.grid || !looping) {
+      this.grid = { origin: now + 0.01, beat };
+      return now + 0.01;
+    }
+    const { origin } = this.grid;
+    const beats = Math.ceil((now + 0.02 - origin) / beat);
+    return origin + beats * beat;
   }
 
   // 0 is open; 1 closes the low-pass filter right down.
@@ -46,15 +63,21 @@ export class Sampler {
     this.wet.gain.setTargetAtTime(amount * 0.7, this.context.currentTime, 0.02);
   }
 
+  // The song a slice comes from: this record, or another one it borrows from.
+  bufferOf(slice) {
+    return slice.source ? this.buffers.get(slice.source) : this.buffer;
+  }
+
   reverseOf(slice) {
-    const key = `${slice.start}-${slice.end}`;
+    const buffer = this.bufferOf(slice);
+    const key = `${slice.source || ''}-${slice.start}-${slice.end}`;
     if (!this.reversed.has(key)) {
-      const rate = this.buffer.sampleRate;
+      const rate = buffer.sampleRate;
       const from = Math.floor(slice.start * rate);
       const length = Math.max(1, Math.floor((slice.end - slice.start) * rate));
-      const copy = this.context.createBuffer(this.buffer.numberOfChannels, length, rate);
-      for (let c = 0; c < this.buffer.numberOfChannels; c++) {
-        const source = this.buffer.getChannelData(c);
+      const copy = this.context.createBuffer(buffer.numberOfChannels, length, rate);
+      for (let c = 0; c < buffer.numberOfChannels; c++) {
+        const source = buffer.getChannelData(c);
         const target = copy.getChannelData(c);
         for (let i = 0; i < length; i++) target[i] = source[from + length - 1 - i] || 0;
       }
@@ -67,22 +90,26 @@ export class Sampler {
   // one pad chokes itself on a sampler.
   // Loop repeats until stopped; Hold repeats for as long as the pad is held,
   // so it is stopped by letting go. A sequencer can play any mode as Once.
+  // Each slice can have its own volume (1 is as recorded) and a fade in and
+  // out in milliseconds, which also smooths clicks at the cut.
   play(key, slice, { time = this.context.currentTime, velocity = 0.85, onEnd, mode = slice?.mode } = {}) {
-    if (!this.buffer || !slice) return null;
+    const buffer = slice && this.bufferOf(slice);
+    if (!buffer) return null;
     this.stop(key, time);
     const length = Math.max(0.02, slice.end - slice.start);
     const rate = 2 ** ((slice.pitch || 0) / 12);
-    const level = 0.35 + velocity * 0.65;
+    const level = (0.35 + velocity * 0.65) * (slice.volume ?? 1);
+    const fade = Math.min(length / 2, Math.max(0.004, (slice.fade || 0) / 1000));
     const gain = this.context.createGain();
     gain.gain.setValueAtTime(0, time);
-    gain.gain.linearRampToValueAtTime(level, time + 0.004);
+    gain.gain.linearRampToValueAtTime(level, time + fade);
     gain.connect(this.input);
     const source = this.context.createBufferSource();
     source.playbackRate.value = rate;
     if (slice.reverse) {
       source.buffer = this.reverseOf(slice);
     } else {
-      source.buffer = this.buffer;
+      source.buffer = buffer;
     }
     const offset = slice.reverse ? 0 : slice.start;
     source.connect(gain);
@@ -95,7 +122,8 @@ export class Sampler {
     } else {
       const heard = length / rate;
       source.start(time, offset, length + 0.01);
-      gain.gain.setValueAtTime(level, time + Math.max(0.005, heard - 0.012));
+      const out = Math.min(heard / 2, Math.max(0.012, fade));
+      gain.gain.setValueAtTime(level, time + Math.max(fade, heard - out));
       gain.gain.linearRampToValueAtTime(0, time + heard);
     }
     const voice = { source, gain, key, slice, started: time, rate, length, loop: repeats };
