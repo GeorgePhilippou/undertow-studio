@@ -660,10 +660,9 @@ dialog::backdrop { background: transparent; }
 .slider::-moz-range-thumb { width: 16px; height: 24px; background: var(--paper); border: 1px solid var(--ink); box-shadow: 1px 1px 0 var(--ink); border-radius: 2px; }
 .mixer output { width: 54px; text-align: right; font: 16px var(--geneva); }
 
-/* ---------------------------------------------------------------- play screen */
+/* ---------------------------------------------------------------- screens */
 
 body:not([data-screen='learn']) .desktop, body:not([data-screen='learn']) .learn-only,
-body:not([data-screen='play']) .play-screen, body:not([data-screen='play']) .play-only,
 body:not([data-screen='desk']) .finder,
 body:not([data-screen='record']) .record-screen { display: none !important; }
 
@@ -671,46 +670,6 @@ body:not([data-screen='record']) .record-screen { display: none !important; }
 .desk-button:active { background: var(--ink); color: var(--paper); }
 body[data-screen='desk'] .desk-button { display: none; }
 
-.play-screen {
-  position: fixed;
-  inset: 24px 0 0 0;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: var(--paper) var(--desktop);
-}
-.play-screen:fullscreen { inset: 0; padding: 0; gap: 0; }
-.play-screen:fullscreen .titlebar { display: none; }
-#world-window { flex: 1; min-height: 0; }
-.world-body { position: relative; flex: 1; min-height: 0; overflow: hidden; }
-#art { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; touch-action: none; cursor: crosshair; }
-.world-caption {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  max-width: min(420px, calc(100% - 24px));
-  background: var(--paper);
-  border: 1px solid var(--ink);
-  box-shadow: 1px 1px 0 var(--ink);
-  padding: 6px 10px 7px;
-  display: grid;
-  gap: 2px;
-  pointer-events: none;
-}
-.world-caption strong { font: 22px var(--chicago); }
-.touch-hint {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--paper);
-  border: 3px double var(--ink);
-  padding: 10px 18px;
-  font: 22px var(--chicago);
-  pointer-events: none;
-  animation: next 1.2s steps(2) infinite;
-}
 .control-strip {
   display: flex;
   flex-wrap: wrap;
@@ -722,38 +681,13 @@ body[data-screen='desk'] .desk-button { display: none; }
   box-shadow: 1px 1px 0 var(--ink);
 }
 .control-strip .spacer { flex: 1; }
-.control-strip #record-time { min-width: 40px; }
-.box.zoom { right: 9px; }
-.box.zoom::after { content: ""; position: absolute; left: 1px; top: 1px; width: 7px; height: 6px; border: 1px solid var(--ink); }
 .piece-media { width: 100%; max-height: 50vh; background: var(--ink); border: 1px solid var(--ink); display: block; margin: 6px 0; }
 .dialog-inner .list-box { margin-top: 6px; min-width: min(420px, 80vw); }
 
 @media (max-width: 520px) {
-  .play-screen { padding: 8px; }
   .control-strip .spacer { display: none; }
-  .world-caption strong { font-size: 18px; }
   .desk-button { padding: 0 8px; }
 }
-.world-caption.brief #world-sub { display: none; }
-body[data-screen='play'] .toast { bottom: 84px; }
-.track-panel {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: min(440px, calc(100% - 32px));
-  background: var(--paper);
-  border: 1px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
-  outline: 3px solid var(--paper);
-  padding: 18px 20px;
-  display: grid;
-  gap: 10px;
-  justify-items: start;
-}
-.track-panel strong { font: 22px var(--chicago); }
-.track-panel p { margin: 0; }
-
 /* ---------------------------------------------------------------- desktop (Finder) */
 
 .finder {

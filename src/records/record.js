@@ -5,12 +5,12 @@
 
 import { Keyboard } from '../ui/keyboard.js';
 import { SONGS } from '../songs.js';
-import { getTrack, updateTrack, decode, overview } from '../play/tracks.js';
+import { getTrack, updateTrack, decode, overview } from './tracks.js';
 import { songFor, timeline, chordAt, chordNotes, chordChoices } from './chart.js';
 import { sliceAtAttacks, sliceEvenly, estimateBeat } from './slices.js';
 import { TakeRecorder } from './take.js';
 import { encodeWav } from '../render.js';
-import { savePiece } from '../play/pieces.js';
+import { savePiece } from './pieces.js';
 import { toast, escape } from '../ui/mac.js';
 import { Sampler, MODES } from './sampler.js';
 import { RiffView } from './riffs.js';

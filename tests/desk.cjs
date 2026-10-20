@@ -64,8 +64,14 @@ function balloonMisses(page) {
   const browser = await launch();
   const { page, errors } = await openApp(browser);
   await page.evaluate(() => undertow.setScreen('desk'));
+  const duplicates = await page.evaluate(() => {
+    const ids = [...document.querySelectorAll('[id]')].map(e => e.id);
+    return ids.filter((id, i) => ids.indexOf(id) !== i);
+  });
+  check(duplicates.length === 0, `every element id is unique ${duplicates.join(', ')}`);
   check(await page.isVisible('#records-window'), 'the desktop shows the Records window');
-  check(await page.isVisible('#desk-icons [data-open="play"]') && await page.isVisible('#desk-icons [data-open="learn"]'), 'the desktop has Sound Worlds and Lessons icons');
+  const icons = await page.$$eval('#desk-icons [data-open]', els => els.map(e => e.dataset.open));
+  check(icons.join() === 'learn,pieces', `the desktop has Lessons and My Pieces and nothing else (${icons.join(', ')})`);
   check(await page.isVisible('#records-empty'), 'an empty desktop explains how to load a record');
   check(!(await page.isVisible('#to-desk')), 'the Desktop button is hidden on the desktop');
 
@@ -73,10 +79,10 @@ function balloonMisses(page) {
   await page.waitForFunction(() => document.body.dataset.screen === 'learn');
   check(await page.isVisible('#songs-window') && await page.isVisible('#to-desk'), 'Lessons opens the song desk with a way back');
   await page.click('#to-desk');
-  await page.click('#desk-icons [data-open="play"]');
-  await page.waitForFunction(() => document.body.dataset.screen === 'play');
-  check(await page.isVisible('#art'), 'Sound Worlds opens the touch screen');
-  await page.click('#to-desk');
+  await page.click('#desk-icons [data-open="pieces"]');
+  await page.waitForSelector('#dialog[open] .list-box');
+  check((await page.textContent('#dialog')).includes('My Pieces'), 'My Pieces opens from the desktop');
+  await page.click('#dialog [data-value="ok"]');
 
   // Load a record.
   await page.setInputFiles('#record-file', testRecord());
@@ -306,7 +312,7 @@ function balloonMisses(page) {
   await page.click('#rec-take');
   await page.waitForSelector('#dialog[open] audio');
   const take = await page.evaluate(async () => {
-    const { listPieces } = await import('./src/play/pieces.js');
+    const { listPieces } = await import('./src/records/pieces.js');
     const piece = (await listPieces()).find(p => p.record === undertow.record.track.id);
     return piece && { type: piece.blob.type, seconds: piece.seconds, title: piece.title };
   });
@@ -356,7 +362,7 @@ function balloonMisses(page) {
   check(copy.name === 'Everything In Its Right Place' && copy.songId === original.songId && copy.bpm === original.bpm && JSON.stringify(copy.slices) === JSON.stringify(original.slices) && JSON.stringify(copy.pattern) === JSON.stringify(original.pattern), 'loading the saved file brings back the song, its pads, pattern and tempo');
   await page.click('#record-close');
   await page.evaluate(async id => {
-    const { deleteTrack } = await import('./src/play/tracks.js');
+    const { deleteTrack } = await import('./src/records/tracks.js');
     await deleteTrack(id);
     await undertow.desktop.render();
   }, copy.id);
@@ -376,7 +382,7 @@ function balloonMisses(page) {
   check(await page.$$eval('#records [data-record]', icons => icons.length) === 4, 'several files can be loaded at once');
   check(await page.evaluate(() => document.body.dataset.screen) === 'desk', 'loading several files stays on the desktop');
   await page.evaluate(async keep => {
-    const { deleteTrack, listTracks } = await import('./src/play/tracks.js');
+    const { deleteTrack, listTracks } = await import('./src/records/tracks.js');
     for (const t of await listTracks()) if (t.id !== keep) await deleteTrack(t.id);
     await undertow.desktop.render();
   }, original.id);
