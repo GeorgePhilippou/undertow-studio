@@ -10,7 +10,8 @@ export class TakeRecorder {
     this.silent = context.createGain();
     this.silent.gain.value = 0;
     this.tap.onaudioprocess = event => {
-      if (!this.recording) return;
+      // Only blocks heard after Record was pressed belong to the take.
+      if (!this.recording || event.playbackTime < this.started) return;
       this.left.push(new Float32Array(event.inputBuffer.getChannelData(0)));
       this.right.push(new Float32Array(event.inputBuffer.getChannelData(1)));
     };
@@ -20,22 +21,35 @@ export class TakeRecorder {
     return this.recording ? this.context.currentTime - this.started : 0;
   }
 
+  // The tap stays connected while a record is open: plugging it in only when
+  // Record is pressed let a stale block of earlier sound into the take.
+  attach() {
+    if (this.attached) return;
+    this.attached = true;
+    for (const source of this.sources) source.connect(this.tap);
+    this.tap.connect(this.silent).connect(this.context.destination);
+  }
+
+  detach() {
+    if (!this.attached || this.recording) return;
+    this.attached = false;
+    for (const source of this.sources) {
+      try { source.disconnect(this.tap); } catch { /* not connected */ }
+    }
+    try { this.tap.disconnect(); } catch { /* not connected */ }
+  }
+
   start() {
+    this.attach();
     this.left = [];
     this.right = [];
     this.recording = true;
     this.started = this.context.currentTime;
-    for (const source of this.sources) source.connect(this.tap);
-    this.tap.connect(this.silent).connect(this.context.destination);
   }
 
   // Returns an AudioBuffer of the take, or null if nothing was played.
   stop() {
     this.recording = false;
-    for (const source of this.sources) {
-      try { source.disconnect(this.tap); } catch { /* not connected */ }
-    }
-    try { this.tap.disconnect(); } catch { /* not connected */ }
     const join = parts => {
       const all = new Float32Array(parts.reduce((sum, p) => sum + p.length, 0));
       let offset = 0;
@@ -47,7 +61,9 @@ export class TakeRecorder {
     };
     const left = join(this.left);
     const right = join(this.right);
-    const loud = i => Math.abs(left[i]) > 0.002 || Math.abs(right[i]) > 0.002;
+    // Anything quieter than about -40 dB, such as the last breath of a reverb,
+    // counts as silence.
+    const loud = i => Math.abs(left[i]) > 0.01 || Math.abs(right[i]) > 0.01;
     let first = 0;
     while (first < left.length && !loud(first)) first++;
     let last = left.length - 1;

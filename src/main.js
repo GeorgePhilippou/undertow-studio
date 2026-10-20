@@ -1015,6 +1015,8 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
   switch (name) {
     case 'undertow':
       return [
+        { label: 'Desktop', shortcut: '⌘D', disabled: screen() === 'desk', action: () => setScreen('desk') },
+        '-',
         { label: 'About OK Computer…', action: showAbout },
         '-',
         { label: 'Lessons (old)...', action: () => setScreen('learn') },
@@ -1226,6 +1228,11 @@ document.addEventListener('keydown', event => {
   if ($('#dialog').open || event.target.closest('input, select, textarea')) return;
   const command = event.metaKey || event.ctrlKey;
   if (command) {
+    if (event.key.toLowerCase() === 'd' && screen() !== 'desk') {
+      event.preventDefault();
+      setScreen('desk');
+      return;
+    }
     if (screen() !== 'learn') {
       if (event.key.toLowerCase() === 'z' && screen() === 'record') {
         event.preventDefault();
@@ -1356,13 +1363,17 @@ $('#trainer').checked = Boolean(settings().trainer);
 player.guide = $('#guide').checked = Boolean(settings().guide);
 keyboard.labels = Boolean(settings().labels);
 selectSong(settings().songId || SONGS[0].id);
-const recordScreen = new RecordScreen({ engine, $, onPlaying: keepAwake, showPiece: (piece, fresh) => showPiece(piece, { fresh, download }) });
+const recordScreen = new RecordScreen({
+  engine, $, onPlaying: keepAwake,
+  showPiece: (piece, fresh) => showPiece(piece, { fresh, download }),
+  records: () => desktop.records,
+  openRecord: id => openFromDesk({ record: id }),
+});
 const desktop = new Desktop({ context, $, open: openFromDesk, download, flush: () => recordScreen.flush() });
 desktop.render();
 // Undertow always starts on the desktop, whatever was open last time.
 settings().screen = 'desk';
 document.body.dataset.screen = 'desk';
-$('#to-desk').addEventListener('click', () => setScreen('desk'));
 $('#record-close').addEventListener('click', () => setScreen('desk'));
 requestAnimationFrame(frame);
 

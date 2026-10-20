@@ -6,7 +6,7 @@ Open https://GeorgePhilippou.github.io/undertow-studio/ and tap **Start**. (The 
 
 ## The desktop
 
-OK Computer opens on a Finder-style desktop. The **Records** window holds the songs you have loaded; touch one to open it. **My Pieces** keeps the takes you record. The **Desktop** button in the menu bar always brings you back.
+OK Computer opens on a Finder-style desktop. The **Records** window holds the songs you have loaded; touch one to open it. **My Pieces** keeps the takes you record. **Desktop** at the top of the apple menu (the little computer at the top left, or Command-D) always brings you back.
 
 Only the records themselves sound exactly like Radiohead, so everything is built from them. Load an MP3, M4A, AAC or WAV you own from Files (**Load a Record...** or File > Load a Record; several at once is fine). It stays in this browser on this device; nothing is uploaded or bundled. Apple Music downloads are copy-protected and cannot be opened.
 
@@ -19,10 +19,10 @@ Records are kept in the browser on each device; nothing syncs or uploads by itse
 
 ## A record
 
-A record opens in one window with three tabs:
+A record opens in one window with three tabs. The menu at the top of the window switches to any of your other records.
 
 - **Play:** the whole record as a waveform: touch to jump, drag across a part to loop it, and slow it down to 50% without changing the pitch. Underneath, the chords scroll past in time, and the song's **riff** is ready to perform.
-  - If the record is one of the known songs (Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits, Motion Picture Soundtrack - recognised from the file name, or chosen in the Song menu), its chord loop and riff are lined up from where the music starts. **Set Start** and the tempo line them up by ear. The chart repeats one passage, so other sections of the record may differ.
+  - If the record is one of the known songs (Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits, Motion Picture Soundtrack - recognised from the file name, or chosen in the Song menu), its chord loop and riff are lined up from where the music starts; **Chords and riff from** in the Play tab sets which song it is. **Set Start** and the tempo line them up by ear. The chart repeats one passage, so other sections of the record may differ.
   - **Tap** (or Return) plays the riff's next hit. **Song** cuts each hit straight from your record, so it is Radiohead's real sound; **Keys** plays it with the app's instrument. **Hear It** plays it in time.
   - The keyboard shows the riff's next hit when stopped and the chord playing now when the record plays. **Chords** turns it into one pad per chord.
   - **Mark Chords:** tap each chord the moment you hear it change. Your marks replace the chart for that record.

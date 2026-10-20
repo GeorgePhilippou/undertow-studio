@@ -34,8 +34,10 @@ export const clock = seconds => {
 };
 
 export class RecordScreen {
-  constructor({ engine, $, onPlaying, showPiece }) {
+  constructor({ engine, $, onPlaying, showPiece, records, openRecord }) {
     this.showPiece = showPiece;
+    this.records = records || (() => []);
+    this.openRecord = openRecord || (() => {});
     this.engine = engine;
     this.context = engine.context;
     this.$ = $;
@@ -131,10 +133,19 @@ export class RecordScreen {
     this.applyFx();
     this.wave = null;
     this.$('#record-title').textContent = this.track.name;
+    this.renderPicker();
     this.$('#record-song').value = this.track.songId || '';
     this.setSong(this.track.songId, false);
     this.renderPads();
     this.setView(['play', 'pads', 'remix'].includes(this.view) ? this.view : 'play');
+  }
+
+  // The menu of records at the top of the window, to switch to another.
+  renderPicker() {
+    const records = this.records();
+    const list = records.some(r => r.id === this.track.id) ? records : [{ id: this.track.id, name: this.track.name }, ...records];
+    this.$('#record-pick').innerHTML = list.map(r => `<option value="${r.id}">${escape(r.name)}</option>`).join('');
+    this.$('#record-pick').value = this.track.id;
   }
 
   // Where the music begins, after any silence at the top of the file.
@@ -186,6 +197,8 @@ export class RecordScreen {
   enter() {
     this.active = true;
     this.wave = null;
+    cancelAnimationFrame(this.frame);
+    this.recorder.attach();
     this.loopFrame();
   }
 
@@ -196,6 +209,7 @@ export class RecordScreen {
     this.remix.stop();
     this.riffs.stopDemo();
     if (this.recorder.recording) this.toggleTake();
+    this.recorder.detach();
     this.releaseAll();
   }
 
@@ -205,7 +219,8 @@ export class RecordScreen {
   async toggleTake() {
     const button = this.$('#rec-take');
     if (!this.recorder.recording) {
-      await this.context.resume();
+      // Start at once, so a quick second tap always stops this take.
+      this.context.resume();
       this.recorder.start();
       button.setAttribute('aria-pressed', 'true');
       button.classList.add('armed');
@@ -868,6 +883,12 @@ export class RecordScreen {
     $('#mark-clear').addEventListener('click', () => this.clearMarks());
     $('#record-song').innerHTML = `<option value="">Not in the list</option>${SONGS.map(s => `<option value="${s.id}">${escape(s.title)}</option>`).join('')}`;
     $('#record-song').addEventListener('change', event => this.setSong(event.target.value || null));
+    $('#record-pick').addEventListener('change', async event => {
+      const id = event.target.value;
+      if (id === this.track?.id) return;
+      await this.flush();
+      this.openRecord(id);
+    });
     $('#record-view').addEventListener('click', event => {
       const button = event.target.closest('[data-view]');
       if (button) this.setView(button.dataset.view);

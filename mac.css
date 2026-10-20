@@ -666,9 +666,7 @@ body:not([data-screen='learn']) .desktop, body:not([data-screen='learn']) .learn
 body:not([data-screen='desk']) .finder,
 body:not([data-screen='record']) .record-screen { display: none !important; }
 
-.desk-button { border: 1px solid var(--ink); border-radius: 5px; background: var(--paper); padding: 0 12px; min-height: 20px; font: inherit; }
-.desk-button:active { background: var(--ink); color: var(--paper); }
-body[data-screen='desk'] .desk-button { display: none; }
+.song-match { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 
 .control-strip {
   display: flex;
@@ -686,7 +684,6 @@ body[data-screen='desk'] .desk-button { display: none; }
 
 @media (max-width: 520px) {
   .control-strip .spacer { display: none; }
-  .desk-button { padding: 0 8px; }
 }
 /* ---------------------------------------------------------------- desktop (Finder) */
 

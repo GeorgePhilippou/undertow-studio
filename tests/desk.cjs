@@ -73,13 +73,19 @@ function balloonMisses(page) {
   const icons = await page.$$eval('#desk-icons [data-open]', els => els.map(e => e.dataset.open));
   check(icons.join() === 'pieces', `the desktop has My Pieces beside the records and nothing else (${icons.join(', ')})`);
   check(await page.isVisible('#records-empty'), 'an empty desktop explains how to load a record');
-  check(!(await page.isVisible('#to-desk')), 'the Desktop button is hidden on the desktop');
+  await page.click('[data-menu="undertow"]');
+  check(await page.isDisabled('.menu button:has-text("Desktop")'), 'Desktop in the apple menu is dimmed on the desktop');
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => document.querySelector('.menu') && document.body.click());
 
   await page.click('[data-menu="undertow"]');
   await page.click('.menu button:has-text("Lessons (old)")');
   await page.waitForFunction(() => document.body.dataset.screen === 'learn');
-  check(await page.isVisible('#songs-window') && await page.isVisible('#to-desk'), 'the old Lessons still open from the apple menu, with a way back');
-  await page.click('#to-desk');
+  check(await page.isVisible('#songs-window'), 'the old Lessons still open from the apple menu');
+  await page.click('[data-menu="undertow"]');
+  await page.click('.menu button:has-text("Desktop")');
+  await page.waitForFunction(() => document.body.dataset.screen === 'desk');
+  check(true, 'Desktop in the apple menu goes back to the desktop');
   await page.click('#desk-icons [data-open="pieces"]');
   await page.waitForSelector('#dialog[open] .list-box');
   check((await page.textContent('#dialog')).includes('My Pieces'), 'My Pieces opens from the desktop');
@@ -235,9 +241,10 @@ function balloonMisses(page) {
   await page.evaluate(() => undertow.record.sampler.stopAll());
   await page.locator('#fx-filter').fill('80');
   const cutoff = await page.evaluate(() => undertow.record.sampler.filter.frequency.value);
-  await page.waitForFunction(() => undertow.record.sampler.filter.frequency.value < 5000, null, { timeout: 5000 }).catch(() => {});
-  const closed = await page.evaluate(() => undertow.record.sampler.filter.frequency.value);
-  check(closed < 5000, `the Filter closes over the pads (${Math.round(closed)} Hz)`);
+  // The cutoff glides there on the audio clock, so check where it is heading.
+  await page.waitForFunction(() => undertow.record.sampler.filter.frequency.value < 15000, null, { timeout: 10000 }).catch(() => {});
+  const closed = await page.evaluate(() => ({ amount: undertow.record.sampler.filterAmount, hz: undertow.record.sampler.filter.frequency.value }));
+  check(closed.amount === 0.8 && closed.hz < 15000, `the Filter closes over the pads (heading for ${Math.round(20000 * Math.pow(160 / 20000, closed.amount))} Hz, now ${Math.round(closed.hz)} Hz)`);
   await page.locator('#fx-filter').fill('0');
 
   // Hold keeps a short pad going for as long as it is held.
@@ -395,11 +402,16 @@ function balloonMisses(page) {
   });
   check(take && take.type === 'audio/wav' && take.seconds > 0.3 && take.seconds < 3, `the take is kept in My Pieces as a WAV (${take && take.seconds.toFixed(2)} s, ${take && take.title})`);
   await page.click('#dialog [data-value="ok"]');
+  // Silence every pad and its echo first, so the take really is empty.
+  await page.evaluate(() => { undertow.record.sampler.stopAll(); undertow.record.remix.stop(); });
+  await page.waitForTimeout(800);
   await page.click('#rec-take');
   await page.click('#rec-take');
   check(await page.evaluate(() => !undertow.record.recorder.recording), 'a take with nothing played is not kept');
 
   // A record that is not in the song list gets its tempo from the record.
+  await page.waitForFunction(() => !document.getElementById('dialog').open);
+  await page.click('#record-view [data-view="play"]');
   await page.selectOption('#record-song', '');
   const heard = await page.evaluate(() => ({ estimate: undertow.record.track.sync.estimate, label: document.getElementById('rec-bpm').textContent }));
   await page.selectOption('#record-song', 'everything');
@@ -438,6 +450,13 @@ function balloonMisses(page) {
   await page.waitForFunction(() => document.body.dataset.screen === 'record' && undertow.record.track && undertow.desktop.records.length === 2, null, { timeout: 15000 });
   const copy = await page.evaluate(() => ({ id: undertow.record.track.id, slices: undertow.record.slices, pattern: undertow.record.remix.pattern, bpm: undertow.record.track.sync.bpm, songId: undertow.record.track.songId, name: undertow.record.track.name }));
   check(copy.name === 'Everything In Its Right Place' && copy.songId === original.songId && copy.bpm === original.bpm && JSON.stringify(copy.slices) === JSON.stringify(original.slices) && JSON.stringify(copy.pattern) === JSON.stringify(original.pattern), 'loading the saved file brings back the song, its pads, pattern and tempo');
+  const picks = await page.$$eval('#record-pick option', options => options.map(o => o.value));
+  check(picks.length === 2 && picks.includes(original.id), 'the record menu lists every record');
+  await page.selectOption('#record-pick', original.id);
+  await page.waitForFunction(id => undertow.record.track.id === id, original.id);
+  check(await page.evaluate(() => document.body.dataset.screen === 'record'), 'choosing another record in the menu opens it');
+  await page.selectOption('#record-pick', copy.id);
+  await page.waitForFunction(id => undertow.record.track.id === id, copy.id);
 
   // Borrow a pad from another record.
   await page.click('#record-view [data-view="pads"]');
