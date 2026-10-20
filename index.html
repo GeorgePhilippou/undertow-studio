@@ -65,6 +65,7 @@
       <label class="label" for="record-song">Song</label>
       <select id="record-song" class="popup" data-help="Which Radiohead song this record is, so its riff and chords can follow along. Choose Not in the list to mark the chords yourself."></select>
       <span class="spacer"></span>
+      <button id="wave-zoom" class="btn square pads-only" aria-pressed="true" hidden data-help="While editing a pad, switch the waveform between a close-up of the pad and the whole song. Zoomed out, drag across any part of the song to give the pad that part.">Whole Song</button>
       <output id="rec-clock" class="small">0:00</output>
     </div>
     <canvas id="record-wave" class="record-wave" aria-label="Waveform" data-help="The whole record. Touch to jump there; drag across a part to loop it. When editing a pad, it zooms in on the pad and dragging sets the pad instead."></canvas>
@@ -109,7 +110,6 @@
       </div>
       <div id="pad-editor" class="pad-editor" hidden>
         <strong id="edit-label" class="small"></strong>
-        <label class="check" data-help="Zoom the waveform in on the pad while you edit it."><input id="edit-zoom" type="checkbox" checked> Zoom</label>
         <span class="nudge" data-help="Move where the pad starts, a sixteenth note at a time."><span class="small">Start</span><button id="edit-start-down" class="btn square" aria-label="Start earlier">-</button><button id="edit-start-up" class="btn square" aria-label="Start later">+</button></span>
         <span class="nudge" data-help="Move where the pad ends, a sixteenth note at a time. Make it as long as you like."><span class="small">End</span><button id="edit-end-down" class="btn square" aria-label="End earlier">-</button><button id="edit-end-up" class="btn square" aria-label="End later">+</button></span>
         <span id="edit-mode" class="segmented" role="group" aria-label="Pad mode" data-help="Once plays the whole pad. Hold plays round and round while you hold it and stops when you let go. Loop repeats until you touch it again."><button data-mode="once">Once</button><button data-mode="hold">Hold</button><button data-mode="loop">Loop</button></span>
