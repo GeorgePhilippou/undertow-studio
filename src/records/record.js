@@ -45,6 +45,9 @@ export class RecordScreen {
     this.editing = null;
     this.bank = 0;
     this.banks = [[], null, null];
+    // While editing a pad the waveform shows a close-up of it, or the whole
+    // song to choose a different part.
+    this.zoomed = true;
     this.undoStack = [];
     this.voices = new Map();
     this.audio = new Audio();
@@ -701,13 +704,21 @@ export class RecordScreen {
     this.renderEditor();
   }
 
+  setZoom(zoomed) {
+    this.zoomed = zoomed;
+    const button = this.$('#wave-zoom');
+    button.setAttribute('aria-pressed', String(zoomed));
+    button.textContent = zoomed ? 'Whole Song' : 'Zoom In';
+  }
+
   toggleEditing() {
     const on = this.$('#pad-edit').getAttribute('aria-pressed') !== 'true';
     this.$('#pad-edit').setAttribute('aria-pressed', String(on));
     this.$('#pad-editor').hidden = !on;
+    this.$('#wave-zoom').hidden = !on;
     if (on) {
       this.selectPad(this.lastPad ?? 0);
-      toast('Touch a pad to edit it. The waveform zooms in on it: drag across to set where it starts and ends.');
+      toast('Touch a pad to edit it. Drag across the waveform to set where it starts and ends; Whole Song zooms out to choose any part.');
     } else {
       this.editing = null;
       this.$$('#sampler .pad.editing').forEach(pad => pad.classList.remove('editing'));
@@ -757,7 +768,7 @@ export class RecordScreen {
 
   // While a pad of this record is edited, the waveform zooms in around it.
   get range() {
-    const slice = this.view === 'pads' && this.editing !== null && this.$('#edit-zoom').checked ? this.slices[this.editing] : null;
+    const slice = this.view === 'pads' && this.editing !== null && this.zoomed ? this.slices[this.editing] : null;
     if (!slice || slice.source || !this.duration) return { from: 0, to: this.duration || 1 };
     const length = slice.end - slice.start;
     const span = Math.min(this.duration, Math.max(2, length * 3));
@@ -884,7 +895,7 @@ export class RecordScreen {
       if (button) this.setBank(Number(button.dataset.bank));
     });
     $('#edit-borrow').addEventListener('click', () => this.borrow());
-    $('#edit-zoom').addEventListener('change', () => { this.peakKey = null; });
+    $('#wave-zoom').addEventListener('click', () => this.setZoom(!this.zoomed));
     $('#edit-fade').innerHTML = FADES.map(([ms, name]) => `<option value="${ms}">${name}</option>`).join('');
     $('#edit-fade').addEventListener('change', event => {
       this.changePad({ fade: Number(event.target.value) }, 'Fade');
