@@ -21,7 +21,7 @@
     <div class="dialog-inner">
       <span data-icon="mac"></span>
       <p>Welcome to OK Computer.</p>
-      <p class="small">Open a Radiohead record you own to play along with its chords or play it on pads, or explore the sound worlds and lessons. Headphones recommended.</p>
+      <p class="small">Open a Radiohead record you own to play its riffs, cut it into pads and remix it, or play along with its chords. Headphones recommended.</p>
       <button id="boot-start" class="btn default">Start</button>
     </div>
   </div>
@@ -30,14 +30,13 @@
 <header class="menubar" role="menubar" aria-label="Menu bar">
   <button class="menu-title logo" data-menu="undertow" aria-label="OK Computer" aria-haspopup="true" aria-expanded="false"><span data-icon="logo"></span></button>
   <button class="menu-title" data-menu="file" aria-haspopup="true" aria-expanded="false">File</button>
-  <button class="menu-title play-only" data-menu="world" aria-haspopup="true" aria-expanded="false">World</button>
   <button class="menu-title learn-only" data-menu="edit" aria-haspopup="true" aria-expanded="false">Edit</button>
   <button class="menu-title learn-only" data-menu="song" aria-haspopup="true" aria-expanded="false">Song</button>
   <button class="menu-title learn-only" data-menu="sound" aria-haspopup="true" aria-expanded="false">Sound</button>
   <button class="menu-title learn-only hide-phone" data-menu="window" aria-haspopup="true" aria-expanded="false">Window</button>
   <button class="menu-title" data-menu="help" aria-haspopup="true" aria-expanded="false">Help</button>
   <span class="menubar-right"><span id="status" class="status" aria-live="polite"></span>
-    <button id="to-desk" class="desk-button" data-help="Back to the desktop: your records, the sound worlds and the lessons.">Desktop</button><span id="clock" class="clock"></span></span>
+    <button id="to-desk" class="desk-button" data-help="Back to the desktop: your records, My Pieces and the lessons.">Desktop</button><span id="clock" class="clock"></span></span>
 </header>
 
 <div id="menus"></div>
@@ -54,9 +53,8 @@
     <input id="record-file" type="file" multiple accept="audio/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.json,application/json" hidden>
   </section>
   <nav id="desk-icons" class="desk-icons" aria-label="Desktop">
-    <button class="icon" data-open="play" data-help="Sound Worlds: touch anywhere to make sounds and pictures in the spirit of Kid A, OK Computer and In Rainbows."><span class="glyph" data-icon="globe"></span><span class="name">Sound Worlds</span></button>
     <button class="icon" data-open="learn" data-help="Lessons: learn short passages of Radiohead songs step by step, played by the app's own instruments."><span class="glyph" data-icon="piano"></span><span class="name">Lessons</span></button>
-    <button class="icon" data-open="pieces" data-help="My Pieces: the pieces you recorded in the sound worlds."><span class="glyph" data-icon="folder"></span><span class="name">My Pieces</span></button>
+    <button class="icon" data-open="pieces" data-help="My Pieces: the takes you recorded in your records, to play, save or share."><span class="glyph" data-icon="folder"></span><span class="name">My Pieces</span></button>
   </nav>
 </main>
 
@@ -156,35 +154,6 @@
       <button id="pad-edit" class="btn pads-only" aria-pressed="false" data-help="Edit a pad: its start and end, how it plays, its pitch and direction.">Edit Pad</button>
       <span class="fx fx-only" data-help="Filter: turn up to close a low-pass filter over the pads. Echo: a delay in time with the tempo."><label class="small" for="fx-filter">Filter</label><input id="fx-filter" class="slider" type="range" min="0" max="100" value="0"><label class="small" for="fx-echo">Echo</label><input id="fx-echo" class="slider" type="range" min="0" max="100" value="0"></span>
     </div>
-  </section>
-</main>
-
-<main id="play-screen" class="play-screen" aria-label="Play">
-  <section id="world-window" class="window active">
-    <header class="titlebar"><h2 id="world-title">Sound World</h2><button id="world-zoom" class="box zoom" aria-label="Full screen" data-help="Full screen: just the picture and the sound."></button></header>
-    <div class="world-body">
-      <canvas id="art" aria-label="Touch anywhere to play" data-help="Touch anywhere to play. Left is low, right is high, higher up is brighter. Slide your finger to play more notes; use several fingers at once. Every note fits, so nothing sounds wrong."></canvas>
-      <div class="world-caption"><strong id="world-name"></strong><span id="world-sub" class="small"></span></div>
-      <div id="touch-hint" class="touch-hint">Touch anywhere to play</div>
-      <div id="track-panel" class="track-panel" hidden>
-        <strong>Play a Radiohead song you own</strong>
-        <p class="small">Load an MP3, M4A or WAV from Files. Left to right is the song: touch to hear any moment, slide to scrub through it, and higher up melts it into a cloud. It stays on this device.</p>
-        <button id="track-load" class="btn default" data-help="Choose a song file you own from Files. Apple Music downloads are copy-protected and cannot be opened.">Load a Song...</button>
-      </div>
-      <input id="track-file" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac" hidden>
-    </div>
-  </section>
-  <section id="strip" class="control-strip" aria-label="Controls">
-    <button id="world-prev" class="btn square" aria-label="Previous world">◀</button>
-    <select id="world-select" class="popup" aria-label="Sound world" data-help="Choose a sound world: Your Song (a Radiohead track you own), Kid A machines, OK Computer's glowing room or In Rainbows guitars."></select>
-    <button id="world-next" class="btn square" aria-label="Next world">▶</button>
-    <button id="track-button" class="btn" hidden data-help="Your Songs: choose another song you have loaded, load a new one, or remove one.">Songs...</button>
-    <output id="track-status" class="small"></output>
-    <span class="spacer"></span>
-    <button id="band" class="btn" aria-pressed="true" data-help="Start or stop the band playing underneath you (Space)."><span data-icon="play"></span><span>Band On</span></button>
-    <button id="play-record" class="btn record" aria-pressed="false" data-help="Record a piece: the sound and the moving picture together (R). It is kept in My Pieces."><span data-icon="record"></span><span>Record</span></button>
-    <output id="record-time" class="small"></output>
-    <button id="pieces-button" class="btn" data-help="Watch, save or share the pieces you have recorded.">My Pieces</button>
   </section>
 </main>
 

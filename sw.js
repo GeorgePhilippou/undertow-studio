@@ -1,14 +1,13 @@
 // Offline support. Pages and code are fetched fresh when online and fall back
 // to the last copy offline; piano samples and fonts are kept once loaded.
 
-const CACHE = 'undertow-v1';
+const CACHE = 'undertow-v2';
 const CORE = [
   './', 'index.html', 'mac.css', 'icon.svg', 'manifest.webmanifest',
   'src/main.js', 'src/songs.js', 'src/beats.js', 'src/player.js', 'src/render.js', 'src/storage.js',
   'src/audio/engine.js', 'src/audio/piano.js', 'src/audio/synths.js', 'src/audio/drums.js',
-  'src/play/index.js', 'src/play/worlds.js', 'src/play/art.js', 'src/play/pieces.js', 'src/play/grains.js', 'src/play/tracks.js',
   'src/records/desktop.js', 'src/records/record.js', 'src/records/chart.js', 'src/records/slices.js',
-  'src/records/sampler.js', 'src/records/riffs.js', 'src/records/remix.js', 'src/records/take.js',
+  'src/records/sampler.js', 'src/records/riffs.js', 'src/records/remix.js', 'src/records/take.js', 'src/records/tracks.js', 'src/records/pieces.js',
   'src/ui/mac.js', 'src/ui/icons.js', 'src/ui/keyboard.js', 'src/ui/roll.js', 'src/ui/balloons.js',
   'assets/fonts/chikarego2.woff2', 'assets/fonts/geneva-9.ttf',
 ];

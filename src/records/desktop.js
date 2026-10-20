@@ -1,7 +1,7 @@
 // The desktop: a Finder window of the records you have loaded, and icons for
-// the sound worlds, the lessons and your pieces. Touch an icon to open it.
+// the lessons and your pieces. Touch an icon to open it.
 
-import { saveTrack, deleteTrack, getTrack, listTracks, titleFrom, decode, MAX_BYTES, MAX_SECONDS } from '../play/tracks.js';
+import { saveTrack, deleteTrack, getTrack, listTracks, titleFrom, decode, MAX_BYTES, MAX_SECONDS } from './tracks.js';
 import { matchSong } from './chart.js';
 import { SONGS } from '../songs.js';
 import { ICONS } from '../ui/icons.js';

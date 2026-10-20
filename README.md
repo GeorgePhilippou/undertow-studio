@@ -1,12 +1,12 @@
 # OK Computer
 
-A classic Macintosh music desk for iPad, built around Radiohead records you own: tap through a song's famous riff with its real sound, cut it into sampler pads and remix them, play along with its chords, or explore sound worlds and lessons.
+A classic Macintosh music desk for iPad, built around Radiohead records you own: tap through a song's famous riff with its real sound, cut it into sampler pads and remix them, play along with its chords, or learn short passages in Lessons.
 
 Open https://GeorgePhilippou.github.io/undertow-studio/ and tap **Start**. (The app was called Undertow; the earlier version still opens as Undertow Classic. OK Computer is a fan-made app, not connected with Radiohead or their record labels.) Headphones recommended.
 
 ## The desktop
 
-OK Computer opens on a Finder-style desktop. The **Records** window holds the songs you have loaded; touch one to open it. Icons on the right open **Sound Worlds**, **Lessons** and **My Pieces**. The **Desktop** button in the menu bar always brings you back.
+OK Computer opens on a Finder-style desktop. The **Records** window holds the songs you have loaded; touch one to open it. Icons on the right open **Lessons** and **My Pieces** (the takes you record). The **Desktop** button in the menu bar always brings you back.
 
 Only the records themselves sound exactly like Radiohead, so they are at the heart of the app. Load an MP3, M4A, AAC or WAV you own from Files (**Load a Record...** or File > Load a Record). It stays in this browser on this device; nothing is uploaded or bundled. Apple Music downloads are copy-protected and cannot be opened.
 
@@ -40,20 +40,6 @@ A record opens in a window with four views:
 - Your song choice, sync, marks, pads and pattern are kept with the record.
 
 The record is one finished mix, so the app cannot pull out just the piano or the guitar; chords and riffs work whatever instruments play them. Official stems that Radiohead released (Nude and Reckoner) load as records like any other file.
-
-## Sound Worlds
-
-Touch anywhere to play: one window, one picture.
-
-- **Your Song** plays a track you load: left to right is the track, touch to hear any moment, slide to scrub, higher up slows it into a frozen cloud of grains.
-- **Three sound worlds**, each an original loop in the manner of an album, not a song from it:
-  - **Kid A** - glass chords, a crunchy machine beat and a singing ondes-style voice that glides under your finger.
-  - **OK Computer** - tape strings, electric piano and glockenspiel in a slow, glowing room.
-  - **In Rainbows** - clean guitars weaving around each other over a steady groove; you pluck along.
-- **Nothing sounds wrong:** the surface plays only notes from the world's scale. Left is low, right is high, higher up is brighter; Apple Pencil pressure sets loudness. Several fingers, computer keys (A W S E D...) and MIDI keyboards all play.
-- **Living one-bit art:** each world has its own dithered black-and-white picture that pulses with the music and ripples where you touch. It is original artwork, not album art.
-- **Record a piece:** the sound and the moving picture together as a video (sound only where a browser cannot record video), kept in My Pieces; Save opens the share sheet.
-- **Band** on or off (Space), **Full Screen** from the window's zoom box.
 
 ## Lessons
 
@@ -104,15 +90,13 @@ Open http://localhost:8000. The page is plain HTML, CSS and ES modules with no d
 | `src/render.js` | Offline WAV export |
 | `src/ui/` | Menus and windows, keyboard and pads, note roll, Balloon Help, icons |
 | `sw.js`, `manifest.webmanifest` | Offline support and Home Screen install |
-| `src/records/` | The desktop and records: Finder window, riffs, sampler pads and pad editing, remix grid, chord chart and play along |
-| `src/play/` | Sound Worlds: worlds, Your Song (grains, stored tracks), touch surface, generative art, recording pieces |
+| `src/records/` | The desktop and records: Finder window, stored records and pieces, riffs, sampler pads and pad editing, remix grid, takes, chord chart and play along |
 | `src/main.js` | Wires the windows, menus and storage together |
 
 Browser checks need Node, the `playwright` package and Chromium (set `CHROMIUM_PATH` if it is not Playwright's own):
 
 ```sh
 node tests/desk.cjs    # desktop and records: riffs, pads, remix, chords, looping, speed
-node tests/play.cjs    # Sound Worlds: worlds, touch, art, recording, layouts
 node tests/app.cjs     # Lessons: songs, practice modes, recording, editing, layouts
 node tests/sound.cjs   # every song renders audibly without clipping
 node tests/balloons.cjs  # every tour step and help balloon points at its control
