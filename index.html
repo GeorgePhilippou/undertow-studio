@@ -36,7 +36,7 @@
   <button class="menu-title learn-only hide-phone" data-menu="window" aria-haspopup="true" aria-expanded="false">Window</button>
   <button class="menu-title" data-menu="help" aria-haspopup="true" aria-expanded="false">Help</button>
   <span class="menubar-right"><span id="status" class="status" aria-live="polite"></span>
-    <button id="to-desk" class="desk-button" data-help="Back to the desktop: your records, My Pieces and the lessons.">Desktop</button><span id="clock" class="clock"></span></span>
+    <button id="to-desk" class="desk-button" data-help="Back to the desktop: your records and My Pieces.">Desktop</button><span id="clock" class="clock"></span></span>
 </header>
 
 <div id="menus"></div>
@@ -47,48 +47,29 @@
     <div class="finder-info"><span id="records-info" class="small"></span><span class="small">Touch a record to open it</span></div>
     <div id="records" class="icon-view" data-help="Your records: Radiohead songs you own, kept on this device. Touch one to play along with its chords or play it on pads."></div>
     <div id="records-empty" class="records-empty small" hidden>
-      <p>Load a Radiohead song you own (MP3, M4A, AAC or WAV from Files) and it becomes a record here. Play along with its chords as it plays, slow it down without changing the pitch, loop the hard parts, or cut it into sampler pads.</p>
+      <p>Load a Radiohead song you own (MP3, M4A, AAC or WAV from Files) and it becomes a record here. Play its riff with its real sound, follow its chords as it plays, cut it into sampler pads and remix them.</p>
       <p>Songs from Apple Music are copy-protected and cannot be opened. Nothing you load leaves this device.</p>
     </div>
     <input id="record-file" type="file" multiple accept="audio/*,.mp3,.m4a,.aac,.wav,.aif,.aiff,.flac,.json,application/json" hidden>
   </section>
   <nav id="desk-icons" class="desk-icons" aria-label="Desktop">
-    <button class="icon" data-open="learn" data-help="Lessons: learn short passages of Radiohead songs step by step, played by the app's own instruments."><span class="glyph" data-icon="piano"></span><span class="name">Lessons</span></button>
     <button class="icon" data-open="pieces" data-help="My Pieces: the takes you recorded in your records, to play, save or share."><span class="glyph" data-icon="folder"></span><span class="name">My Pieces</span></button>
   </nav>
 </main>
 
 <main id="record-screen" class="record-screen" aria-label="Record">
-  <section id="record-window" class="window active" data-view="riffs">
+  <section id="record-window" class="window active" data-view="play">
     <header class="titlebar"><button id="record-close" class="box close" aria-label="Close" data-help="Close the record and go back to the desktop."></button><h2 id="record-title">Record</h2></header>
     <div class="record-top">
-      <span id="record-view" class="segmented" role="group" aria-label="View" data-help="Riffs: tap through the song's famous part. Pads: the record cut into sixteen pads. Remix: put the pads into a pattern. Play Along: the chords in time with the record."><button data-view="riffs" aria-pressed="true">Riffs</button><button data-view="pads" aria-pressed="false">Pads</button><button data-view="remix" aria-pressed="false">Remix</button><button data-view="along" aria-pressed="false">Play Along</button></span>
+      <span id="record-view" class="segmented" role="group" aria-label="View" data-help="Play: the chords in time with the record, and the song's riff to tap through. Pads: the record cut into three banks of sixteen pads. Remix: put the pads into patterns."><button data-view="play" aria-pressed="true">Play</button><button data-view="pads" aria-pressed="false">Pads</button><button data-view="remix" aria-pressed="false">Remix</button></span>
       <label class="label" for="record-song">Song</label>
       <select id="record-song" class="popup" data-help="Which Radiohead song this record is, so its riff and chords can follow along. Choose Not in the list to mark the chords yourself."></select>
       <span class="spacer"></span>
       <output id="rec-clock" class="small">0:00</output>
     </div>
-    <canvas id="record-wave" class="record-wave" aria-label="Waveform" data-help="The whole record. Touch to jump there; drag across a part to loop it. When editing a pad, dragging sets the pad instead."></canvas>
+    <canvas id="record-wave" class="record-wave" aria-label="Waveform" data-help="The whole record. Touch to jump there; drag across a part to loop it. When editing a pad, it zooms in on the pad and dragging sets the pad instead."></canvas>
 
-    <div class="riffs-view riffs-only">
-      <p id="riff-none" class="small riff-none" hidden>There is no riff for this record yet. Choose the song above if it is one of the songs in Lessons, or use Pads and Remix to play it your way.</p>
-      <div id="riff-body" class="riff-body">
-        <div class="riff-head">
-          <div class="riff-words"><strong id="riff-title"></strong><span id="riff-about" class="small"></span></div>
-          <span id="riff-sound" class="segmented" role="group" aria-label="Sound" data-help="Your Record plays each hit cut straight from your record, so it sounds exactly like Radiohead. Keys plays it with the app's own instrument."><button data-sound="record" aria-pressed="true">Your Record</button><button data-sound="keys" aria-pressed="false">Keys</button></span>
-        </div>
-        <canvas id="riff-strip" class="riff-strip" aria-label="The riff" data-help="Every hit of the riff in order, as long as it lasts. The black box plays next; touch any box to play from there."></canvas>
-        <div class="riff-play">
-          <button id="riff-tap" class="riff-tap" data-help="Tap here in rhythm, or press Space. Each tap plays the next hit of the riff."><strong>Tap</strong><span id="riff-next" class="small"></span></button>
-          <div class="riff-side">
-            <button id="riff-hear" class="btn" aria-pressed="false" data-help="Hear the whole riff in time, so you know how it goes.">Hear It</button>
-            <button id="riff-restart" class="btn" data-help="Go back to the first hit.">Start Over</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="along-view along-only">
+    <div class="play-view play-only">
       <div class="chord-sheet">
         <div class="chord-now"><span class="small">Now</span><strong id="chord-now">-</strong></div>
         <canvas id="chord-lane" class="chord-lane" aria-label="Chords" data-help="The chords scroll past in time with the record. The black box is the chord playing now; the dotted line is now."></canvas>
@@ -99,23 +80,44 @@
         <button id="mark-undo" class="btn square" data-help="Remove the last chord you marked.">Undo</button>
         <button id="mark-clear" class="btn square" data-help="Remove all your marks for this record.">Clear Marks</button>
       </div>
+      <p id="riff-none" class="small riff-none" hidden>No riff for this record yet: choose the song above if it is one of the known songs.</p>
+      <div id="riff-body" class="riff-body">
+        <canvas id="riff-strip" class="riff-strip" aria-label="The riff" data-help="Every hit of the song's riff in order, as long as it lasts. The black box plays next; touch any box to play from there."></canvas>
+        <div class="riff-play">
+          <button id="riff-tap" class="riff-tap" data-help="Tap here in rhythm, or press Return. Each tap plays the next hit of the riff."><strong id="riff-title">Tap</strong><span id="riff-next" class="small"></span></button>
+          <div class="riff-side">
+            <span id="riff-sound" class="segmented" role="group" aria-label="Sound" data-help="Song plays each hit cut straight from your record, so it sounds exactly like Radiohead. Keys plays it with the app's own instrument."><button data-sound="record" aria-pressed="true">Song</button><button data-sound="keys" aria-pressed="false">Keys</button></span>
+            <span class="riff-buttons"><button id="riff-hear" class="btn" aria-pressed="false" data-help="Hear the whole riff in time, so you know how it goes.">Hear It</button><button id="riff-restart" class="btn" data-help="Go back to the first hit.">Start Over</button></span>
+          </div>
+        </div>
+        <span id="riff-about" class="small riff-about" hidden></span>
+      </div>
     </div>
 
     <div class="along-keys keys-only">
-      <span id="along-tabs" class="segmented" role="group" aria-label="Keyboard" data-help="Play on piano keys or one pad per chord. The dotted keys are what to play now."><button data-along="keys" aria-pressed="true">Keys</button><button data-along="chords" aria-pressed="false">Chords</button></span>
-      <div id="along-piano" class="piano" aria-label="Piano keyboard" data-help="Play along. The dotted keys show the notes to play; in Riffs, playing them moves on to the next hit."></div>
+      <span id="along-tabs" class="segmented" role="group" aria-label="Keyboard" data-help="Play on piano keys or one pad per chord. The dotted keys are what to play: the riff's next hit when stopped, the chord playing now when the record plays."><button data-along="keys" aria-pressed="true">Keys</button><button data-along="chords" aria-pressed="false">Chords</button></span>
+      <div id="along-piano" class="piano" aria-label="Piano keyboard" data-help="Play along. The dotted keys show the notes to play; playing the riff's next hit moves it on."></div>
       <div id="along-pads" class="pads" aria-label="Chord pads" hidden data-help="One pad per chord. The dotted pad is the chord to play now."></div>
       <div id="along-drums" class="pads" hidden></div>
     </div>
 
     <div class="pads-view pads-only">
+      <div class="pad-tools">
+        <span id="pad-banks" class="segmented" role="group" aria-label="Bank" data-help="Three banks of sixteen pads: A, B and C. Bank B starts as a bar per pad, bank C as two bars per pad."><button data-bank="0" aria-pressed="true">A</button><button data-bank="1" aria-pressed="false">B</button><button data-bank="2" aria-pressed="false">C</button></span>
+        <button id="pad-undo" class="btn" disabled data-help="Take back the last change to the pads: a cut, an edit or a borrowed pad. Command-Z works too.">Undo</button>
+        <label class="check" data-help="Sync: a Loop pad starts on the next beat of any loop already playing, so loops stack in time."><input id="pad-sync" type="checkbox" checked> Sync loops</label>
+      </div>
       <div id="pad-editor" class="pad-editor" hidden>
         <strong id="edit-label" class="small"></strong>
+        <label class="check" data-help="Zoom the waveform in on the pad while you edit it."><input id="edit-zoom" type="checkbox" checked> Zoom</label>
         <span class="nudge" data-help="Move where the pad starts, a sixteenth note at a time."><span class="small">Start</span><button id="edit-start-down" class="btn square" aria-label="Start earlier">-</button><button id="edit-start-up" class="btn square" aria-label="Start later">+</button></span>
         <span class="nudge" data-help="Move where the pad ends, a sixteenth note at a time. Make it as long as you like."><span class="small">End</span><button id="edit-end-down" class="btn square" aria-label="End earlier">-</button><button id="edit-end-up" class="btn square" aria-label="End later">+</button></span>
         <span id="edit-mode" class="segmented" role="group" aria-label="Pad mode" data-help="Once plays the whole pad. Hold plays round and round while you hold it and stops when you let go. Loop repeats until you touch it again."><button data-mode="once">Once</button><button data-mode="hold">Hold</button><button data-mode="loop">Loop</button></span>
+        <span class="nudge" data-help="The pad's volume, so every pad sits at the same level."><span class="small">Volume</span><button id="edit-vol-down" class="btn square" aria-label="Quieter">-</button><output id="edit-vol" class="small">100%</output><button id="edit-vol-up" class="btn square" aria-label="Louder">+</button></span>
+        <select id="edit-fade" class="popup" aria-label="Fade" data-help="Fade the pad in and out, which also smooths any click where it is cut."></select>
         <span class="nudge" data-help="Pitch the pad up or down in semitones, like a sampler: it plays faster or slower too."><span class="small">Pitch</span><button id="edit-pitch-down" class="btn square" aria-label="Lower">-</button><output id="edit-pitch" class="small">0</output><button id="edit-pitch-up" class="btn square" aria-label="Higher">+</button></span>
         <label class="check" data-help="Play the pad backwards."><input id="edit-reverse" type="checkbox"> Reverse</label>
+        <button id="edit-borrow" class="btn" data-help="Put a pad from another record on this pad, to mix songs together.">From Another Record...</button>
       </div>
       <div id="sampler" class="sampler" aria-label="Sampler pads" data-help="Sixteen pads cut from the record. Touch to play; keys 1-4, Q-R, A-F and Z-V play them too."></div>
     </div>
@@ -123,23 +125,26 @@
     <div class="remix-view remix-only">
       <div class="remix-tools">
         <button id="remix-play" class="btn default" aria-pressed="false" data-help="Play the pattern round and round (Space)."><span data-icon="play"></span><span>Play</span></button>
+        <span id="remix-patterns" class="segmented" role="group" aria-label="Pattern" data-help="Four patterns, A to D. Patterns with something in them are marked with a dot."><button data-pattern="0">A</button><button data-pattern="1">B</button><button data-pattern="2">C</button><button data-pattern="3">D</button></span>
+        <label class="check" data-help="Chain: play every pattern that has something in it, one after another."><input id="remix-chain" type="checkbox"> Chain</label>
+        <span id="remix-bank" class="segmented" role="group" aria-label="Pads for this pattern" data-help="Which bank of pads this pattern plays."><button data-bank="0">Pads A</button><button data-bank="1">B</button><button data-bank="2">C</button></span>
         <span class="tempo" data-help="The pattern's tempo."><button id="remix-down" class="btn square" aria-label="Slower">-</button><output id="remix-bpm" class="small"></output><button id="remix-up" class="btn square" aria-label="Faster">+</button></span>
-        <button id="remix-clear" class="btn" data-help="Clear the whole pattern.">Clear</button>
-        <span class="small remix-hint">Each row is a pad, each column a sixteenth note.</span>
+        <span class="fx" data-help="Swing: delay every other sixteenth note for a looser groove."><label class="small" for="remix-swing">Swing</label><input id="remix-swing" class="slider" type="range" min="0" max="100" value="0"></span>
+        <button id="remix-clear" class="btn" data-help="Clear this pattern.">Clear</button>
       </div>
       <div id="remix-grid" class="remix-grid" aria-label="Pattern" data-help="Touch squares to make a pattern: each row plays one pad, each column is a sixteenth note. Touch a number to hear its pad."></div>
     </div>
 
     <div class="control-strip record-strip">
-      <button id="rec-play" class="btn default" aria-pressed="false" data-help="Play or stop the record."><span data-icon="play"></span><span>Play</span></button>
+      <button id="rec-play" class="btn default" aria-pressed="false" data-help="Play or stop the record (Space)."><span data-icon="play"></span><span>Play</span></button>
       <button id="rec-take" class="btn record" aria-pressed="false" data-help="Record what you play here - pads, riff, remix or keys - and keep it in My Pieces as a sound file to save or share. The record playing underneath is not included."><span data-icon="record"></span><span>Record</span></button>
       <output id="take-time" class="small"></output>
-      <select id="rec-speed" class="popup along-only" aria-label="Speed" data-help="Slow the record down without changing its pitch."></select>
+      <select id="rec-speed" class="popup play-only" aria-label="Speed" data-help="Slow the record down without changing its pitch."></select>
       <button id="rec-loop" class="btn" aria-pressed="false" disabled data-help="Drag across the waveform to loop a part. Touch here to stop looping."><span>Loop</span></button>
       <button id="rec-start" class="btn sync-only" data-help="Press this the moment you hear the first chord, and the riff and chords line up with the record.">Set Start</button>
       <span id="rec-tempo" class="tempo tempo-only" data-help="The record's tempo. Nudge it if the riff, the chords or the beat grid slowly drift from the record. A question mark means it was heard from the record."><button id="tempo-down" class="btn square" aria-label="Slower">-</button><output id="rec-bpm" class="small"></output><button id="tempo-up" class="btn square" aria-label="Faster">+</button></span>
-      <button id="rec-mark" class="btn along-only" aria-pressed="false" data-help="Mark the chords yourself: tap each one as you hear it.">Mark Chords</button>
-      <select id="rec-cut" class="popup pads-only" aria-label="Cut the pads" data-help="Cut all the pads again: at the strongest attacks, into beats or bars from the loop or playhead, or the loop into sixteen.">
+      <button id="rec-mark" class="btn play-only" aria-pressed="false" data-help="Mark the chords yourself: tap each one as you hear it.">Mark Chords</button>
+      <select id="rec-cut" class="popup pads-only" aria-label="Cut the pads" data-help="Cut this bank's pads again: at the strongest attacks, into beats or bars from the loop or playhead, or the loop into sixteen.">
         <option value="">Cut Pads...</option>
         <option value="attacks">At the strongest attacks</option>
         <option value="beat">1 beat each</option>
@@ -151,7 +156,7 @@
       </select>
       <label class="check pads-only" data-help="Snap: pad edits and cuts land on the beat grid, a sixteenth note at a time, so loops stay in time."><input id="pad-snap" type="checkbox" checked> Snap</label>
       <button id="rec-assign" class="btn pads-only" aria-pressed="false" disabled data-help="Put the looped part on a pad: touch this, then the pad.">Loop to Pad</button>
-      <button id="pad-edit" class="btn pads-only" aria-pressed="false" data-help="Edit a pad: its start and end, how it plays, its pitch and direction.">Edit Pad</button>
+      <button id="pad-edit" class="btn pads-only" aria-pressed="false" data-help="Edit a pad: its start and end, how it plays, volume, fade, pitch and direction, or borrow one from another record.">Edit Pad</button>
       <span class="fx fx-only" data-help="Filter: turn up to close a low-pass filter over the pads. Echo: a delay in time with the tempo."><label class="small" for="fx-filter">Filter</label><input id="fx-filter" class="slider" type="range" min="0" max="100" value="0"><label class="small" for="fx-echo">Echo</label><input id="fx-echo" class="slider" type="range" min="0" max="100" value="0"></span>
     </div>
   </section>

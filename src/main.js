@@ -893,13 +893,12 @@ function showHelp() {
     <h3>Records</h3>
     <ul>
       <li><b>Load a Record</b> on the desktop: a Radiohead song you own as an MP3, M4A, AAC or WAV from Files. It stays on this device. (Apple Music downloads are copy-protected and cannot be opened.) Touch a record to open it.</li>
-      <li><b>Riffs</b> - the song's famous part. Tap the big pad (or Space) in rhythm and each tap plays the next hit, cut from your own record or played on keys. The keyboard shows the notes, and playing them moves on too. Hear It plays the whole riff.</li>
-      <li><b>Pads</b> - the record cut into sixteen pads. Cut Pads recuts them at attacks or into beats and bars; Edit Pad sets a pad's start and end, Once, Hold or Loop, pitch and Reverse. Filter and Echo colour the pads. Keys 1-4, Q-R, A-F and Z-V play them.</li>
-      <li><b>Remix</b> - put the pads into a sixteen-step pattern and play it round and round.</li>
+      <li><b>Play</b> - the chords scroll past in time with the record and light up on the keys. Touch the waveform to jump, drag across it to loop a part, and slow it down without changing the pitch. Set Start lines the chords up; Mark Chords lets you tap them in yourself. Below, the song's riff: tap the big pad (or Return) in rhythm and each tap plays the next hit, cut from your own record or played on keys.</li>
+      <li><b>Pads</b> - three banks, A, B and C, of sixteen pads cut from the record. Cut Pads recuts a bank; Edit Pad zooms in on a pad to set its start and end, and sets Once, Hold or Loop, volume, fade, pitch and Reverse, or borrows a pad from another record. Sync loops keeps loops in time, Undo takes back changes, and Filter and Echo colour the pads. Keys 1-4, Q-R, A-F and Z-V play them.</li>
+      <li><b>Remix</b> - four patterns, A to D, of sixteen steps. Chain plays them one after another; Swing loosens the groove.</li>
       <li><b>Record</b> keeps what you play here in My Pieces as a sound file to save or share. <b>Snap</b> keeps pad edits and cuts on the beat.</li>
-      <li><b>Play Along</b> - the chords scroll past in time with the record and light up on the keys. Touch the waveform to jump, drag across it to loop a part, and slow it down without changing the pitch. Set Start lines the chords up; Mark Chords lets you tap them in yourself.</li>
     </ul>
-    <h3>Lessons</h3>
+    <h3>Lessons (old, in the apple menu)</h3>
     <ul>
       <li><b>Choose a song</b> from the Songs window or the Song menu.</li>
       <li><b>Follow the five steps</b> along the top. Each gets a tick when you've done it, and your progress shows in the Songs list.</li>
@@ -1018,6 +1017,7 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
       return [
         { label: 'About OK Computer…', action: showAbout },
         '-',
+        { label: 'Lessons (old)...', action: () => setScreen('learn') },
         { label: 'Open Undertow Classic…', action: openClassic },
       ];
     case 'file':
@@ -1226,6 +1226,13 @@ document.addEventListener('keydown', event => {
   if ($('#dialog').open || event.target.closest('input, select, textarea')) return;
   const command = event.metaKey || event.ctrlKey;
   if (command) {
+    if (screen() !== 'learn') {
+      if (event.key.toLowerCase() === 'z' && screen() === 'record') {
+        event.preventDefault();
+        recordScreen.undo();
+      }
+      return;
+    }
     const actions = { z: undo, n: newSong, i: showInfo, s: saveCopy };
     const action = actions[event.key.toLowerCase()];
     if (action) {
@@ -1377,7 +1384,8 @@ function screen() {
   return ['desk', 'record', 'learn'].includes(settings().screen) ? settings().screen : 'desk';
 }
 
-// The desktop opens records, My Pieces and the lessons (learn).
+// The desktop opens records and My Pieces; the old lessons (learn) open from
+// the apple menu.
 async function openFromDesk(target) {
   if (target.screen === 'pieces') {
     showPieces({ download });
@@ -1432,7 +1440,7 @@ function startTour() {
   if (screen() === 'desk' || screen() === 'record') {
     runTour([
       { target: '#records', text: 'Your records live here. Load a Radiohead song you own from Files, then touch it to open it. It stays on this device.' },
-      { target: '#desk-icons', text: 'Lessons teaches short passages of Radiohead songs step by step. My Pieces keeps the takes you record.' },
+      { target: '#desk-icons', text: 'My Pieces keeps the takes you record in your records, to play, save or share.' },
       { target: '[data-menu="help"]', text: 'Help > Show Balloons explains anything you point at or touch.' },
     ]).then(() => {
       settings().deskToured = true;

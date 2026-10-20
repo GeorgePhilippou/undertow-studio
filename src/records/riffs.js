@@ -191,10 +191,10 @@ export class RiffView {
     $('#riff-none').hidden = Boolean(riff);
     $('#riff-body').hidden = !riff;
     if (!riff) return;
-    $('#riff-title').textContent = riff.title;
+    $('#riff-title').textContent = 'Tap';
     $('#riff-about').textContent = riff.about;
     const hit = riff.hits[this.index];
-    $('#riff-next').textContent = `${this.index + 1} of ${riff.hits.length}${hit.name ? ` - ${plain(hit.name)}` : ''}`;
+    $('#riff-next').textContent = `${riff.title}: ${this.index + 1} of ${riff.hits.length}${hit.name ? ` - ${plain(hit.name)}` : ''}`;
     this.lit = null;
   }
 
@@ -235,7 +235,7 @@ export class RiffView {
       }
     });
     // Light the notes of the hit to play next.
-    if (this.lit !== current) {
+    if (this.lit !== current && !this.screen.playing) {
       this.lit = current;
       const hit = riff.hits[current];
       this.screen.keyboard.highlight({ targets: new Set(hit.notes), chord: hit.chord });
