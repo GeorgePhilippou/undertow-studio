@@ -36,7 +36,7 @@
   <button class="menu-title learn-only hide-phone" data-menu="window" aria-haspopup="true" aria-expanded="false">Window</button>
   <button class="menu-title" data-menu="help" aria-haspopup="true" aria-expanded="false">Help</button>
   <span class="menubar-right"><span id="status" class="status" aria-live="polite"></span>
-    <button id="to-desk" class="desk-button" data-help="Back to the desktop: your records and My Pieces.">Desktop</button><span id="clock" class="clock"></span></span>
+    <span id="clock" class="clock"></span></span>
 </header>
 
 <div id="menus"></div>
@@ -62,8 +62,7 @@
     <header class="titlebar"><button id="record-close" class="box close" aria-label="Close" data-help="Close the record and go back to the desktop."></button><h2 id="record-title">Record</h2></header>
     <div class="record-top">
       <span id="record-view" class="segmented" role="group" aria-label="View" data-help="Play: the chords in time with the record, and the song's riff to tap through. Pads: the record cut into three banks of sixteen pads. Remix: put the pads into patterns."><button data-view="play" aria-pressed="true">Play</button><button data-view="pads" aria-pressed="false">Pads</button><button data-view="remix" aria-pressed="false">Remix</button></span>
-      <label class="label" for="record-song">Song</label>
-      <select id="record-song" class="popup" data-help="Which Radiohead song this record is, so its riff and chords can follow along. Choose Not in the list to mark the chords yourself."></select>
+      <select id="record-pick" class="popup" aria-label="Record" data-help="Switch to another of your records."></select>
       <span class="spacer"></span>
       <button id="wave-zoom" class="btn square pads-only" aria-pressed="true" hidden data-help="While editing a pad, switch the waveform between a close-up of the pad and the whole song. Zoomed out, drag across any part of the song to give the pad that part.">Whole Song</button>
       <output id="rec-clock" class="small">0:00</output>
@@ -71,6 +70,8 @@
     <canvas id="record-wave" class="record-wave" aria-label="Waveform" data-help="The whole record. Touch to jump there; drag across a part to loop it. When editing a pad, it zooms in on the pad and dragging sets the pad instead."></canvas>
 
     <div class="play-view play-only">
+      <div class="song-match"><label class="label" for="record-song">Chords and riff from</label>
+        <select id="record-song" class="popup" data-help="Which Radiohead song this record is, so its riff and chords can follow along. Choose Not in the list to mark the chords yourself."></select></div>
       <div class="chord-sheet">
         <div class="chord-now"><span class="small">Now</span><strong id="chord-now">-</strong></div>
         <canvas id="chord-lane" class="chord-lane" aria-label="Chords" data-help="The chords scroll past in time with the record. The black box is the chord playing now; the dotted line is now."></canvas>
