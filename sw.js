@@ -1,7 +1,7 @@
 // Offline support. Pages and code are fetched fresh when online and fall back
 // to the last copy offline; piano samples and fonts are kept once loaded.
 
-const CACHE = 'undertow-v4';
+const CACHE = 'undertow-v5';
 const CORE = [
   './', 'index.html', 'mac.css', 'icon.svg', 'manifest.webmanifest',
   'src/main.js', 'src/songs.js', 'src/beats.js', 'src/player.js', 'src/render.js', 'src/storage.js',
@@ -34,7 +34,10 @@ self.addEventListener('fetch', event => {
     })));
     return;
   }
-  event.respondWith(fetch(request).then(response => {
+  // no-cache: always ask the server (a cheap check when nothing changed), so
+  // a new page never meets a stylesheet or script the browser kept from the
+  // last version.
+  event.respondWith(fetch(request, { cache: 'no-cache' }).then(response => {
     if (response.ok) {
       const copy = response.clone();
       caches.open(CACHE).then(cache => cache.put(request, copy));
