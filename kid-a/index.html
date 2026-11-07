@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="Play Radiohead's piano parts from your computer keyboard, one chord at a time, on a classic Macintosh desk.">
+  <title>Kid A</title>
+  <meta name="apple-mobile-web-app-title" content="Kid A">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../assets/icons/icon-180.png">
+  <link rel="stylesheet" href="../mac.css">
+</head>
+<body data-app="kid-a">
+
+<div id="boot" class="boot">
+  <div class="boot-box dialog-frame">
+    <div class="dialog-inner">
+      <span data-icon="piano"></span>
+      <p>Welcome to Kid A.</p>
+      <p class="small">Play Radiohead's piano parts on your computer keyboard. The left side of the keyboard is your left hand, the right side is your right hand, and every press plays the next chord of the song in your own time. Headphones recommended.</p>
+      <button id="boot-start" class="btn default">Start</button>
+    </div>
+  </div>
+</div>
+
+<header class="menubar" role="menubar" aria-label="Menu bar">
+  <button class="menu-title logo" data-menu="kida" aria-label="Kid A" aria-haspopup="true" aria-expanded="false"><span data-icon="piano"></span></button>
+  <button class="menu-title" data-menu="song" aria-haspopup="true" aria-expanded="false">Song</button>
+  <button class="menu-title" data-menu="help" aria-haspopup="true" aria-expanded="false">Help</button>
+  <span class="menubar-right"><span id="status" class="status" aria-live="polite"></span>
+    <span id="clock" class="clock"></span></span>
+</header>
+
+<div id="menus"></div>
+
+<main class="kida-screen" aria-label="Kid A">
+  <section id="kida-window" class="window active">
+    <header class="titlebar"><h2 id="kida-title">Kid A</h2></header>
+
+    <div class="kida-top">
+      <select id="kida-song" class="popup" aria-label="Song" data-help="The song to play. More songs will join Pyramid Song."></select>
+      <button id="kida-info" class="btn" data-help="About this song: what is checked against published analyses, what is a best guess, and the sources.">Get Info</button>
+      <span class="spacer"></span>
+      <button id="kida-hear" class="btn" aria-pressed="false" data-help="Hear the part played in time, so you know how it goes. Press any key to take over.">Hear It</button>
+      <button id="kida-restart" class="btn" data-help="Go back to the first chord (Delete steps back one).">Start Over</button>
+    </div>
+
+    <p id="kida-about" class="small kida-about"></p>
+    <canvas id="kida-strip" class="riff-strip kida-strip" aria-label="The chords in order" data-help="The part, chord by chord, as long as each one lasts (counted in eighth notes). The black box plays next; touch any box to go there."></canvas>
+
+    <div class="kida-hands">
+      <button id="hand-left" class="pad kida-hand" data-hand="left" aria-label="Left hand" data-help="Left hand: the bass. Any key on the left of the keyboard plays it (1-5, Q-T, A-G, Z-B), or touch here.">
+        <span class="number">Left hand</span>
+        <strong id="left-notes">-</strong>
+        <small class="kida-keys">1 2 3 4 5<br>Q W E R T<br>A S D F G<br>Z X C V B</small>
+      </button>
+      <div class="kida-next" data-help="The chord to play next, and how far through the part you are.">
+        <span class="small">Next</span>
+        <strong id="kida-chord">-</strong>
+        <span id="kida-count" class="small"></span>
+      </div>
+      <button id="hand-right" class="pad kida-hand" data-hand="right" aria-label="Right hand" data-help="Right hand: the chord on top. Any key on the right of the keyboard plays it (6-0, Y-P, H-;, N-/), or touch here.">
+        <span class="number">Right hand</span>
+        <strong id="right-notes">-</strong>
+        <small class="kida-keys">6 7 8 9 0<br>Y U I O P<br>H J K L ;<br>N M , . /</small>
+      </button>
+    </div>
+    <p id="kida-hint" class="small kida-hint">Press a key on each side together for the whole chord, or Space for both hands. The number row plays loudest, the bottom row softest.</p>
+
+    <div id="kida-piano" class="piano" aria-label="Piano keyboard" data-help="The notes sound here. Dotted keys are the next chord. You can also play the keys freely with your fingers."></div>
+    <div id="kida-pads" hidden></div>
+    <div id="kida-drums" hidden></div>
+
+    <div class="control-strip kida-strip-bar">
+      <label class="check" data-help="Pedal: each chord rings on until that hand plays the next one, like a sustain pedal changed on every chord. Off, notes stop when you let go of the key."><input id="kida-pedal" type="checkbox" checked> Pedal</label>
+      <span class="spacer"></span>
+      <label class="label" for="kida-record">Play along with</label>
+      <select id="kida-record" class="popup" data-help="Play over a record you loaded in OK Computer on this device, or nothing. Records never leave the device."></select>
+      <button id="kida-play" class="btn default" aria-pressed="false" disabled data-help="Play or stop the record underneath you (Return)."><span data-icon="play"></span><span>Play</span></button>
+      <select id="kida-speed" class="popup" aria-label="Speed" data-help="Slow the record down without changing its pitch, to learn the part.">
+        <option value="1">100%</option><option value="0.9">90%</option><option value="0.8">80%</option><option value="0.75">75%</option><option value="0.7">70%</option><option value="0.6">60%</option><option value="0.5">50%</option>
+      </select>
+      <output id="kida-time" class="small">0:00</output>
+    </div>
+  </section>
+</main>
+
+<dialog id="dialog"><div class="dialog-frame"><div class="dialog-inner" id="dialog-body"></div></div></dialog>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

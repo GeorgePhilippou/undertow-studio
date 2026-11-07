@@ -21,8 +21,8 @@
     <div class="dialog-inner">
       <span data-icon="mac"></span>
       <p>Welcome to OK Computer.</p>
-      <p class="small">Open a Radiohead record you own to play its riffs, cut it into pads and remix it, or play along with its chords. Headphones recommended.</p>
-      <button id="boot-start" class="btn default">Start</button>
+      <p class="small">Open a Radiohead record you own to play its riffs, cut it into pads and remix it, or play along with its chords. Or open Kid A to play the piano parts on your keyboard. Headphones recommended.</p>
+      <span class="boot-choices"><button id="boot-kida" class="btn" data-help="Kid A: play Radiohead's piano parts on your computer keyboard.">Kid A Piano</button><button id="boot-start" class="btn default">Start</button></span>
     </div>
   </div>
 </div>
@@ -54,6 +54,7 @@
   </section>
   <nav id="desk-icons" class="desk-icons" aria-label="Desktop">
     <button class="icon" data-open="pieces" data-help="My Pieces: the takes you recorded in your records, to play, save or share."><span class="glyph" data-icon="folder"></span><span class="name">My Pieces</span></button>
+    <button class="icon" data-open="kid-a" data-help="Kid A: play Radiohead's piano parts on your computer keyboard, a chord at a time, along with your records."><span class="glyph" data-icon="piano"></span><span class="name">Kid A</span></button>
   </nav>
 </main>
 
@@ -94,13 +95,6 @@
         </div>
         <span id="riff-about" class="small riff-about" hidden></span>
       </div>
-    </div>
-
-    <div class="along-keys keys-only">
-      <span id="along-tabs" class="segmented" role="group" aria-label="Keyboard" data-help="Play on piano keys or one pad per chord. The dotted keys are what to play: the riff's next hit when stopped, the chord playing now when the record plays."><button data-along="keys" aria-pressed="true">Keys</button><button data-along="chords" aria-pressed="false">Chords</button></span>
-      <div id="along-piano" class="piano" aria-label="Piano keyboard" data-help="Play along. The dotted keys show the notes to play; playing the riff's next hit moves it on."></div>
-      <div id="along-pads" class="pads" aria-label="Chord pads" hidden data-help="One pad per chord. The dotted pad is the chord to play now."></div>
-      <div id="along-drums" class="pads" hidden></div>
     </div>
 
     <div class="pads-view pads-only">

@@ -2,11 +2,11 @@
 
 A classic Macintosh music desk for iPad, built around Radiohead records you own: tap through a song's famous riff with its real sound, cut it into sampler pads and remix them and play along with its chords.
 
-Open https://GeorgePhilippou.github.io/undertow-studio/ and tap **Start**. (The app was called Undertow; the earlier version still opens as Undertow Classic. OK Computer is a fan-made app, not connected with Radiohead or their record labels.) Headphones recommended.
+Open https://GeorgePhilippou.github.io/undertow-studio/ and tap **Start**, or **Kid A Piano** to play the piano parts instead (see [Kid A](#kid-a)). (The app was called Undertow; the earlier version still opens as Undertow Classic. OK Computer is a fan-made app, not connected with Radiohead or their record labels.) Headphones recommended.
 
 ## The desktop
 
-OK Computer opens on a Finder-style desktop. The **Records** window holds the songs you have loaded; touch one to open it. **My Pieces** keeps the takes you record. **Desktop** at the top of the apple menu (the little computer at the top left, or Command-D) always brings you back.
+OK Computer opens on a Finder-style desktop. The **Records** window holds the songs you have loaded; touch one to open it. **My Pieces** keeps the takes you record. **Kid A** opens the piano app. **Desktop** at the top of the apple menu (the little computer at the top left, or Command-D) always brings you back.
 
 Only the records themselves sound exactly like Radiohead, so everything is built from them. Load an MP3, M4A, AAC or WAV you own from Files (**Load a Record...** or File > Load a Record; several at once is fine). It stays in this browser on this device; nothing is uploaded or bundled. Apple Music downloads are copy-protected and cannot be opened.
 
@@ -24,7 +24,6 @@ A record opens in one window with three tabs. The menu at the top of the window 
 - **Play:** the whole record as a waveform: touch to jump, drag across a part to loop it, and slow it down to 50% without changing the pitch. Underneath, the chords scroll past in time, and the song's **riff** is ready to perform.
   - If the record is one of the known songs (Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits, Motion Picture Soundtrack - recognised from the file name, or chosen in the Song menu), its chord loop and riff are lined up from where the music starts; **Chords and riff from** in the Play tab sets which song it is. **Set Start** and the tempo line them up by ear. The chart repeats one passage, so other sections of the record may differ.
   - **Tap** (or Return) plays the riff's next hit. **Song** cuts each hit straight from your record, so it is Radiohead's real sound; **Keys** plays it with the app's instrument. **Hear It** plays it in time.
-  - The keyboard shows the riff's next hit when stopped and the chord playing now when the record plays. **Chords** turns it into one pad per chord.
   - **Mark Chords:** tap each chord the moment you hear it change. Your marks replace the chart for that record.
 - **Pads:** three banks, **A, B and C**, of sixteen sampler pads cut from the record (bank B starts as a bar per pad, bank C as two bars per pad). Touch them, or press 1-4, Q-R, A-F and Z-V; several fingers or keys at once is fine. While a pad plays, its waveform fills in.
   - **Cut Pads...** recuts a bank: at the strongest attacks, **1 beat, 1 bar, 2 bars or 4 bars each** from the loop or the playhead, or the loop into sixteen. **Loop to Pad** puts the looped part on one pad.
@@ -32,10 +31,22 @@ A record opens in one window with three tabs. The menu at the top of the window 
   - **Sync loops** starts a Loop pad on the next beat of any loop already playing, so loops stack in time. **Snap** keeps cuts and edits on the beat grid. **Undo** (or Command-Z) takes back any change to the pads.
   - **Filter** and **Echo** colour everything the pads play.
 - **Remix:** four sixteen-step patterns, **A to D**, one row per pad and one column per sixteenth note. Each pattern plays one bank. **Chain** plays the patterns one after another, and **Swing** loosens the groove.
-- **Record** (in every tab) records what you play - pads, riff, remix or keys - and keeps it in My Pieces as a WAV to play back, save or share. The record playing underneath is not included.
+- **Record** (in every tab) records what you play - pads, riff or remix - and keeps it in My Pieces as a WAV to play back, save or share. The record playing underneath is not included.
 - Your song choice, sync, marks, pads, patterns and effects are kept with the record. For a record that is not a known song, the tempo and first beat are heard from the record itself (shown with a question mark) and can be nudged.
 
 The record is one finished mix, so the app cannot pull out just the piano or the guitar; chords, riffs, pads and remixes work whatever instruments play them. Official stems that Radiohead released (Nude and Reckoner) load as records like any other file.
+
+## Kid A
+
+Kid A is the piano companion to OK Computer: play Radiohead's piano parts on a computer keyboard, a chord at a time. Open it from the **Kid A** icon on the desktop, **Kid A Piano** on the start screen or **Kid A (Piano)** in the apple menu; its apple menu goes back to OK Computer. It lives at `kid-a/` on the same site, so it shares the sampled piano, the song data and the records you loaded in OK Computer, and keeps its own settings (`kid-a-v1`). It starts with **Pyramid Song**.
+
+- **Tap along:** every press plays the next chord of the part, in your own time. The **left** side of the keyboard (1-5, Q-T, A-G, Z-B) is your left hand and plays the bass; the **right** side (6-0, Y-P, H-;, N-/) is your right hand and plays the chord on top. Press one key on each side together for the whole chord, or **Space** for both hands. Pressing one hand twice moves on without the other.
+- **Loudness by row:** the number row plays loudest, then the top row, the home row, and the bottom row softest.
+- **Pedal:** on, each chord rings until that hand plays the next one, like a sustain pedal changed on every chord; off, notes stop when you let go.
+- The **strip** shows the part chord by chord as long as each lasts (Pyramid Song's 3 + 3 + 4 + 3 + 3 eighth notes); the piano dots the next chord. **Hear It** plays the part in time, **Start Over** or Delete steps back.
+- **Play along with** a record you loaded in OK Computer (a Pyramid Song record is chosen for you), slowed down to 50% without changing pitch. Return plays or stops it.
+- On iPad use a hardware keyboard, or touch the two hand pads. A MIDI keyboard works too: below middle C is the left hand. Many computer keyboards cannot register lots of keys at once, so one key per hand is all it needs.
+- Get Info says what is checked against published analyses and what is a best guess. It is a reconstruction for playing along, not an exact transcription.
 
 ## Lessons (old)
 
@@ -86,6 +97,7 @@ Open http://localhost:8000. The page is plain HTML, CSS and ES modules with no d
 | `src/render.js` | Offline WAV export |
 | `src/ui/` | Menus and windows, keyboard and pads, note roll, Balloon Help, icons |
 | `sw.js`, `manifest.webmanifest` | Offline support and Home Screen install |
+| `kid-a/` | Kid A, the piano app: its page, the tap-along part split into hands (`tapalong.js`) and its window (`main.js`) |
 | `src/records/` | The desktop and records: Finder window, stored records and pieces, riffs, sampler pads and pad editing, remix grid, takes, chord chart and play along |
 | `src/main.js` | Wires the windows, menus and storage together |
 
@@ -96,6 +108,7 @@ node tests/desk.cjs    # desktop and records: riffs, pads, remix, chords, loopin
 node tests/app.cjs     # Lessons: songs, practice modes, recording, editing, layouts
 node tests/sound.cjs   # every song renders audibly without clipping
 node tests/balloons.cjs  # every tour step and help balloon points at its control
+node tests/kida.cjs    # Kid A: tapping along with both hands, pedal, Hear It, records, links from OK Computer
 ```
 
 `python3 scripts/package.py` copies the site into `dist/`. Pushes to `main` build and deploy `dist/` with GitHub Actions.

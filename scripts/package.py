@@ -1,7 +1,8 @@
 """Copy the static site into dist/ for GitHub Pages.
 
 The site is plain HTML, CSS and ES modules with relative paths, so packaging is
-a copy of the files the page loads plus the classic app for older projects.
+a copy of the files the page loads, the Kid A piano app in kid-a/, and the
+classic app for older projects.
 """
 from pathlib import Path
 import shutil
@@ -13,7 +14,7 @@ if dist.exists():
 dist.mkdir()
 for name in ['index.html', 'mac.css', 'icon.svg', 'manifest.webmanifest', 'sw.js', '.nojekyll']:
     shutil.copy2(root / name, dist / name)
-for folder in ['src', 'assets']:
+for folder in ['src', 'assets', 'kid-a']:
     shutil.copytree(root / folder, dist / folder)
 shutil.copytree(root / 'classic', dist / 'classic', ignore=shutil.ignore_patterns('tests', '*.md'))
 print('Packaged dist/ with', sum(1 for p in dist.rglob('*') if p.is_file()), 'files.')

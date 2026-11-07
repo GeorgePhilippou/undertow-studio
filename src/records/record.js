@@ -4,7 +4,6 @@
 // sixteen sampler pads; Remix sequences them. The record never leaves this
 // device.
 
-import { Keyboard } from '../ui/keyboard.js';
 import { SONGS } from '../songs.js';
 import { getTrack, updateTrack, listTracks, decode } from './tracks.js';
 import { songFor, timeline, chordAt, chordNotes, chordChoices } from './chart.js';
@@ -19,7 +18,6 @@ import { Remix } from './remix.js';
 import { ICONS } from '../ui/icons.js';
 
 const PAD_KEYS = '1234qwerasdfzxcv';
-const PIANO_KEYS = 'awsedftgyhujkolp;';
 const SPEEDS = [1, 0.9, 0.8, 0.75, 0.7, 0.6, 0.5];
 const BEFORE = 2;
 const AHEAD = 8;
@@ -51,7 +49,6 @@ export class RecordScreen {
     // song to choose a different part.
     this.zoomed = true;
     this.undoStack = [];
-    this.voices = new Map();
     this.audio = new Audio();
     this.audio.preload = 'auto';
     this.audio.preservesPitch = true;
@@ -63,13 +60,6 @@ export class RecordScreen {
     this.output = this.context.createGain();
     this.output.gain.value = 0.85;
     this.output.connect(this.context.destination);
-    this.keyboard = new Keyboard({ piano: $('#along-piano'), pads: $('#along-pads'), drumPads: $('#along-drums') }, {
-      noteOn: (midi, velocity) => this.noteOn(midi, velocity),
-      noteOff: midi => this.noteOff(midi),
-      padOn: (pad, velocity) => pad.notes.forEach(midi => this.noteOn(midi, velocity * 0.8)),
-      padOff: pad => pad.notes.forEach(midi => this.noteOff(midi)),
-      drum: () => {},
-    });
     this.sampler = new Sampler(this.context, this.output);
     this.recorder = new TakeRecorder(this.context, [this.output, engine.master]);
     this.riffs = new RiffView(this);
@@ -162,23 +152,11 @@ export class RecordScreen {
     this.track.songId = this.song ? id : null;
     this.chords = null;
     this.litChord = undefined;
-    const choices = this.song ? chordChoices(this.song) : this.markedChoices();
-    this.keyboard.setPads(choices.map(c => ({ name: c.name, notes: c.notes })));
-    const notes = choices.flatMap(c => c.notes);
-    if (notes.length) this.keyboard.fit(Math.min(...notes), Math.max(...notes));
-    else this.keyboard.layout(48);
     this.renderMarks();
     this.renderSync();
     this.riffs.setSong(this.song);
     this.remix.renderTempo();
     if (save) this.save({ songId: this.track.songId });
-  }
-
-  // For records not in the song list, pads are the chords the player marked.
-  markedChoices() {
-    const names = [...new Set(this.track.sync.marks.map(m => m.name))];
-    const chosen = names.length ? names : ['C', 'G', 'Am', 'F'];
-    return chosen.map(name => ({ name, notes: chordNotes(null, name) }));
   }
 
   save(fields) {
@@ -373,25 +351,9 @@ export class RecordScreen {
     $('#along-hint').textContent = hint;
   }
 
-  // ------------------------------------------------------------ keyboard
-
-  // With a riff, the keys sound like the song's own part; otherwise a piano.
-  noteOn(midi, velocity) {
-    this.noteOff(midi);
-    const instrument = this.riffs.riff ? this.riffs.riff.instrument : 'piano';
-    const output = this.engine.channel(`along-${instrument}`, { instrument, volume: 0.9 });
-    this.voices.set(midi, this.engine.noteOn(instrument, midi, velocity, this.context.currentTime, output));
-    if (!this.playing) this.riffs.notePlayed(midi);
-  }
-
-  noteOff(midi) {
-    this.voices.get(midi)?.release(this.context.currentTime);
-    this.voices.delete(midi);
-  }
+  // ------------------------------------------------------------ sound
 
   releaseAll() {
-    this.keyboard.releaseAll();
-    for (const midi of [...this.voices.keys()]) this.noteOff(midi);
     this.sampler.stopAll();
     this.$$('#sampler .pad.down').forEach(pad => pad.classList.remove('down'));
   }
@@ -849,7 +811,6 @@ export class RecordScreen {
     this.releaseAll();
     this.wave = null;
     this.litChord = undefined;
-    this.riffs.lit = null;
     this.renderTransport();
     if (view === 'play') {
       requestAnimationFrame(() => this.setSong(this.track?.songId ?? null, false));
@@ -893,13 +854,6 @@ export class RecordScreen {
       const button = event.target.closest('[data-view]');
       if (button) this.setView(button.dataset.view);
     });
-    $('#along-tabs').addEventListener('click', event => {
-      const button = event.target.closest('[data-along]');
-      if (!button) return;
-      this.keyboard.show(button.dataset.along);
-      this.$$('#along-tabs [data-along]').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
-    });
-    this.keyboard.show('keys');
     $('#rec-cut').addEventListener('change', event => {
       this.cut(event.target.value);
       event.target.value = '';
@@ -1049,35 +1003,12 @@ export class RecordScreen {
       else this.toggle();
       return;
     }
-    if (padKeys && PAD_KEYS.includes(key)) {
-      this.padOn(PAD_KEYS.indexOf(key));
-      return;
-    }
-    const keys = this.view === 'play';
-    if (keys && PIANO_KEYS.includes(key) && this.keyboard.tab === 'keys') {
-      this.keyboard.press(this.keyboard.low + PIANO_KEYS.indexOf(key), 0.75);
-    } else if (keys && /^[1-9]$/.test(key)) {
-      const pad = this.keyboard.pads[Number(key) - 1];
-      if (pad) this.keyboard.handlers.padOn(pad, 0.8);
-    }
+    if (padKeys && PAD_KEYS.includes(key)) this.padOn(PAD_KEYS.indexOf(key));
   }
 
   keyUp(event) {
     const key = event.key.toLowerCase();
-    const keys = this.view === 'play';
-    if ((this.view === 'pads' || this.view === 'remix') && PAD_KEYS.includes(key)) {
-      this.padOff(PAD_KEYS.indexOf(key));
-    } else if (keys && PIANO_KEYS.includes(key) && this.keyboard.tab === 'keys') {
-      this.keyboard.release(this.keyboard.low + PIANO_KEYS.indexOf(key));
-    } else if (keys && /^[1-9]$/.test(key)) {
-      const pad = this.keyboard.pads[Number(key) - 1];
-      if (pad) this.keyboard.handlers.padOff(pad);
-    }
-  }
-
-  midiNote(note, velocity) {
-    if (velocity > 0) this.keyboard.press(note, velocity);
-    else this.keyboard.release(note);
+    if ((this.view === 'pads' || this.view === 'remix') && PAD_KEYS.includes(key)) this.padOff(PAD_KEYS.indexOf(key));
   }
 
   // ------------------------------------------------------------ drawing
@@ -1091,11 +1022,10 @@ export class RecordScreen {
 
   draw() {
     if (!this.buffer) return;
-    // The keys show the riff's next hit when stopped, the chord when playing.
+    // Redraw the chord now box when the record starts or stops.
     if (this.playing !== this.wasPlaying) {
       this.wasPlaying = this.playing;
       this.litChord = undefined;
-      this.riffs.lit = null;
     }
     this.drawWave();
     if (this.view === 'play') {
@@ -1252,11 +1182,10 @@ export class RecordScreen {
       g.font = '16px Geneva, sans-serif';
       g.fillText('No chords yet', nowX + 10, top + boxHeight / 2);
     }
-    // Light the keys and pad of the chord that is playing now.
+    // Show the chord that is playing now.
     const name = current?.name || null;
     if (name !== this.litChord) {
       this.litChord = name;
-      if (this.playing || !this.riffs.riff) this.keyboard.highlight({ targets: new Set(name ? chordNotes(this.song, name) : []), chord: name });
       this.$('#chord-now').textContent = name ? plain(name) : '-';
     }
   }

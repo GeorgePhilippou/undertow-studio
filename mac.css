@@ -539,6 +539,7 @@ dialog::backdrop { background: transparent; }
 .boot-box { text-align: center; }
 .boot-box .dialog-inner { padding: 26px 46px 24px; display: grid; justify-items: center; gap: 12px; }
 .boot-box svg { width: 64px; height: 64px; }
+.boot-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 .boot-box p { margin: 0; }
 .boot-box .small { max-width: 30ch; }
 .boot.leaving { animation: boot 0.25s steps(3) forwards; }
@@ -732,7 +733,7 @@ body:not([data-screen='record']) .record-screen { display: none !important; }
 #record-window { flex: 1; min-height: 0; }
 #record-window:not([data-view='play']) .play-only, #record-window:not([data-view='pads']) .pads-only,
 #record-window:not([data-view='remix']) .remix-only,
-#record-window:not([data-view='play']) .sync-only, #record-window:not([data-view='play']) .keys-only,
+#record-window:not([data-view='play']) .sync-only,
 #record-window[data-view='remix'] .tempo-only, #record-window[data-view='play'] .fx-only { display: none !important; }
 .record-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px 8px; }
 .record-top .spacer { flex: 1; }
@@ -762,7 +763,6 @@ body:not([data-screen='record']) .record-screen { display: none !important; }
 .riff-tap strong { font: 34px var(--chicago); }
 .riff-tap.down, .riff-tap:active { background: var(--ink); color: var(--paper); box-shadow: 1px 1px 0 var(--ink); transform: translate(2px, 2px); }
 .riff-side { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
-.along-keys { padding: 0 12px 10px; }
 .pad-editor { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 6px 8px; border: 1px dotted var(--ink); }
 .pad-editor .nudge { display: inline-flex; align-items: center; gap: 4px; }
 .pad-editor output { min-width: 26px; text-align: center; }
@@ -787,11 +787,7 @@ body:not([data-screen='record']) .record-screen { display: none !important; }
 .along-hint { margin: 0; min-height: 1.3em; }
 .mark-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px; border: 1px dotted var(--ink); }
 .mark-chords { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
-.along-keys { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
 .record-strip { flex-wrap: wrap; }
-.along-keys .segmented { align-self: flex-start; }
-.along-keys .piano { flex: 1; min-height: 120px; max-height: 340px; height: auto; }
-.along-keys .pads { flex: 1; min-height: 90px; max-height: 260px; grid-auto-rows: minmax(0, 1fr); }
 .sampler { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 10px; touch-action: none; }
 .pad.sample { min-height: 0; display: grid; grid-template-columns: 100%; align-content: space-between; justify-items: stretch; text-align: left; gap: 4px; }
 .pad.sample .number { display: flex; justify-content: space-between; width: 100%; }
@@ -818,13 +814,45 @@ body:not([data-screen='record']) .record-screen { display: none !important; }
 .pad.sample.borrowed { border-style: dashed; }
 #remix-patterns button.used::after { content: ''; display: inline-block; width: 5px; height: 5px; margin-left: 5px; background: currentColor; vertical-align: middle; }
 #record-window { overflow: hidden; }
-#record-window > .play-view, #record-window > .along-keys { min-height: 0; }
+#record-window > .play-view { min-height: 0; }
 /* On a phone the window scrolls: nothing shrinks under the controls. */
 @media (max-width: 700px) {
   #record-window { overflow: auto; }
   #record-window > * { flex-shrink: 0; }
-  #record-window > .along-keys, #record-window > .pads-view, #record-window > .remix-view { flex: none; }
-  .along-keys .piano { height: 150px; flex: none; }
+  #record-window > .pads-view, #record-window > .remix-view { flex: none; }
   .sampler { grid-auto-rows: 92px; }
   .riff-play { flex-direction: column; }
+}
+
+/* ---------------------------------------------------------------- Kid A (kid-a/) */
+
+.kida-screen {
+  position: fixed;
+  inset: 24px 0 0 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+#kida-window { flex: 1; min-height: 0; overflow: auto; }
+#kida-window > * { flex-shrink: 0; }
+.kida-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px 4px; }
+.kida-top .spacer { flex: 1; }
+.kida-about, .kida-hint { margin: 0; padding: 0 12px; min-height: 1.3em; }
+.kida-strip { margin: 6px 12px; width: calc(100% - 24px); height: 48px; cursor: pointer; }
+.kida-hands { display: grid; grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr); gap: 12px; padding: 4px 12px 8px; }
+.pad.kida-hand { min-height: 150px; touch-action: none; }
+.pad.kida-hand strong { font-size: 26px; overflow-wrap: anywhere; }
+.pad.kida-hand .kida-keys { line-height: 1.35; letter-spacing: 1px; }
+.pad.kida-hand.target .kida-keys { background: var(--paper); padding: 0 3px; }
+.kida-next { border: 1px solid var(--ink); box-shadow: 1px 1px 0 var(--ink); display: grid; align-content: center; justify-items: center; gap: 4px; padding: 6px; text-align: center; }
+.kida-next strong { font: 34px var(--chicago); white-space: nowrap; }
+#kida-window > .piano { flex: 1 0 auto; margin: 8px 12px; min-height: 130px; max-height: 420px; height: auto; }
+.kida-strip-bar { margin: auto 0 0; border-width: 1px 0 0; box-shadow: none; }
+
+@media (max-width: 700px) {
+  .kida-screen { padding: 6px; }
+  .kida-hands { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .kida-next { grid-column: 1 / -1; grid-row: 1; }
+  .kida-next strong { font-size: 26px; }
+  #kida-window > .piano { flex: none; height: 140px; }
 }

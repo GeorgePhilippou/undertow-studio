@@ -55,7 +55,6 @@ export class RiffView {
     this.sampler = new Sampler(this.context, screen.output);
     this.index = 0;
     this.sound = 'record';
-    this.pressed = new Map();
     this.bind();
   }
 
@@ -109,7 +108,6 @@ export class RiffView {
 
   advance() {
     this.index = (this.index + 1) % this.riff.hits.length;
-    this.pressed.clear();
     this.render();
   }
 
@@ -126,18 +124,6 @@ export class RiffView {
     this.flashTimer = setTimeout(() => pad.classList.remove('down'), 120);
   }
 
-  // Playing the notes of the next hit on the keyboard counts as playing it.
-  // Any octave is fine.
-  notePlayed(midi) {
-    if (!this.riff) return;
-    this.pressed.set(midi % 12, performance.now());
-    const now = performance.now();
-    const wanted = new Set(this.riff.hits[this.index].notes.map(n => n % 12));
-    for (const pitch of wanted) {
-      if (!this.pressed.has(pitch) || now - this.pressed.get(pitch) > 700) return;
-    }
-    this.advance();
-  }
 
   // Hear It: the whole riff in time, with the chosen sound.
   hear() {
@@ -195,7 +181,6 @@ export class RiffView {
     $('#riff-about').textContent = riff.about;
     const hit = riff.hits[this.index];
     $('#riff-next').textContent = `${riff.title}: ${this.index + 1} of ${riff.hits.length}${hit.name ? ` - ${plain(hit.name)}` : ''}`;
-    this.lit = null;
   }
 
   draw() {
@@ -234,12 +219,6 @@ export class RiffView {
         g.restore();
       }
     });
-    // Light the notes of the hit to play next.
-    if (this.lit !== current && !this.screen.playing) {
-      this.lit = current;
-      const hit = riff.hits[current];
-      this.screen.keyboard.highlight({ targets: new Set(hit.notes), chord: hit.chord });
-    }
   }
 
   bind() {
