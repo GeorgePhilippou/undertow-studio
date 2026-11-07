@@ -34,13 +34,32 @@ const state = page => page.evaluate(() => ({ n: undertow.piano.n, sounding: [...
     });
   });
   const ids = songs.map(s => s.id);
-  check(['everything', 'karma', 'pyramid', 'codex', 'videotape', 'truelove', 'idioteque', 'motionpicture'].every(id => ids.includes(id)), `the songs with keyboard parts are all there (${ids.join(', ')})`);
+  check(['everything', 'karma', 'pyramid', 'codex', 'videotape', 'truelove', 'idioteque', 'motionpicture', 'creep'].every(id => ids.includes(id)), `the songs with keyboard parts are all there (${ids.join(', ')})`);
   check(await page.$$eval('#pk-song option', options => options.length) === songs.length, 'the song menu lists them');
   const pyramid = songs.find(s => s.id === 'pyramid');
   check(pyramid.keys === 'ASD' && pyramid.order === 'ASDSA', `Pyramid Song is A S D S A on the home row (${pyramid.order})`);
   const karma = songs.find(s => s.id === 'karma');
   check(karma.order.startsWith('AASSDDFF'), `Karma Police reads left to right (${karma.order})`);
-  check(songs.every(s => s.keys.length >= 2 && s.keys.length <= 10), 'every song fits on the home row');
+  check(songs.every(s => s.keys.length >= 2 && s.keys.length <= 20), 'every song fits on the home and top rows');
+  const creep = songs.find(s => s.id === 'creep');
+  check(creep.keys === 'ASDF' && creep.order === 'AASSDDFF', `Creep is G B C Cm on A S D F (${creep.order})`);
+  const pieces = await page.evaluate(async () => {
+    const { playableSongs, keymapFor, piecesOf } = await import('./src/keys/keymap.js');
+    const karma = playableSongs().find(s => s.id === 'karma');
+    const whole = keymapFor(karma, 'whole');
+    return {
+      pieces: piecesOf(karma).map(p => p.id),
+      bars: whole.length / 4,
+      sections: whole.sections.map(s => s.name),
+      chorus: keymapFor(karma, 'chorus').hits.map(h => h.key.name).filter((n, i, all) => n !== all[i - 1]).join(' '),
+      coda: keymapFor(karma, 'coda').keys.map(k => k.name).join(' '),
+      wholeKeys: whole.keys.length,
+    };
+  });
+  check(pieces.pieces.join() === 'whole,verse,chorus,coda', `Karma Police offers the whole song or one section (${pieces.pieces})`);
+  check(pieces.bars === 77 && pieces.sections[0] === 'Intro' && pieces.sections.includes('Chorus') && pieces.sections.at(-1) === 'Last Chord', `the whole song runs intro, verses, choruses and coda (${pieces.bars} bars)`);
+  check(pieces.chorus === 'C D G F♯7 C D G F♯7 C D G Bm/F♯ C Bm D', `the chorus chords follow the chart (${pieces.chorus})`);
+  check(pieces.coda === 'Bm D G Eadd9', `the coda is Bm D G Eadd9 (${pieces.coda})`);
   check(await page.$$eval('#pk-keys [data-code]', keys => keys.map(k => k.textContent.replace(/\s+/g, ' ').trim())).then(t => t[0].startsWith('A F#') && t.length === 3), 'the chord keys show their letter and chord');
 
   // Wait for Me.
@@ -92,6 +111,15 @@ const state = page => page.evaluate(() => ({ n: undertow.piano.n, sounding: [...
   await page.keyboard.press('KeyA');
   const second = (await state(page)).sounding;
   check(first.includes(33) && first.includes(45) && !second.includes(33), `each key plays what the part has there: bass and chord, then the chord (${first} / ${second})`);
+  check(await page.isVisible('#pk-piece') && await page.inputValue('#pk-piece') === 'whole', 'Karma Police starts on the whole song');
+  check((await page.textContent('#pk-hint')).startsWith('Intro.'), 'the hint says which section you are in');
+  check(await page.$$eval('#pk-keys [data-code]', keys => keys.length) === 12, 'the whole song needs twelve keys, on the home and top rows');
+  await page.selectOption('#pk-piece', 'coda');
+  check(await page.$$eval('#pk-keys [data-code]', keys => keys.map(k => k.dataset.code).join()) === 'KeyA,KeyS,KeyD,KeyF', 'one section has its own few keys');
+  await page.keyboard.press('KeyA');
+  check((await state(page)).sounding.includes(47), 'and plays its first chord, Bm');
+  check(await page.evaluate(() => undertow.data.settings.piano.pieces.karma) === 'coda', 'the section is kept for the song');
+  await page.selectOption('#pk-piece', 'whole');
   await page.selectOption('#pk-sound', 'epiano');
   check(await page.evaluate(() => undertow.data.settings.piano.sounds.karma) === 'epiano', 'the sound is kept for the song');
 

@@ -14,6 +14,7 @@ const TITLES = {
   videotape: 'The closing piano',
   truelove: 'The layered pianos',
   motionpicture: 'The organ hymn',
+  creep: 'The four chords',
 };
 
 const plain = name => (name || '').replace(/♭/g, 'b').replace(/♯/g, '#');

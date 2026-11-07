@@ -25,7 +25,7 @@ async function pressPad(page, index) {
 
   // Songs.
   const ids = await page.$$eval('#song-list [data-song]', buttons => buttons.map(b => b.dataset.song));
-  check(ids.join() === 'everything,idioteque,karma,pyramid,codex,videotape,truelove,motionpicture', 'eight checked songs are listed in order');
+  check(ids.join() === 'everything,idioteque,karma,pyramid,codex,videotape,truelove,motionpicture,creep', 'nine checked songs are listed in order');
   for (const id of ids) {
     await page.click(`[data-song="${id}"]`);
     const title = await page.textContent('#song-title');

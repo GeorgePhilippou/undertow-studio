@@ -22,7 +22,7 @@ Records are kept in the browser on each device; nothing syncs or uploads by itse
 A record opens in one window with three tabs. The menu at the top of the window switches to any of your other records.
 
 - **Play:** the whole record as a waveform: touch to jump, drag across a part to loop it, and slow it down to 50% without changing the pitch. Underneath, the chords scroll past in time, and the song's **riff** is ready to perform.
-  - If the record is one of the known songs (Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits, Motion Picture Soundtrack - recognised from the file name, or chosen in the Song menu), its chord loop and riff are lined up from where the music starts; **Chords and riff from** in the Play tab sets which song it is. **Set Start** and the tempo line them up by ear. The chart repeats one passage, so other sections of the record may differ.
+  - If the record is one of the known songs (Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits, Motion Picture Soundtrack, Creep - recognised from the file name, or chosen in the Song menu), its chord loop and riff are lined up from where the music starts; **Chords and riff from** in the Play tab sets which song it is. **Set Start** and the tempo line them up by ear. The chart repeats one passage, so other sections of the record may differ.
   - **Tap** (or Return) plays the riff's next hit. **Song** cuts each hit straight from your record, so it is Radiohead's real sound; **Keys** plays it with the app's instrument. **Hear It** plays it in time.
   - **Mark Chords:** tap each chord the moment you hear it change. Your marks replace the chart for that record.
 - **Pads:** three banks, **A, B and C**, of sixteen sampler pads cut from the record (bank B starts as a bar per pad, bank C as two bars per pad). Touch them, or press 1-4, Q-R, A-F and Z-V; several fingers or keys at once is fine. While a pad plays, its waveform fills in.
@@ -40,9 +40,9 @@ The record is one finished mix, so the app cannot pull out just the piano or the
 
 The start screen asks what you would like to play: **Pads** (your records, below) or **Piano**. The Piano also opens from its icon on the desktop or **Piano** in the apple menu; its close box goes back to the desktop.
 
-Choose a song: Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits or Motion Picture Soundtrack. You play its keyboard part.
+Choose a song: Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits, Motion Picture Soundtrack or Creep. You play its keyboard part. **Karma Police** is there as the whole song (intro, verses, choruses and the "for a minute there" coda, 77 bars); the section menu plays just one section round and round to learn it, and the lane names each section as it comes. The other songs are their famous loop.
 
-- **One key per chord:** every chord of the part gets its own key on the home row of your keyboard (A, S, D, F...), in the order the chords first come, so a progression reads left to right. Pyramid Song is A S D S A in its 3 + 3 + 4 + 3 + 3 rhythm; Karma Police starts A A S S D D F F. Each key plays what the part really has there: the bass with the chord on the downbeat, the chord alone where it repeats.
+- **One key per chord:** every chord of the part gets its own key on the home row of your keyboard (A, S, D, F...), in the order the chords first come, so a progression reads left to right. Pyramid Song is A S D S A in its 3 + 3 + 4 + 3 + 3 rhythm; Karma Police starts A A S S D D F F; its whole song needs twelve chords, so the last ones go on the top row (Q, W). Each key plays what the part really has there: the bass with the chord on the downbeat, the chord alone where it repeats.
 - The **lane** shows the chords coming up as boxes as long as they last, each with its key; the black box is next. The chord keys on screen and the piano show it too, and both can be touched on iPad.
 - **Wait for Me:** the song waits at each chord until you press its key, so you learn the order at your own pace. Delete steps back, Start Over goes to the beginning.
 - **In Time:** press Play (Space). After a bar of clicks the chords scroll at the song's tempo; press each key as its box reaches the dotted line. A tick means in time (underlined when spot on), a cross means missed, and each time round gets a score. The speed menu slows it to 50%; **Click** keeps a beat.
@@ -56,7 +56,7 @@ Choose a song: Everything In Its Right Place, Idioteque, Karma Police, Pyramid S
 
 The earlier song desk, where the app's own instruments play short passages to learn step by step, still opens from the apple menu: **Lessons (old)...**
 
-- **Songs:** Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits and Motion Picture Soundtrack. Each is a short, looping passage with its own sound. Get Info explains what is checked against published analyses and what is a reconstruction. No Surprises and 15 Step are held back until their parts sound right.
+- **Songs:** Everything In Its Right Place, Idioteque, Karma Police, Pyramid Song, Codex, Videotape, True Love Waits, Motion Picture Soundtrack and Creep. Each is a short, looping passage with its own sound. Get Info explains what is checked against published analyses and what is a reconstruction. No Surprises and 15 Step are held back until their parts sound right.
 - **Five lesson steps** for every song, each ticked off as you go and shown in the Songs list:
   1. **Listen** while the note roll and the keyboard show your part.
   2. **Learn:** the song stops at every chord until you play it. Any octave counts, and on chord pads only the right chord counts.
