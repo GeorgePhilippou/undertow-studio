@@ -71,7 +71,7 @@ function balloonMisses(page) {
   check(duplicates.length === 0, `every element id is unique ${duplicates.join(', ')}`);
   check(await page.isVisible('#records-window'), 'the desktop shows the Records window');
   const icons = await page.$$eval('#desk-icons [data-open]', els => els.map(e => e.dataset.open));
-  check(icons.join() === 'pieces,kid-a', `the desktop has My Pieces and Kid A beside the records (${icons.join(', ')})`);
+  check(icons.join() === 'pieces,piano', `the desktop has My Pieces and the Piano beside the records (${icons.join(', ')})`);
   check(await page.isVisible('#records-empty'), 'an empty desktop explains how to load a record');
   await page.click('[data-menu="undertow"]');
   check(await page.isDisabled('.menu button:has-text("Desktop")'), 'Desktop in the apple menu is dimmed on the desktop');

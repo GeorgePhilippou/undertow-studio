@@ -539,7 +539,6 @@ dialog::backdrop { background: transparent; }
 .boot-box { text-align: center; }
 .boot-box .dialog-inner { padding: 26px 46px 24px; display: grid; justify-items: center; gap: 12px; }
 .boot-box svg { width: 64px; height: 64px; }
-.boot-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 .boot-box p { margin: 0; }
 .boot-box .small { max-width: 30ch; }
 .boot.leaving { animation: boot 0.25s steps(3) forwards; }
@@ -824,35 +823,60 @@ body:not([data-screen='record']) .record-screen { display: none !important; }
   .riff-play { flex-direction: column; }
 }
 
-/* ---------------------------------------------------------------- Kid A (kid-a/) */
+/* ---------------------------------------------------------------- piano */
 
-.kida-screen {
+.piano-screen {
   position: fixed;
   inset: 24px 0 0 0;
   padding: 12px;
   display: flex;
   flex-direction: column;
+  background: var(--paper) var(--desktop);
 }
-#kida-window { flex: 1; min-height: 0; overflow: auto; }
-#kida-window > * { flex-shrink: 0; }
-.kida-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px 4px; }
-.kida-top .spacer { flex: 1; }
-.kida-about, .kida-hint { margin: 0; padding: 0 12px; min-height: 1.3em; }
-.kida-strip { margin: 6px 12px; width: calc(100% - 24px); height: 48px; cursor: pointer; }
-.kida-hands { display: grid; grid-template-columns: minmax(0, 1fr) 150px minmax(0, 1fr); gap: 12px; padding: 4px 12px 8px; }
-.pad.kida-hand { min-height: 150px; touch-action: none; }
-.pad.kida-hand strong { font-size: 26px; overflow-wrap: anywhere; }
-.pad.kida-hand .kida-keys { line-height: 1.35; letter-spacing: 1px; }
-.pad.kida-hand.target .kida-keys { background: var(--paper); padding: 0 3px; }
-.kida-next { border: 1px solid var(--ink); box-shadow: 1px 1px 0 var(--ink); display: grid; align-content: center; justify-items: center; gap: 4px; padding: 6px; text-align: center; }
-.kida-next strong { font: 34px var(--chicago); white-space: nowrap; }
-#kida-window > .piano { flex: 1 0 auto; margin: 8px 12px; min-height: 130px; max-height: 420px; height: auto; }
-.kida-strip-bar { margin: auto 0 0; border-width: 1px 0 0; box-shadow: none; }
+body:not([data-screen='piano']) .piano-screen { display: none !important; }
+#pk-window { flex: 1; min-height: 0; overflow: auto; }
+#pk-window > * { flex-shrink: 0; }
+.pk-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px 6px; }
+.pk-top .spacer { flex: 1; }
+.pk-lane-row { display: flex; gap: 10px; padding: 4px 12px; }
+.pk-next strong { font-size: 40px; line-height: 1; }
+.pk-lane { height: 104px; touch-action: none; }
+.pk-hint { margin: 0; padding: 4px 12px; min-height: 2.6em; }
+.pk-keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; padding: 4px 12px 8px; touch-action: none; }
+.pad.pk-key { min-height: 104px; touch-action: none; }
+.pad.pk-key strong { font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.pk-cap { font: 26px var(--chicago); min-width: 38px; padding: 0 6px; border: 1px solid currentColor; border-radius: 5px; box-shadow: 1px 2px 0 currentColor; text-align: center; background: var(--paper); color: var(--ink); }
+.pad.pk-key.down .pk-cap { background: var(--ink); color: var(--paper); border-color: var(--paper); }
+.pad.pk-key.target small, .pad.pk-key.target strong { background: var(--paper); padding: 0 3px; }
+#pk-window > .piano { flex: 1 0 auto; margin: 4px 12px 10px; min-height: 120px; max-height: 300px; height: auto; }
+.pk-strip { margin: auto 0 0; border-width: 1px 0 0; box-shadow: none; }
+
+.boot-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 6px; width: min(440px, 76vw); }
+.boot-choice {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  padding: 16px 10px 14px;
+  border: 1px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 var(--ink);
+  background: var(--paper);
+  touch-action: manipulation;
+}
+.boot-choice strong { font: 22px var(--chicago); }
+.boot-choice svg { width: 48px; height: 48px; }
+.boot-choice .small { max-width: none; }
+.boot-choice:active, .boot-choice:focus-visible { background: var(--ink); color: var(--paper); }
+.boot-choice:active svg { filter: invert(1); }
 
 @media (max-width: 700px) {
-  .kida-screen { padding: 6px; }
-  .kida-hands { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .kida-next { grid-column: 1 / -1; grid-row: 1; }
-  .kida-next strong { font-size: 26px; }
-  #kida-window > .piano { flex: none; height: 140px; }
+  .piano-screen { padding: 6px; }
+  .pk-next { width: 72px; }
+  .pk-next strong { font-size: 30px; }
+  .pk-keys { grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 6px; }
+  .pad.pk-key { min-height: 84px; padding: 6px; }
+  .pad.pk-key small { display: none; }
+  #pk-window > .piano { flex: none; height: 130px; }
+  .boot-box .dialog-inner { padding: 20px 18px; }
 }
