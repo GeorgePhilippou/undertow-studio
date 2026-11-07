@@ -60,10 +60,52 @@ export function hitsOf(song, part) {
 // A name for what a hit plays: its chord, or its notes when it has none.
 const nameOf = hit => hit.chord || noteList(hit.notes);
 
-// The keys for a song: { song, part, hits, keys, length }. Each key is
-// { code, label, name, notes } where notes is the chord's full voicing.
-export function keymapFor(song) {
-  const part = keyboardPart(song);
+// What can be played of a song: the whole song and each of its sections when
+// the song has them (song.piano), or else its keyboard loop.
+export function piecesOf(song) {
+  if (!song.piano) return [{ id: 'part', name: keyboardPart(song).name }];
+  const seen = new Set();
+  const sections = [];
+  for (const [id] of song.piano.form) {
+    // A section too short to practise on its own, like a last chord, only
+    // plays in the whole song.
+    if (seen.has(id) || song.piano.sections[id].length < 8) continue;
+    seen.add(id);
+    sections.push({ id, name: song.piano.sections[id].name });
+  }
+  return [{ id: 'whole', name: 'Whole Song' }, ...sections];
+}
+
+// The notes of a piece: { part, sections } where sections marks where each
+// section of the form begins, for the lane.
+function pieceOf(song, piece) {
+  const main = keyboardPart(song);
+  if (!song.piano || piece === 'part') return { part: main, sections: [] };
+  const raw = SONGS.find(s => s.id === song.id);
+  const parsed = prepareSong({
+    ...raw,
+    parts: Object.entries(raw.piano.sections).map(([id, section]) => ({ id, name: section.name, instrument: main.instrument, length: section.length, notes: section.notes })),
+  });
+  const byId = Object.fromEntries(parsed.parts.map(p => [p.id, p]));
+  if (piece !== 'whole' && byId[piece]) {
+    return { part: { ...main, events: byId[piece].events, length: byId[piece].length }, sections: [] };
+  }
+  const events = [];
+  const sections = [];
+  let offset = 0;
+  for (const [id, label] of raw.piano.form) {
+    const section = byId[id];
+    sections.push({ beat: offset, name: label || section.name });
+    for (const event of section.events) events.push({ ...event, beat: event.beat + offset });
+    offset += section.length;
+  }
+  return { part: { ...main, events, length: offset }, sections };
+}
+
+// The keys for a song: { song, part, hits, keys, length, sections }. Each key
+// is { code, label, name, notes } where notes is the chord's full voicing.
+export function keymapFor(song, piece = 'whole') {
+  const { part, sections } = pieceOf(song, piece);
   const hits = hitsOf(song, part);
   const keys = [];
   for (const hit of hits) {
@@ -78,7 +120,15 @@ export function keymapFor(song) {
     }
     hit.key = key;
   }
-  return { song, part, hits: hits.filter(hit => hit.key), keys, length: part.length || song.loop };
+  return { song, part, hits: hits.filter(hit => hit.key), keys, length: part.length || song.loop, sections };
+}
+
+// The section a beat falls in, counted within one time through.
+export function sectionAt(map, beat) {
+  const within = ((beat % map.length) + map.length) % map.length;
+  let found = null;
+  for (const section of map.sections) if (section.beat <= within + 1e-6) found = section;
+  return found;
 }
 
 // The nth hit counted from the start, going round the part: its hit, and its

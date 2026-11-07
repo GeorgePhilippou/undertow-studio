@@ -9,7 +9,7 @@ import { INSTRUMENTS } from '../audio/engine.js';
 import { showDialog, toast, escape } from '../ui/mac.js';
 import { ICONS, renderIcons } from '../ui/icons.js';
 import { listTracks, getTrack } from '../records/tracks.js';
-import { playableSongs, keymapFor, nth, plain, noteList } from './keymap.js';
+import { playableSongs, keymapFor, piecesOf, sectionAt, nth, plain, noteList } from './keymap.js';
 
 const BLACK = new Set([1, 3, 6, 8, 10]);
 const PERFECT = 0.08; // seconds either side
@@ -62,11 +62,17 @@ export class PianoScreen {
     this.stop();
     this.releaseAll();
     this.song = this.songs.find(s => s.id === id) || this.songs.find(s => s.id === 'pyramid') || this.songs[0];
-    this.map = keymapFor(this.song);
+    const pieces = piecesOf(this.song);
+    const saved = this.store().pieces?.[this.song.id];
+    this.piece = pieces.some(p => p.id === saved) ? saved : pieces[0].id;
+    this.map = keymapFor(this.song, this.piece);
     this.restart();
     const $ = this.$;
     $('#pk-title').textContent = `Piano - ${this.song.title}`;
     $('#pk-song').value = this.song.id;
+    $('#pk-piece').innerHTML = pieces.map(p => `<option value="${p.id}">${escape(p.name)}</option>`).join('');
+    $('#pk-piece').value = this.piece;
+    $('#pk-piece').hidden = pieces.length < 2;
     this.renderSound();
     this.renderKeys();
     this.fit();
@@ -75,6 +81,19 @@ export class PianoScreen {
       this.persist();
     }
     this.chooseRecord();
+    this.show();
+  }
+
+  setPiece(id) {
+    this.stop();
+    this.releaseAll();
+    this.piece = id;
+    this.store().pieces = { ...this.store().pieces, [this.song.id]: id };
+    this.persist();
+    this.map = keymapFor(this.song, id);
+    this.restart();
+    this.renderKeys();
+    this.fit();
     this.show();
   }
 
@@ -183,7 +202,8 @@ export class PianoScreen {
         this.play(hit.notes, hit.velocity, null);
         this.flashKey(hit.key.code);
         this.n++;
-        if (this.n >= this.map.hits.length * 2) {
+        // A short part plays twice, a whole song once.
+        if (this.n >= this.map.hits.length * (this.map.length > 32 ? 1 : 2)) {
           setTimeout(() => this.stop(), hit.gap * run.spb * 1000);
           run.auto = 'ending';
           break;
@@ -518,6 +538,8 @@ export class PianoScreen {
     else if (this.run) hint = this.score || 'Press each key as its box reaches the line.';
     else if (this.mode === 'time') hint = this.score ? `${this.score} Press Play (Space) to go again.` : `Press Play (Space): after a bar of clicks, press each key as its box reaches the line, at ${Math.round(this.speed * 100)}% speed.`;
     else hint = `Press ${hit.key.label} for ${plain(hit.key.name)}. The song waits for you; the boxes show each chord's length. Space plays the part to hear how it goes.`;
+    const section = sectionAt(this.map, nth(this.map, this.n).beat);
+    if (section) hint = `${section.name}. ${hint}`;
     $('#pk-hint').textContent = hint;
     this.showRunning();
     this.showKeys();
@@ -569,8 +591,8 @@ export class PianoScreen {
     const perBeat = (width - nowX) / AHEAD;
     const cursor = this.cursorBeat();
     const x = beat => nowX + (beat - cursor) * perBeat;
-    const top = 6;
-    const boxHeight = height - 22;
+    const top = this.map.sections.length ? 20 : 6;
+    const boxHeight = height - top - 16;
     // Bar lines and beats along the bottom.
     g.fillStyle = '#000';
     for (let beat = Math.floor(cursor - nowX / perBeat) - 1; x(beat) < width; beat++) {
@@ -607,6 +629,22 @@ export class PianoScreen {
       g.fillText(plain(hit.key.name), left + 7, top + boxHeight - 22);
       if (result) this.mark(g, right - 18, top + 10, result);
       g.restore();
+    }
+    // Section names above the boxes, where each section starts.
+    if (this.map.sections.length) {
+      g.fillStyle = '#000';
+      g.font = '16px Geneva, sans-serif';
+      g.textBaseline = 'top';
+      const span = this.map.length;
+      const firstRound = Math.floor((cursor - AHEAD) / span);
+      for (let round = firstRound; round <= firstRound + 2; round++) {
+        for (const section of this.map.sections) {
+          const sx = x(round * span + section.beat);
+          if (sx < -200 || sx > width) continue;
+          g.fillRect(Math.round(sx), 2, 1, top - 4);
+          g.fillText(section.name, Math.round(sx) + 4, 2);
+        }
+      }
     }
     // The now line, dotted.
     g.fillStyle = '#000';
@@ -657,6 +695,7 @@ export class PianoScreen {
     const $ = this.$;
     $('#pk-song').innerHTML = this.songs.map(song => `<option value="${song.id}">${escape(song.title)}</option>`).join('');
     $('#pk-song').addEventListener('change', event => this.setSong(event.target.value));
+    $('#pk-piece').addEventListener('change', event => this.setPiece(event.target.value));
     $('#pk-info').addEventListener('click', () => this.showInfo());
     $('#pk-mode').addEventListener('click', event => {
       const button = event.target.closest('[data-mode]');

@@ -20,24 +20,34 @@ parts: [{
 }]
 ```
 
+A song can also carry the whole song for the Piano in `piano`: named `sections` (each with a `length` in beats and `notes` in the same format, using the song's `chords`) and a `form`, the order they come in with a label for each (`['verse', 'Verse 1']`). The Piano then offers the whole song or any section of eight beats or more; Lessons and records still use the loop in `parts`.
+
+```js
+piano: {
+  sections: { verse: { name: 'Verse', length: 32, notes: `...` }, chorus: { ... } },
+  form: [['verse', 'Intro'], ['verse', 'Verse 1'], ['chorus', 'Chorus']],
+},
+```
+
 `bars` lists the bar lengths in beats (`[4, 6]` for Everything In Its Right Place). The loop is the shortest length that every part fits into. Instruments: `piano`, `prophet`, `lansky`, `epiano`, `musicbox`, `organ`, `guitar`, `bass`. Kits: `machine`, `electro`, `soft`.
 
 Players can also correct a part in the app: record it as they hear it, then choose **Use as Part** in the Takes window. That edit is stored in the browser, not in this file.
 
 ## How close each song is
 
-These are synthesised arrangements of short passages. They are not transcriptions of the records and they are not the original sounds.
+These are synthesised arrangements of short passages (Karma Police also as a whole song on the Piano). They are not transcriptions of the records and they are not the original sounds.
 
 | Song | Checked against sources | Reconstructed |
 | --- | --- | --- |
 | Everything In Its Right Place | C, D♭maj7, E♭6 with a high C on top; ten-beat (4 + 6) cycle; 124 BPM. Sound after published Prophet-5 recreations: pulse waves, closed resonant filter swept per key, long decay, two takes panned hard left and right, about 19 cents flat | Stab rhythm (no source gives it note for note) and voicing spacing |
 | Idioteque | Four E♭maj7 voicings, five-bar cycle (Ali Jamieson) | Six-beat drum pattern, pad sound |
-| Karma Police | Am, D/F♯, Em, G, Am, F, Em, G | Voicings, repeated-chord rhythm, light drums |
+| Karma Police | Am, D/F♯, Em, G, Am, F, Em, G. Whole song on the Piano: intro and verses, chorus (C D G F♯7, C D G, Bm/F♯ C Bm D) and the coda (Bm D G D G D Eadd9) after Piano with Nate's bar-by-bar chart; section keys and 74-76 BPM agree with Hooktheory and Capuzzo (2009) | Voicings, repeated-chord rhythm, light drums, how long each chorus chord lasts and how often the coda repeats |
 | Pyramid Song | 3 + 3 + 4 + 3 + 3 rhythm; F♯, Gmaj7, A6 with a high F♯ | Which chord falls on each hit; tempo |
 | Codex | C, B♭add9, Dm | Pulse, chord lengths and tempo |
 | Videotape | A, C♯m, E cycle, key of A, about 72 BPM | Steady chord pulse and voicings (the record's changes feel pushed early) |
 | True Love Waits | C, E/C, Am, A♭ cycle; C at about 69 BPM (from live and arranged versions) | The two interlocking piano parts |
 | Motion Picture Soundtrack | G, C, Bm, C | Organ voicing, chord lengths, tempo |
+| Creep | G, B, C, Cm a bar each, all through the song (Capuzzo 2004, cited by Wikipedia); G major, 92-95 BPM (Hooktheory) | The piano part itself (the record's piano only comes in at the end), voicings, two hits a bar |
 
 **Held back:** No Surprises and 15 Step did not sound like the records when checked by ear. Their data is kept in `UNCHECKED_SONGS` in `src/songs.js`; correct the recognisable riffs (the No Surprises guitar and glockenspiel line, the 15 Step beat and guitar figure) and move them back into `SONGS`.
 

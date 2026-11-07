@@ -115,11 +115,14 @@ export const SONGS = [
     bars: [4],
     key: 'A minor',
     youtube: '1uYWYWPc9HU',
-    about: 'The opening piano: Am, D/F♯, Em, G, then Am, F, Em, G. Two beats for each chord, with the bass walking down underneath.',
-    accuracy: 'The chord sequence matches published charts. The voicings and the repeated-chord rhythm are a piano reconstruction.',
+    about: 'The opening piano: Am, D/F♯, Em, G, then Am, F, Em, G. Two beats for each chord, with the bass walking down underneath. On the Piano the whole song is here: verses, choruses and the "for a minute there" coda.',
+    accuracy: 'The chord sequence matches published charts. The whole-song chords (intro and verse, chorus, the B minor coda) follow Piano with Nate\'s bar-by-bar chart, and the keys of each section agree with Hooktheory (verse A Dorian, chorus G major, coda B minor, 74-76 BPM) and with Capuzzo\'s analysis cited by Wikipedia. How long each chorus chord lasts, how many times the coda repeats, the voicings and the repeated-chord rhythm are a piano reconstruction.',
     sources: [
       ['Heartwood Guitar — chord chart', 'https://www.heartwoodguitar.com/chords/radiohead-karma-police/'],
       ['Cifra Club — chords', 'https://www.cifraclub.com/radiohead/karma-police/'],
+      ['Piano with Nate — chords and piano lesson', 'https://pianowithnate.com/All-Songs/karma-police'],
+      ['Hooktheory — sections, keys and tempo', 'https://www.hooktheory.com/theorytab/view/radiohead/karma-police'],
+      ['Wikipedia — Karma Police (music)', 'https://en.wikipedia.org/wiki/Karma_Police'],
     ],
     chords: {
       'Am': 'A1 A2 | A3 C4 E4',
@@ -127,6 +130,157 @@ export const SONGS = [
       'Em': 'E1 E2 | G3 B3 E4',
       'G': 'G1 G2 | G3 B3 D4',
       'F': 'F1 F2 | A3 C4 F4',
+      'D': 'D2 D3 | A3 D4 F#4',
+      'Cmaj7': 'C2 C3 | G3 B3 E4',
+      'Bm': 'B1 B2 | B3 D4 F#4',
+      'C': 'C2 C3 | G3 C4 E4',
+      'F♯7': 'F#1 F#2 | A#3 C#4 E4',
+      'Bm/F♯': 'F#1 F#2 | B3 D4 F#4',
+      'Eadd9': 'E1 E2 | G#3 B3 F#4',
+    },
+    // The whole song for the Piano: sections, then the order they come in.
+    piano: {
+      sections: {
+        verse: { name: 'Verse', length: 32, notes: `
+          0    A1 A2      2    0.65
+          0    [Am]       0.9  0.8
+          1    [Am]       0.9  0.5
+          2    F#1 F#2    2    0.65
+          2    [D/F♯]     0.9  0.8
+          3    [D/F♯]     0.9  0.5
+          4    E1 E2      2    0.65
+          4    [Em]       0.9  0.8
+          5    [Em]       0.9  0.5
+          6    G1 G2      2    0.65
+          6    [G]        0.9  0.8
+          7    [G]        0.9  0.5
+          8    A1 A2      2    0.65
+          8    [Am]       0.9  0.8
+          9    [Am]       0.9  0.5
+          10   F1 F2      2    0.65
+          10   [F]        0.9  0.8
+          11   [F]        0.9  0.5
+          12   E1 E2      2    0.65
+          12   [Em]       0.9  0.8
+          13   [Em]       0.9  0.5
+          14   G1 G2      2    0.65
+          14   [G]        0.9  0.8
+          15   [G]        0.9  0.5
+          16   A1 A2      2    0.65
+          16   [Am]       0.9  0.8
+          17   [Am]       0.9  0.5
+          18   D2 D3      2    0.65
+          18   [D]        0.9  0.8
+          19   [D]        0.9  0.5
+          20   G1 G2      1    0.65
+          20   [G]        0.9  0.8
+          21   F#1 F#2    1    0.65
+          21   [D/F♯]     0.9  0.8
+          22   C2 C3      1    0.65
+          22   [Cmaj7]    0.9  0.8
+          23   B1 B2      1    0.65
+          23   [Bm]       0.9  0.8
+          24   A1 A2      4    0.65
+          24   [Am]       0.9  0.8
+          25   [Am]       0.9  0.5
+          26   [Am]       0.9  0.5
+          27   [Am]       0.9  0.5
+          28   B1 B2      2    0.65
+          28   [Bm]       0.9  0.8
+          29   [Bm]       0.9  0.5
+          30   D2 D3      2    0.65
+          30   [D]        0.9  0.8
+          31   [D]        0.9  0.5
+        ` },
+        chorus: { name: 'Chorus', length: 32, notes: `
+          0    C2 C3      2    0.65
+          0    [C]        0.9  0.8
+          1    [C]        0.9  0.5
+          2    D2 D3      2    0.65
+          2    [D]        0.9  0.8
+          3    [D]        0.9  0.5
+          4    G1 G2      2    0.65
+          4    [G]        0.9  0.8
+          5    [G]        0.9  0.5
+          6    F#1 F#2    2    0.65
+          6    [F♯7]      0.9  0.8
+          7    [F♯7]      0.9  0.5
+          8    C2 C3      2    0.65
+          8    [C]        0.9  0.8
+          9    [C]        0.9  0.5
+          10   D2 D3      2    0.65
+          10   [D]        0.9  0.8
+          11   [D]        0.9  0.5
+          12   G1 G2      2    0.65
+          12   [G]        0.9  0.8
+          13   [G]        0.9  0.5
+          14   F#1 F#2    2    0.65
+          14   [F♯7]      0.9  0.8
+          15   [F♯7]      0.9  0.5
+          16   C2 C3      2    0.65
+          16   [C]        0.9  0.8
+          17   [C]        0.9  0.5
+          18   D2 D3      2    0.65
+          18   [D]        0.9  0.8
+          19   [D]        0.9  0.5
+          20   G1 G2      4    0.65
+          20   [G]        0.9  0.8
+          21   [G]        0.9  0.5
+          22   [G]        0.9  0.5
+          23   [G]        0.9  0.5
+          24   F#1 F#2    2    0.65
+          24   [Bm/F♯]    0.9  0.8
+          25   [Bm/F♯]    0.9  0.5
+          26   C2 C3      2    0.65
+          26   [C]        0.9  0.8
+          27   [C]        0.9  0.5
+          28   B1 B2      2    0.65
+          28   [Bm]       0.9  0.8
+          29   [Bm]       0.9  0.5
+          30   D2 D3      2    0.65
+          30   [D]        0.9  0.8
+          31   [D]        0.9  0.5
+        ` },
+        coda: { name: 'For a Minute There', length: 16, notes: `
+          0    B1 B2      2    0.65
+          0    [Bm]       0.9  0.8
+          1    [Bm]       0.9  0.5
+          2    D2 D3      2    0.65
+          2    [D]        0.9  0.8
+          3    [D]        0.9  0.5
+          4    G1 G2      2    0.65
+          4    [G]        0.9  0.8
+          5    [G]        0.9  0.5
+          6    D2 D3      2    0.65
+          6    [D]        0.9  0.8
+          7    [D]        0.9  0.5
+          8    G1 G2      2    0.65
+          8    [G]        0.9  0.8
+          9    [G]        0.9  0.5
+          10   D2 D3      2    0.65
+          10   [D]        0.9  0.8
+          11   [D]        0.9  0.5
+          12   E1 E2      4    0.65
+          12   [Eadd9]    0.9  0.8
+          13   [Eadd9]    0.9  0.5
+          14   [Eadd9]    0.9  0.5
+          15   [Eadd9]    0.9  0.5
+        ` },
+        end: { name: 'Last Chord', length: 4, notes: `
+          0    B1 B2      4    0.65
+          0    [Bm]       0.9  0.8
+          1    [Bm]       0.9  0.5
+          2    [Bm]       0.9  0.5
+          3    [Bm]       0.9  0.5
+        ` },
+      },
+      form: [
+        ['verse', 'Intro'], ['verse', 'Verse 1'], ['verse', 'Verse 2'], ['chorus', 'Chorus'],
+        ['verse', 'Verse 3'], ['chorus', 'Chorus'],
+        ['coda', 'For a Minute There'], ['coda', 'For a Minute There'], ['coda', 'For a Minute There'],
+        ['coda', 'For a Minute There'], ['coda', 'For a Minute There'], ['coda', 'Outro'], ['coda', 'Outro'],
+        ['end', 'Last Chord'],
+      ],
     },
     parts: [
       {
@@ -392,8 +546,50 @@ export const SONGS = [
         `,
       },
     ],
-  }
+  },
 
+  {
+    id: 'creep',
+    legacyIndex: null,
+    title: 'Creep',
+    album: 'Pablo Honey',
+    year: 1993,
+    bpm: 92,
+    bars: [4],
+    key: 'G major',
+    youtube: null,
+    about: 'G, B, C, C minor: four chords, a bar each, that run through the whole song. The turn to B major and the borrowed C minor give it its bittersweet lift.',
+    accuracy: 'The G - B - C - Cm progression repeated throughout the song follows Capuzzo\'s analysis, cited by Wikipedia; Hooktheory gives G major at 92-95 BPM. On the record the guitar arpeggiates the chords in the verses and the piano only comes in at the end, so this piano part, its voicings (keeping the shared notes B, then C and G, in place) and its two hits a bar are a reconstruction.',
+    sources: [
+      ['Wikipedia — Creep (Radiohead song), music', 'https://en.wikipedia.org/wiki/Creep_(Radiohead_song)'],
+      ['Hooktheory — sections, key and tempo', 'https://www.hooktheory.com/theorytab/view/radiohead/creep'],
+    ],
+    chords: {
+      'G': 'G1 G2 | B3 D4 G4',
+      'B': 'B1 B2 | B3 D#4 F#4',
+      'C': 'C2 C3 | C4 E4 G4',
+      'Cm': 'C2 C3 | C4 Eb4 G4',
+    },
+    parts: [
+      {
+        id: 'piano', name: 'Piano', instrument: 'piano', length: 16, learn: true,
+        notes: `
+          0    G1 G2      4    0.7
+          0    [G]        1.9  0.8
+          2    [G]        1.9  0.5
+          4    B1 B2      4    0.7
+          4    [B]        1.9  0.8
+          6    [B]        1.9  0.5
+          8    C2 C3      4    0.7
+          8    [C]        1.9  0.8
+          10   [C]        1.9  0.5
+          12   C2 C3      4    0.7
+          12   [Cm]       1.9  0.8
+          14   [Cm]       1.9  0.5
+        `,
+      },
+    ],
+  },
 ];
 
 // Songs that did not sound like the records when checked by ear. They are not
