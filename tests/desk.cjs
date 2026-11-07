@@ -71,7 +71,7 @@ function balloonMisses(page) {
   check(duplicates.length === 0, `every element id is unique ${duplicates.join(', ')}`);
   check(await page.isVisible('#records-window'), 'the desktop shows the Records window');
   const icons = await page.$$eval('#desk-icons [data-open]', els => els.map(e => e.dataset.open));
-  check(icons.join() === 'pieces', `the desktop has My Pieces beside the records and nothing else (${icons.join(', ')})`);
+  check(icons.join() === 'pieces,kid-a', `the desktop has My Pieces and Kid A beside the records (${icons.join(', ')})`);
   check(await page.isVisible('#records-empty'), 'an empty desktop explains how to load a record');
   await page.click('[data-menu="undertow"]');
   check(await page.isDisabled('.menu button:has-text("Desktop")'), 'Desktop in the apple menu is dimmed on the desktop');
@@ -105,18 +105,14 @@ function balloonMisses(page) {
   const riff = await page.evaluate(() => ({ hits: undertow.record.riffs.riff.hits.length, first: undertow.record.riffs.sliceOf(0), second: undertow.record.riffs.sliceOf(1) }));
   const beat = 60 / 124;
   check(riff.hits === 15 && Math.abs(riff.first.start - start) < 0.001 && Math.abs(riff.second.start - (start + 0.75 * beat)) < 0.001, `each hit is cut from the record in time (${riff.hits} hits)`);
-  const targets = await page.$$eval('#along-piano .target', keys => keys.map(k => Number(k.dataset.midi)).sort((a, b) => a - b));
-  check(targets.join() === '36,52,55,60', `the keys show the first hit (${targets.join(' ')})`);
+  check(!(await page.$('#record-window .piano')), 'the record window has no piano keyboard: the piano lives in Kid A');
   await page.click('#riff-tap');
   check(await page.evaluate(() => undertow.record.riffs.index === 1 && undertow.record.riffs.sampler.playing('riff')), 'tapping plays the first hit from the record and moves on');
   await page.keyboard.press('Enter');
   check(await page.evaluate(() => undertow.record.riffs.index) === 2, 'Return taps too');
-  await page.evaluate(() => [36, 52, 55, 60].forEach(n => undertow.record.keyboard.press(n, 0.7)));
-  await page.evaluate(() => [36, 52, 55, 60].forEach(n => undertow.record.keyboard.release(n)));
-  check(await page.evaluate(() => undertow.record.riffs.index) === 3, 'playing the right keys moves on as well');
   await page.click('#riff-sound [data-sound="keys"]');
   await page.click('#riff-tap');
-  check(await page.evaluate(() => undertow.record.riffs.sound === 'keys' && undertow.record.riffs.index === 4 && !undertow.record.riffs.sampler.playing('riff')), 'Keys plays the riff with the app instrument');
+  check(await page.evaluate(() => undertow.record.riffs.sound === 'keys' && undertow.record.riffs.index === 3 && !undertow.record.riffs.sampler.playing('riff')), 'Keys plays the riff with the app instrument');
   await page.click('#riff-sound [data-sound="record"]');
   await page.click('#riff-hear');
   await page.waitForTimeout(1300);
@@ -174,11 +170,10 @@ function balloonMisses(page) {
   await page.click('#mark-clear');
   check(await page.evaluate(() => undertow.record.chordList()[0].name) === 'C', 'Clear Marks goes back to the song chart');
 
-  // Keyboard lights the current chord.
+  // The chord box shows the chord playing now.
   await page.evaluate(() => undertow.record.seek(1.2));
   await page.waitForTimeout(200);
-  const lit = await page.$$eval('#along-piano .target', keys => keys.map(k => Number(k.dataset.midi) % 12).sort((a, b) => a - b));
-  check(lit.includes(0) && lit.includes(4) && lit.includes(7), `the keyboard shows the chord playing now (${lit.join(' ')})`);
+  check(await page.textContent('#chord-now') === 'C', 'the chord box shows the chord playing now');
 
   // Pads.
   await page.click('#record-view [data-view="pads"]');

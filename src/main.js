@@ -1019,6 +1019,7 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
         '-',
         { label: 'About OK Computer…', action: showAbout },
         '-',
+        { label: 'Kid A (Piano)', action: openKidA },
         { label: 'Lessons (old)...', action: () => setScreen('learn') },
         { label: 'Open Undertow Classic…', action: openClassic },
       ];
@@ -1101,6 +1102,13 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
       return [];
   }
 });
+
+// Kid A, the piano app, is its own page on the same site, so it can play
+// along with the records loaded here.
+async function openKidA() {
+  if (screen() === 'record') await recordScreen.flush();
+  location.href = 'kid-a/';
+}
 
 async function openClassic() {
   if (await confirmBox('Open Undertow Classic?', 'The earlier version, Undertow, opens with its own saved projects. Your songs and takes here are kept.', 'Open')) {
@@ -1299,8 +1307,8 @@ function connectMidi() {
     const listen = input => {
       input.onmidimessage = ({ data: [status, note, velocity] }) => {
         const type = status & 0xf0;
-        if (screen() === 'record' && (type === 0x90 || type === 0x80)) recordScreen.midiNote(note, type === 0x90 ? velocity / 127 : 0);
-        else if (type === 0x90 && velocity > 0) keyboard.press(note, velocity / 127);
+        if (screen() === 'record') return;
+        if (type === 0x90 && velocity > 0) keyboard.press(note, velocity / 127);
         else if (type === 0x80 || (type === 0x90 && velocity === 0)) keyboard.release(note);
         else if (type === 0xb0 && note === 64) setPedal(velocity >= 64);
       };
@@ -1377,6 +1385,8 @@ document.body.dataset.screen = 'desk';
 $('#record-close').addEventListener('click', () => setScreen('desk'));
 requestAnimationFrame(frame);
 
+$('#boot-kida').addEventListener('click', openKidA);
+
 $('#boot-start').addEventListener('click', async () => {
   await context.resume();
   if (desktop.records.length) keepData();
@@ -1400,6 +1410,10 @@ function screen() {
 async function openFromDesk(target) {
   if (target.screen === 'pieces') {
     showPieces({ download });
+    return;
+  }
+  if (target.screen === 'kid-a') {
+    openKidA();
     return;
   }
   if (target.screen) {
