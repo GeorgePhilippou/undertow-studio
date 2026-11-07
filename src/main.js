@@ -16,6 +16,7 @@ import { pianoReady } from './audio/piano.js';
 import { showPieces, showPiece } from './records/pieces.js';
 import { Desktop, keepData } from './records/desktop.js';
 import { RecordScreen } from './records/record.js';
+import { PianoScreen } from './keys/screen.js';
 
 const $ = selector => document.querySelector(selector);
 const $$ = selector => [...document.querySelectorAll(selector)];
@@ -919,6 +920,21 @@ function showHelp() {
     <div class="button-row"><button class="btn default" data-value="ok">OK</button></div>`);
 }
 
+function showPianoHelp() {
+  showDialog(`
+    <h3>How to Play the Piano</h3>
+    <ul>
+      <li>Every chord of the song has its own key on the <b>home row</b> of your keyboard: A, S, D, F and on, in the order the chords first come. The boxes show which key is next and how long each chord lasts.</li>
+      <li><b>Wait for Me:</b> the song waits at each chord until you press its key, so you can learn the order at your own pace. Space plays the part to hear how it goes.</li>
+      <li><b>In Time:</b> press Play (or Space). After a bar of clicks the chords scroll past; press each key as its box reaches the dotted line. A tick means in time, a cross means missed, and you get a score each time round. Slow it down with the speed menu.</li>
+      <li>Each key plays what the part really has there: the bass with the chord where the song has it, the chord alone where it repeats.</li>
+      <li><b>Pedal</b> on: each chord rings until the next. Off: notes stop when you let go.</li>
+      <li><b>Play along with</b> one of your records underneath; Return plays or stops it.</li>
+      <li>On iPad, use a hardware keyboard or touch the keys on screen. A MIDI keyboard plays the piano keys directly.</li>
+    </ul>
+    <div class="button-row"><button class="btn default" data-value="ok">OK</button></div>`);
+}
+
 function showAbout() {
   showDialog(`
     <div class="alert">${ICONS.mac}<div>
@@ -1016,15 +1032,15 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
     case 'undertow':
       return [
         { label: 'Desktop', shortcut: '⌘D', disabled: screen() === 'desk', action: () => setScreen('desk') },
+        { label: 'Piano', disabled: screen() === 'piano', action: () => setScreen('piano') },
         '-',
         { label: 'About OK Computer…', action: showAbout },
         '-',
-        { label: 'Kid A (Piano)', action: openKidA },
         { label: 'Lessons (old)...', action: () => setScreen('learn') },
         { label: 'Open Undertow Classic…', action: openClassic },
       ];
     case 'file':
-      if (screen() === 'desk' || screen() === 'record') {
+      if (screen() !== 'learn') {
         return [
           { label: 'Load a Record...', action: () => $('#record-file').click() },
           { label: 'Save All Records to Files...', disabled: !desktop.records.length, action: () => desktop.saveAll() },
@@ -1092,6 +1108,7 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
       ];
     case 'help':
       return [
+        ...(screen() === 'piano' ? [{ label: 'How to Play the Piano...', action: showPianoHelp }, '-'] : []),
         { label: balloons.enabled ? 'Hide Balloons' : 'Show Balloons', action: () => toast(balloons.toggle() ? 'Point at or touch anything to see what it does.' : 'Balloons off.') },
         { label: 'Take the Tour', action: startTour },
         '-',
@@ -1102,13 +1119,6 @@ const menus = new MenuBar($('.menubar'), $('#menus'), name => {
       return [];
   }
 });
-
-// Kid A, the piano app, is its own page on the same site, so it can play
-// along with the records loaded here.
-async function openKidA() {
-  if (screen() === 'record') await recordScreen.flush();
-  location.href = 'kid-a/';
-}
 
 async function openClassic() {
   if (await confirmBox('Open Undertow Classic?', 'The earlier version, Undertow, opens with its own saved projects. Your songs and takes here are kept.', 'Open')) {
@@ -1262,6 +1272,10 @@ document.addEventListener('keydown', event => {
     recordScreen.keyDown(event);
     return;
   }
+  if (screen() === 'piano') {
+    pianoScreen.keyDown(event);
+    return;
+  }
   if (event.key === 'Shift') {
     setPedal(true);
     return;
@@ -1295,6 +1309,10 @@ document.addEventListener('keyup', event => {
     recordScreen.keyUp(event);
     return;
   }
+  if (screen() === 'piano') {
+    pianoScreen.keyUp(event);
+    return;
+  }
   if (event.key === 'Shift') setPedal(false);
   const key = event.key.toLowerCase();
   heldKeys.get(key)?.();
@@ -1308,6 +1326,10 @@ function connectMidi() {
       input.onmidimessage = ({ data: [status, note, velocity] }) => {
         const type = status & 0xf0;
         if (screen() === 'record') return;
+        if (screen() === 'piano') {
+          if (type === 0x90 || type === 0x80) pianoScreen.midiNote(note, type === 0x90 ? velocity / 127 : 0);
+          return;
+        }
         if (type === 0x90 && velocity > 0) keyboard.press(note, velocity / 127);
         else if (type === 0x80 || (type === 0x90 && velocity === 0)) keyboard.release(note);
         else if (type === 0xb0 && note === 64) setPedal(velocity >= 64);
@@ -1385,9 +1407,11 @@ document.body.dataset.screen = 'desk';
 $('#record-close').addEventListener('click', () => setScreen('desk'));
 requestAnimationFrame(frame);
 
-$('#boot-kida').addEventListener('click', openKidA);
+const pianoScreen = new PianoScreen({ engine, $, settings, persist });
+$('#pk-close').addEventListener('click', () => setScreen('desk'));
 
-$('#boot-start').addEventListener('click', async () => {
+// The start screen: Pads (the records desktop) or Piano.
+async function begin(name) {
   await context.resume();
   if (desktop.records.length) keepData();
   connectMidi();
@@ -1395,14 +1419,16 @@ $('#boot-start').addEventListener('click', async () => {
   $('#boot').classList.add('leaving');
   setTimeout(() => {
     $('#boot').remove();
-    setScreen('desk');
+    setScreen(name);
   }, 300);
-});
+}
+$('#boot-start').addEventListener('click', () => begin('desk'));
+$('#boot-piano').addEventListener('click', () => begin('piano'));
 
 // ---------------------------------------------------------------- screens
 
 function screen() {
-  return ['desk', 'record', 'learn'].includes(settings().screen) ? settings().screen : 'desk';
+  return ['desk', 'record', 'learn', 'piano'].includes(settings().screen) ? settings().screen : 'desk';
 }
 
 // The desktop opens records and My Pieces; the old lessons (learn) open from
@@ -1410,10 +1436,6 @@ function screen() {
 async function openFromDesk(target) {
   if (target.screen === 'pieces') {
     showPieces({ download });
-    return;
-  }
-  if (target.screen === 'kid-a') {
-    openKidA();
     return;
   }
   if (target.screen) {
@@ -1438,6 +1460,7 @@ function setScreen(name) {
   document.body.dataset.screen = name;
   menus.close();
   if (previous === 'record' && name !== 'record') recordScreen.leave();
+  if (previous === 'piano' && name !== 'piano') pianoScreen.leave();
   if (previous === 'learn' && name !== 'learn') {
     player.stop();
     keyboard.releaseAll();
@@ -1447,6 +1470,8 @@ function setScreen(name) {
     if (!settings().deskToured) startTour();
   } else if (name === 'record') {
     recordScreen.enter();
+  } else if (name === 'piano') {
+    pianoScreen.enter();
   } else {
     renderKeyboard();
     lastRoll = '';
@@ -1465,7 +1490,7 @@ function startTour() {
   if (screen() === 'desk' || screen() === 'record') {
     runTour([
       { target: '#records', text: 'Your records live here. Load a Radiohead song you own from Files, then touch it to open it. It stays on this device.' },
-      { target: '#desk-icons', text: 'My Pieces keeps the takes you record in your records, to play, save or share.' },
+      { target: '#desk-icons', text: 'My Pieces keeps the takes you record in your records. Piano plays the songs\' chords on your keyboard.' },
       { target: '[data-menu="help"]', text: 'Help > Show Balloons explains anything you point at or touch.' },
     ]).then(() => {
       settings().deskToured = true;
@@ -1538,4 +1563,4 @@ if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
 }
 
 // Exposed for automated browser checks.
-window.undertow = { player, engine, keyboard, setScreen, get desktop() { return desktop; }, get record() { return recordScreen; }, get song() { return song; }, get data() { return data; } };
+window.undertow = { player, engine, keyboard, setScreen, get desktop() { return desktop; }, get record() { return recordScreen; }, get piano() { return pianoScreen; }, get song() { return song; }, get data() { return data; } };

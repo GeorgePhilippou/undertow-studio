@@ -1,8 +1,8 @@
 """Copy the static site into dist/ for GitHub Pages.
 
 The site is plain HTML, CSS and ES modules with relative paths, so packaging is
-a copy of the files the page loads, the Kid A piano app in kid-a/, and the
-classic app for older projects.
+a copy of the files the page loads, the kid-a/ page that sends old links to
+the Piano, and the classic app for older projects.
 """
 from pathlib import Path
 import shutil
